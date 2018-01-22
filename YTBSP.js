@@ -930,6 +930,9 @@ var GoogleAuth;
                 '<p class="ytbsp-uploaded"/>';
 
             $(".ytbsp-clip, .ytbsp-title", this.thumbLi).click(function(event){
+                if(event.target.classList.contains("ytbsp-x")){
+					return;
+                }
                 event.preventDefault();
                 openVideoWithSPF($(this).attr('data-vid'));
             });
