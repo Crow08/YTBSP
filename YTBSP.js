@@ -918,16 +918,22 @@ var GoogleAuth;
 
 			this.thumbLi.id = "YTBSPthumb_" + this.vid;
 			this.thumbLi.className = "ytbsp-video-item";
-			this.thumbLi.innerHTML = '<div class="ytbsp-clip contains-addto ux-thumb-wrap ">' +
-				'<div class="ytbsp-x yt-uix-tooltip " data-tooltip-text="remove video">X</div>' +
-				'<a href="/watch?v=' + this.vid + '">' +
-				'<img class="ytbsp-thumb" /></a>' +
-				'<ytd-thumbnail-overlay-time-status-renderer><span class="style-scope ytd-thumbnail-overlay-time-status-renderer">' +
-				'</span></ytd-thumbnail-overlay-time-status-renderer>' +
+			this.thumbLi.innerHTML = '<div class="ytbsp-clip" data-vid=' + this.vid + '>' +
+				'<div class="ytbsp-x">X</div>' +
+				'<img class="ytbsp-thumb" />' +
+				'<ytd-thumbnail-overlay-time-status-renderer></ytd-thumbnail-overlay-time-status-renderer>' +
 				'<input type="hidden" class="ytbsp-thumb-large-url" />' +
-				'</div><a class="vlink" href="/watch?v=' + this.vid + '"></a>' +
-				'<div class="ytbsp-seemarker' + (this.isSeen() ? ' seen">already seen' : '">mark as seen') + '</div>' +
-				'<p class="ytbsp-views"></p><p class="ytbsp-uploaded"></p>';
+				'</div>' +
+                '<a class="ytbsp-title" href="/watch?v=' + this.vid + '" data-vid=' + this.vid + '></a>' +
+				'<p class="ytbsp-seemarker' + (this.isSeen() ? ' seen">already seen' : '">mark as seen') + '</p>' +
+				'<p class="ytbsp-views"/>' +
+                '<p class="ytbsp-uploaded"/>';
+
+            $(".ytbsp-clip, .ytbsp-title", this.thumbLi).click(function(event){
+                event.preventDefault();
+                openVideoWithSPF($(this).attr('data-vid'));
+            });
+
 			function enlarge(){
 				if ($(".ytbsp-x:hover", this).length !== 0) {
 					return;
@@ -935,16 +941,17 @@ var GoogleAuth;
 				if(!(self.vid.replace('-', '$') in timeouts)){
 					timeouts[self.vid.replace('-', '$')] = -1;
 				}
-				var that = this;
+				var thumb = this.parentElement;
+                var clip = this;
 				if(timeouts[self.vid.replace('-', '$')] == -1){
 					timeouts[self.vid.replace('-', '$')] = setTimeout(function(){
-						var img = that.querySelectorAll('.ytbsp-thumb')[0];
-						var title = that.parentElement.querySelectorAll('.vlink')[0];
-						var infos = that.parentElement.querySelectorAll('p');
-						img.src= that.querySelectorAll('.ytbsp-thumb-large-url')[0].value;
+						var img = clip.querySelectorAll('.ytbsp-thumb')[0];
+						var title = thumb.querySelectorAll('.ytbsp-title')[0];
+						var infos = thumb.querySelectorAll('p');
+						img.src= clip.querySelectorAll('.ytbsp-thumb-large-url')[0].value;
 						img.classList.add('ytbsp-thumb-large');
-						title.classList.add('vlink-large');
-						that.classList.add('ytbsp-clip-large');
+						title.classList.add('ytbsp-title-large');
+						clip.classList.add('ytbsp-clip-large');
 						for (var i = 0; i < infos.length; ++i) {
 							infos[i].style.display='none';
 						}
@@ -959,18 +966,20 @@ var GoogleAuth;
 					clearTimeout(timeouts[self.vid.replace('-', '$')]);
 				}
 				timeouts[self.vid.replace('-', '$')] = -1;
-				var img = this.querySelectorAll('.ytbsp-thumb')[0];
-				var title = this.parentElement.querySelectorAll('.vlink')[0];
-				var infos = this.parentElement.querySelectorAll('p');
+                var thumb = this;
+                var clip = this.querySelectorAll(".ytbsp-clip")[0];
+				var img = clip.querySelectorAll('.ytbsp-thumb')[0];
+				var title = thumb.querySelectorAll('.ytbsp-title')[0];
+				var infos = thumb.querySelectorAll('p');
 				img.classList.remove('ytbsp-thumb-large');
-				title.classList.remove('vlink-large');
-				this.classList.remove('ytbsp-clip-large');
+				title.classList.remove('ytbsp-title-large');
+				clip.classList.remove('ytbsp-clip-large');
 				for (var i = 0; i < infos.length; ++i) {
 					infos[i].style.display='';
 				}
 			}
 
-			$(".ytbsp-clip", this.thumbLi).mouseleave(enlargecancel);
+			$(this.thumbLi).mouseleave(enlargecancel);
 
 			function enlargecanclex(){
 				if(self.vid.replace('-', '$') in timeouts){
@@ -985,11 +994,11 @@ var GoogleAuth;
 				if (that != 'undefined') {
 					timeouts[self.vid.replace('-', '$')] = setTimeout(function(){
 						var img = that.querySelectorAll('.ytbsp-thumb')[0];
-						var title = that.parentElement.querySelectorAll('.vlink')[0];
+						var title = that.parentElement.querySelectorAll('.ytbsp-title')[0];
 						var infos = that.parentElement.querySelectorAll('p');
 						img.src= that.querySelectorAll('.ytbsp-thumb-large-url')[0].value;
 						img.classList.add('ytbsp-thumb-large');
-						title.classList.add('vlink-large');
+						title.classList.add('ytbsp-title-large');
 						that.classList.add('ytbsp-clip-large');
 						for (var i = 0; i < infos.length; ++i) {
 							infos[i].style.display='none';
@@ -1003,10 +1012,10 @@ var GoogleAuth;
 			// Save information elements.
 			this.thumbItem = $(".ytbsp-thumb", this.thumbLi)[0];
 			this.thumblargeItem = $(".ytbsp-thumb-large-url", this.thumbLi)[0];
-			this.durationItem = $("div.ytbsp-clip.contains-addto.ux-thumb-wrap > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi)[0];
+			this.durationItem = $("div.ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi)[0];
 			this.clicksItem = $(".ytbsp-views", this.thumbLi)[0];
 			this.uploadItem = $(".ytbsp-uploaded", this.thumbLi)[0];
-			this.titleItem = $("a.vlink", this.thumbLi)[0];
+			this.titleItem = $("a.ytbsp-title", this.thumbLi)[0];
 			this.updateThumb(inView);
 		},
 
@@ -1114,19 +1123,19 @@ var GoogleAuth;
 			'#ytbsp-subs { overflow: visible; margin: -30px 0 0 -30px; padding: 31px 0px 10px 30px; width: 1180px; box-shadow: none; ' +
 			'list-style-type: none;}' +
 			'.ytbsp-subscription { border: 1px solid ' + stdBorderColor + '; padding: 0 4px; margin-top: -1px; }' +
-			'.ytbsp-subvids { margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s;}' +
+			'.ytbsp-subvids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
 			'.ytbsp-video-item { display: inline-block; width: 122px; height: 152px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
 			'.ytbsp-video-item a { display: block; height: 2.3em; line-height: 1.2em; overflow: hidden; color: ' + stdFontColor + '; }' +
-			'.ytbsp-video-item p { color: ' + subtextColor + '; }' +
+			'.ytbsp-video-item p { color: ' + subtextColor + '; margin: 3px; }' +
 			'.ytbsp-subinfo { height: 25px; margin: 4px 4px 3px; }' +
 			'#YTBSP .right { float: right; }' +
 			'.ytbsp-subtitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute;}' +
 			'#YTBSP {margin-left: 240px; margin-top: 60px; zoom: 1.2;}' +
-			'#ytbsp-subs .vlink-large{ width: 316px; left: -103px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
+			'#ytbsp-subs .ytbsp-title-large{ width: 316px; left: -103px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
 			'border-width: 0px 3px 3px 3px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px; top: -2px;}' +
 
 			// image part
-			'.ytbsp-clip { position: relative; width: 124px; height: 70px; border: none;}' +
+			'.ytbsp-clip { position: relative; width: 124px; height: 70px; border: none; cursor: pointer;}' +
 			'.ytbsp-clip-large { z-index: 1; width: 320px; height: 180px; top: -45px; left: -100px; margin-bottom: -40px; border: none; }' +
 			'.ytbsp-video-item .ytbsp-x { position: absolute; z-index: 2; top: 2px; right: 2px; opacity: 0.6; width: 14px; height: 14px; ' +
 			'line-height: 14px; text-align: center; background-color: #000; color: #fff; font-size: 12px; font-weight: bold; ' +
@@ -1291,6 +1300,20 @@ var GoogleAuth;
         }, 10000);
 	}
 
+    function openVideoWithSPF(vid){
+        var ytdApp = document.querySelector('ytd-app');
+        ytdApp.fire("yt-navigate", {
+            endpoint: {
+                watchEndpoint: {
+                    videoId:vid
+                },
+                webNavigationEndpointData: {
+                    url:"/watch?v="+vid,
+                    webPageType:"WATCH"
+                }
+            }
+        });
+    }
 	// Old page is loaded.
 	$( document ).ready(function() {
         // Insert new page.
