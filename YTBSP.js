@@ -13,7 +13,7 @@
 /**
  * The MIT License
  *
- * Copyright (c) 2015-2017 (Crow08)
+ * Copyright (c) 2015-2018 (Crow08)
  * Copyright (c) 2014 (dzre)
  * Copyright (c) 2011-2013 Marco D. Pfeiffer (Nemo64)
  *
@@ -39,6 +39,7 @@ var GoogleAuth;
     const MAXITEMSPERSUB = 36; 			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by ITEMSPERROW).
     const SCREENLOADTHREADSHOLD = 500; 	// DEFAULT: 500.
     const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
+	const TIMETOMARKASSEEN = 10			// DEFAILT: 10 (in ms).
 
     // OAuth
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
@@ -50,11 +51,10 @@ var GoogleAuth;
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
     const YT_CHANNELLINK = "#owner-name > a";
 	const YT_CONTENT = "#content";
-	const YT_SIDEBAR = "#sections";
-	const YT_SIDEBARENTRY = "#endpoint";
 
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
+	//initialisation of chache-variables
 	var cache = null;
 	var corruptCache = false;
 	var hideSeen = false;
@@ -171,11 +171,6 @@ var GoogleAuth;
 		return params;
 	}
 
-	// OAuth request.
-	function executeRequest(callback, request) {
-		request.execute(callback);
-	}
-
 	// Build proper OAuth request.
 	function buildApiRequest(callback, requestMethod, path, params, properties) {
 		params = removeEmptyParams(params);
@@ -195,7 +190,7 @@ var GoogleAuth;
 				'params': params
 			});
 		}
-		executeRequest(callback, request);
+		request.execute(callback);
 	}
 
 	// End OAuth Stuff.
@@ -251,7 +246,8 @@ var GoogleAuth;
 		loadingSubs--;
 		// All subs loaded.
 		if(loadingSubs === 0) {
-			$("#ytbsp-ls").hide();
+			$(".ytbsp-loader","#ytbsp-ls").hide();
+			$("#ytbsp-refresh","#ytbsp-ls").show();
 			loadingVids--;
 			// All vids loaded. (In case async loading of videos is faster.)
 			if(loadingVids === 0) {
@@ -276,15 +272,15 @@ var GoogleAuth;
 	// Create an div for us.
 	var maindiv = document.createElement("div");
 	maindiv.id = "YTBSP";
-	var headerHtml = '<span id="ytbsp-ls">' + LOADER + '</span>' +
-		'<span class="func togglenative">toggle native startpage</span> ' +
-		'<span class="func removeAllVideos">remove all videos</span>' +
-		'<span class="func resetAllVideos">reset all videos</span> ' +
-		'<span class="func backup">backup video info</span>' +
-		'<label for="hideSeenCb" class="func hideSeen">'+
+	var headerHtml = '<span id="ytbsp-ls">' + LOADER + '<div id="ytbsp-refresh" class="ytbsp-func">&#x27F3;</div></span>' +
+		'<span class="ytbsp-func toggleytbsp">toggle YTBSP</span> ' +
+		'<span class="ytbsp-func removeAllVideos">remove all videos</span>' +
+		'<span class="ytbsp-func resetAllVideos">reset all videos</span> ' +
+		'<span class="ytbsp-func backup">backup video info</span>' +
+		'<label for="hideSeenCb" class="ytbsp-func hideSeen">'+
 		'<input id="hideSeenCb" type="checkbox" ' + (hideSeen ? 'checked="checked" ' : '') +'/>Hide seen videos' +
 		'</label>' +
-		'<label for="hideSubsCb" class="func hide">' +
+		'<label for="hideSubsCb" class="ytbsp-func hide">' +
 		'<input id="hideSubsCb" type="checkbox" ' + (hideSubs ? '' : 'checked="checked" ') + '/>Show empty' +
 		'</label>';
 
@@ -300,7 +296,25 @@ var GoogleAuth;
 	var subList = $("#ytbsp-subs", maindiv);
 
 	// Set functions affecting all subs:
-
+	// Set click event for refresh button, updating all videos for all subs.
+	function updateAllSubs(){
+		$(".ytbsp-loader","#ytbsp-ls").show();
+		$("#ytbsp-refresh","#ytbsp-ls").hide();
+        setTimeout(function() {
+            loadingVids++;
+            subs.forEach(function(sub, i) {
+                subs[i].updateVideos();
+            });
+            $(".ytbsp-loader","#ytbsp-ls").hide();
+            $("#ytbsp-refresh","#ytbsp-ls").show();
+            loadingVids--;
+            // All vids loaded. (In case async loading of videos is faster.)
+            if(loadingVids === 0) {
+                saveList();
+            }
+        }, 0);
+	}
+	$(".ytbsp-func#ytbsp-refresh", maindiv).click(updateAllSubs);
 
     function shownative() {
         $(YT_STARTPAGE_BODY).show();
@@ -312,24 +326,23 @@ var GoogleAuth;
         subList.show();
 	}
     // Now set click event for the toggle native button.
-	function togglenative() {
+	function toggleytbsp() {
 		isNative = !isNative;
 		if(isNative){
-            $(YT_STARTPAGE_BODY).show();
-            subList.hide();
+            shownative();
         }else{
-            $(YT_STARTPAGE_BODY).hide();
-            subList.show();
+            hidenative();
         }
 	}
-	$(".func.togglenative", maindiv).click(togglenative);
+	$(".ytbsp-func.toggleytbsp", maindiv).click(toggleytbsp);
 
 	// Remove all videos button.
 	function removeAllVideos() {
 		if(!confirm("delete all videos?")) {
 			return;
 		}
-		$("#ytbsp-ls").show();
+		$(".ytbsp-loader","#ytbsp-ls").show();
+		$("#ytbsp-refresh","#ytbsp-ls").hide();
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -344,17 +357,19 @@ var GoogleAuth;
 				subs[i].buildList();
 			});
 			saveList();
-			$("#ytbsp-ls").hide();
-		}, 50);
+			$(".ytbsp-loader","#ytbsp-ls").hide();
+			$("#ytbsp-refresh","#ytbsp-ls").show();
+		}, 0);
 	}
-	$(".func.removeAllVideos", maindiv).click(removeAllVideos);
+	$(".ytbsp-func.removeAllVideos", maindiv).click(removeAllVideos);
 
 	// Reset videos button.
 	function resetAllVideos() {
 		if(!confirm("reset all videos?")) {
 			return;
 		}
-		$("#ytbsp-ls").show();
+		$(".ytbsp-loader","#ytbsp-ls").show();
+		$("#ytbsp-refresh","#ytbsp-ls").hide();
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -369,10 +384,11 @@ var GoogleAuth;
 				subs[i].buildList();
 			});
 			saveList();
-			$("#ytbsp-ls").hide();
-		}, 50);
+			$(".ytbsp-loader","#ytbsp-ls").hide();
+			$("#ytbsp-refresh","#ytbsp-ls").show();
+		}, 0);
 	}
-	$(".func.resetAllVideos", maindiv).click(resetAllVideos);
+	$(".ytbsp-func.resetAllVideos", maindiv).click(resetAllVideos);
 
 	// Hide seen videos buttons.
 	function hideSeenVideos() {
@@ -381,7 +397,7 @@ var GoogleAuth;
 		subs.forEach(function(sub, i) {
 			subs[i].buildList();
 		});
-		$("input.func.hideSeen", maindiv).prop("checked", hideSeen);
+		$("input.ytbsp-func.hideSeen", maindiv).prop("checked", hideSeen);
 	}
 	$("#hideSeenCb", maindiv).change(hideSeenVideos);
 
@@ -392,13 +408,13 @@ var GoogleAuth;
 		subs.forEach(function(sub, i) {
 			subs[i].handleVisablility();
 		});
-		$("input.func.hide", maindiv).prop("checked", !hideSubs);
+		$("input.ytbsp-func.hide", maindiv).prop("checked", !hideSubs);
 	}
 	$("#hideSubsCb", maindiv).change(hideSubsFunc);
 
 	// Open backup dialog.
 	function openBackupDialog() {
-		if($("#ytbsp-ls").is(':visible')) {
+		if($(".ytbsp-loader","#ytbsp-ls").is(':visible')) {
 			alert("Not so fast. Let it load the sub list first.");
 			return;
 		}
@@ -449,7 +465,7 @@ var GoogleAuth;
 
 		openModal(content);
 	}
-	$(".func.backup", maindiv).click(openBackupDialog);
+	$(".ytbsp-func.backup", maindiv).click(openBackupDialog);
 
 	// Show backup dialog modal
 	function openModal(content) {
@@ -461,7 +477,7 @@ var GoogleAuth;
 		modal.style.display = "block";
 		setTimeout(function() {
 			modal.style.opacity = "1";
-		}, 50);
+		}, 0);
 	}
 
 	// Hide backup dialog modal
@@ -489,9 +505,9 @@ var GoogleAuth;
 
 		// Create content.
 		this.row.innerHTML = '<div class="ytbsp-subinfo">' +
-			'<div class="right"><span class="func removeall">remove all</span> <span class="func reset">reset all</span>' +
-			' <span class="func allseen">mark all as seen</span>' +
-			' <span class="func showmore">show more</span></div>' +
+			'<div class="right"><span class="ytbsp-func removeall">remove all</span> <span class="ytbsp-func reset">reset all</span>' +
+			' <span class="ytbsp-func allseen">mark all as seen</span>' +
+			' <span class="ytbsp-func showmore">show more</span></div>' +
 			'<div class="ytbsp-loaderph">' + LOADER + '</div><h3 class="ytbsp-subtitle"><a href="/channel/' + this.id + '"></a></h3>' +
 			'</div><ul class="ytbsp-subvids"></ul>';
 
@@ -503,99 +519,10 @@ var GoogleAuth;
 		this.titleObj.textContent = this.name;
 		subList.append(this.row);
 
+		// Get videos for sub from api.
+		this.updateVideos();
+
 		var self = this;
-
-		// If videos for sub are in cache find them.
-		var cacheSub = $.grep(cache, function(subs) {
-			return subs.id == self.id;
-		});
-		var cacheVideos = [];
-		if(cacheSub.length == 1) {
-			cacheVideos = cacheSub[0].videos;
-		}
-
-		// Get subs from api.
-		loadingVids++;
-		buildApiRequest(
-			processRequestVids,
-			'GET',
-			'/youtube/v3/playlistItems',
-			{
-				'maxResults': MAXITEMSPERSUB,
-				'part': 'snippet',
-				'fields': 'items(snippet(publishedAt,resourceId/videoId,thumbnails(maxres,medium),title)),nextPageToken,pageInfo,prevPageToken',
-				'playlistId': this.id.replace(/^UC/, 'UU')
-			}
-		);
-
-		function processRequestVids(response) {
-			response.items.forEach(function(video) {
-                var thumb;
-                var thumb_large;
-                var title;
-                var upload;
-                var pubDate;
-                var vid;
-                var seen;
-                var removed;
-
-				try {
-					thumb = video.snippet.thumbnails.medium.url;
-				} catch(e) {}
-				try {
-					thumb_large = video.snippet.thumbnails.maxres.url;
-				} catch(e) {}
-				try {
-					title = video.snippet.title;
-				} catch(e) {}
-				try {
-					upload = moment(video.snippet.publishedAt).fromNow();
-				} catch(e) {}
-				try {
-					pubDate = moment(video.snippet.publishedAt).format('YYYY-MM-DD HH:mm:ss');
-				} catch(e) {}
-				try {
-					vid = video.snippet.resourceId.videoId;
-				} catch(e) {}
-
-				// Merge cache info if available.
-				var cacheVideo = $.grep(cacheVideos, function(cVideo) {
-					return cVideo.vid == vid;
-				});
-				if(cacheVideo.length == 1) {
-					try {
-                        seen = cacheVideo[0].seen;
-					} catch(e) {}
-					try {
-						removed = cacheVideo[0].removed;
-					} catch(e) {}
-				}
-
-				var infos = {
-					vid: vid,
-					title: title,
-					thumb: thumb ? thumb : "",
-					thumb_large: thumb_large ? thumb_large : "",
-					uploaded: upload ? upload : "missing upload time",
-					pubDate: pubDate ? pubDate : "missing upload time",
-					seen: seen ? seen : false,
-					removed: removed ? removed : false
-				};
-				self.videos.push(new Video(infos));
-			});
-			// Rebuild the list.
-			self.buildList();
-			self.removeLoader();
-
-			// Mark row as updated.
-			self.row.className += " updated";
-
-			loadingVids--;
-			// All vids loaded.
-			if(loadingVids === 0) {
-				saveList();
-			}
-		}
 
 		// Function to remove all videos.
 		function removeAll() {
@@ -604,9 +531,8 @@ var GoogleAuth;
 			});
 			self.buildList();
 			saveList();
-
 		}
-		$(".func.removeall", this.row).click(removeAll);
+		$(".ytbsp-func.removeall", this.row).click(removeAll);
 
 		// Function to reset all videos.
 		function resetAll() {
@@ -615,9 +541,8 @@ var GoogleAuth;
 			});
 			self.buildList();
 			saveList();
-
 		}
-		$(".func.reset", this.row).click(resetAll);
+		$(".ytbsp-func.reset", this.row).click(resetAll);
 
 		// Function to see all.
 		function seeAll() {
@@ -628,25 +553,117 @@ var GoogleAuth;
 			saveList();
 
 		}
-		$(".func.allseen", this.row).click(seeAll);
+		$(".ytbsp-func.allseen", this.row).click(seeAll);
 
 		// Function to show more.
 		function showMore() {
             self.showall = !self.showall;
 			if(self.showall) {
-				$("span.func.showmore", self.row).text("show less");
+				$("span.ytbsp-func.showmore", self.row).text("show less");
 			} else {
-				$("span.func.showmore", self.row).text("show more");
+				$("span.ytbsp-func.showmore", self.row).text("show more");
 			}
 			self.buildList();
 		}
-		$("span.func.showmore", this.row).click(showMore);
+		$("span.ytbsp-func.showmore", this.row).click(showMore);
 	}
 	Subscription.prototype = {
 
 		showall: false,
 		needsUpdate: false,
 		isInView: false,
+
+		updateVideos: function(){
+			loadingVids++;
+			this.showLoader();
+			// If videos for sub are in cache find them.
+			var self = this;
+			var cacheSub = $.grep(cache, function(subs) {
+				return subs.id == self.id;
+			});
+			var cacheVideos = [];
+			if(cacheSub.length == 1) {
+				cacheVideos = cacheSub[0].videos;
+			}
+			buildApiRequest(
+				processRequestVids,
+				'GET',
+				'/youtube/v3/playlistItems',
+				{
+					'maxResults': MAXITEMSPERSUB,
+					'part': 'snippet',
+					'fields': 'items(snippet(publishedAt,resourceId/videoId,thumbnails(maxres,medium),title)),nextPageToken,pageInfo,prevPageToken',
+					'playlistId': this.id.replace(/^UC/, 'UU')
+				}
+			);
+
+			function processRequestVids(response) {
+				self.videos = [];
+				response.items.forEach(function(video) {
+					var thumb;
+					var thumb_large;
+					var title;
+					var upload;
+					var pubDate;
+					var vid;
+					var seen;
+					var removed;
+
+					try {
+						thumb = video.snippet.thumbnails.medium.url;
+					} catch(e) {}
+					try {
+						thumb_large = video.snippet.thumbnails.maxres.url;
+					} catch(e) {}
+					try {
+						title = video.snippet.title;
+					} catch(e) {}
+					try {
+						upload = moment(video.snippet.publishedAt).fromNow();
+					} catch(e) {}
+					try {
+						pubDate = moment(video.snippet.publishedAt).format('YYYY-MM-DD HH:mm:ss');
+					} catch(e) {}
+					try {
+						vid = video.snippet.resourceId.videoId;
+					} catch(e) {}
+
+					// Merge cache info if available.
+					var cacheVideo = $.grep(cacheVideos, function(cVideo) {
+						return cVideo.vid == vid;
+					});
+					if(cacheVideo.length == 1) {
+						try {
+							seen = cacheVideo[0].seen;
+						} catch(e) {}
+						try {
+							removed = cacheVideo[0].removed;
+						} catch(e) {}
+					}
+
+					var infos = {
+						vid: vid,
+						title: title,
+						thumb: thumb ? thumb : "",
+						thumb_large: thumb_large ? thumb_large : "",
+						uploaded: upload ? upload : "missing upload time",
+						pubDate: pubDate ? pubDate : "missing upload time",
+						seen: seen ? seen : false,
+						removed: removed ? removed : false
+					};
+					self.videos.push(new Video(infos));
+				});
+				// Rebuild the list.
+				self.buildList();
+				self.removeLoader();
+
+				loadingVids--;
+				// All vids loaded.
+				if(loadingVids === 0) {
+					saveList();
+				}
+			}
+		},
 
 		// (Re-)Build the list of videos.
 		buildList: function() {
@@ -719,9 +736,19 @@ var GoogleAuth;
 			updateSubsInView();
 		},
 
+		// Displays the Loader.
+		showLoader: function(){
+			var loadph = $(".ytbsp-loaderph", this.row);
+			var loader = $(".ytbsp-loader", this.row);
+			if(loadph && loader) {
+				loader.css("opacity", "1");
+				loader.css("display", "block");
+				loadph.css("width", "16px");
+			}
+		},
+
 		// Removes the Loader.
 		removeLoader: function() {
-
 			var loadph = $(".ytbsp-loaderph", this.row);
 			var loader = $(".ytbsp-loader", this.row);
 			if(loadph && loader) {
@@ -1060,7 +1087,6 @@ var GoogleAuth;
 
 	function saveList() {
 		var saveObj = [];
-		// that get new updated subs
 		subs.forEach(function(sub) {
 			saveObj.push(sub.getSaveable());
 		});
@@ -1157,16 +1183,17 @@ var GoogleAuth;
 			'.ytbsp-seemarker.seen:hover { opacity: 0.6; }' +
 
 			// functionbuttons
-			'#YTBSP .func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: 1px solid ' + stdBorderColor + '; z-index: 1;' +
+			'#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: 1px solid ' + stdBorderColor + '; z-index: 1;' +
 			'background-color: ' + altBgColor + '; padding: 1px 10px; margin: 0px 2px; opacity: 0.6;}' +
-			'#YTBSP .func:hover { opacity: 1; }' +
-			'#YTBSP .func:active { opacity: 0.4; }' +
-			'#YTBSP .func input{ vertical-align: middle; margin: -2px 5px -1px 0px;}' +
+			'#YTBSP .ytbsp-func:hover { opacity: 1; }' +
+			'#YTBSP .ytbsp-func:active { opacity: 0.4; }' +
+			'#YTBSP .ytbsp-func input{ vertical-align: middle; margin: -2px 5px -1px 0px;}' +
 
 			// loader
 			'.ytbsp-loaderph { float: left; width: 16px; height: 16px; margin-right: 5px; ' +
 			'-webkit-transition: width 0.4s; -moz-transition: width 0.4s; -o-transition: width 0.4s; }' +
-			'#ytbsp-ls { position: absolute; margin-left: -20px; }' +
+			'#ytbsp-ls { margin-left: -10px; width: 21px; margin-right: 1px;}' +
+			'#YTBSP #ytbsp-refresh {display: none; padding: 1px 3px;}' +
 			'.ytbsp-loader { border: 3px solid #bbb; border-top: 3px solid #555; border-left: 3px solid #bbb; border-bottom: 3px solid #555; ' +
 			'border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; -webkit-transition: opacity 0.3s; ' +
 			'-moz-transition: opacity 0.3s; -o-transition: opacity 0.3s;}' +
@@ -1201,7 +1228,7 @@ var GoogleAuth;
 					moved = false;
 					checkEvent();
 				}
-			}, 300);
+			}, 100);
 		} else {
 			moved = true;
 		}
@@ -1300,7 +1327,7 @@ var GoogleAuth;
                     }
                 });
             }
-        }, 10000);
+        }, TIMETOMARKASSEEN * 1000);
 	}
 
     function openVideoWithSPF(vid){
