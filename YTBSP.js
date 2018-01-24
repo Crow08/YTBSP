@@ -1096,17 +1096,16 @@ var GoogleAuth;
 		localStorage.setItem("YTBSPcorruptcache", 1);
 		var newcache = JSON.stringify(saveObj);
 		localStorage.setItem("YTBSP", newcache);
-		var oldcache = cache;
-		cache = localStorage.getItem("YTBSP");
-		if(newcache === cache) {
+		var savedcache = localStorage.getItem("YTBSP");
+		if(newcache === savedcache) {
+			cache = JSON.parse(savedcache);
 			localStorage.setItem("YTBSPcorruptcache", 0);
 			localStorage.setItem("YTBSPbackup", newcache);
 		} else {
-			cache = oldcache
 			console.log("cache save error!");
 		}
 		newcache = null;
-		oldcache = null;
+		savedcache = null;
 	}
 
 	// Now we just need to generate a stylesheet
