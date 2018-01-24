@@ -39,7 +39,7 @@ var GoogleAuth;
     const MAXITEMSPERSUB = 36; 			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by ITEMSPERROW).
     const SCREENLOADTHREADSHOLD = 500; 	// DEFAULT: 500.
     const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
-	const TIMETOMARKASSEEN = 10			// DEFAILT: 10 (in ms).
+	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in ms).
 
     // OAuth
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
@@ -57,8 +57,8 @@ var GoogleAuth;
 	//initialisation of chache-variables
 	var cache = null;
 	var corruptCache = false;
-	var hideSeen = false;
-	var hideSubs = false;
+	var hideSeenVideos = false;
+	var hideEmptySubs = false;
 
 	// Get Cache from localStorage and set config.
 	cache = localStorage.getItem("YTBSP");
@@ -71,8 +71,8 @@ var GoogleAuth;
 	}
 
 	// Parse the config.
-	hideSeen = localStorage.getItem("YTBSPhideSeen") === "1"; // DEFAULT: false.
-	hideSubs = localStorage.getItem("YTBSPhide") === "1"; // DEFAULT: false.
+	hideSeenVideos = localStorage.getItem("YTBSPhideSeen") === "1"; // DEFAULT: false.
+	hideEmptySubs = localStorage.getItem("YTBSPhide") === "1"; // DEFAULT: false.
 
 	// If we have a cache parse it.
 	if(cache === null || cache === "") {
@@ -246,8 +246,8 @@ var GoogleAuth;
 		loadingSubs--;
 		// All subs loaded.
 		if(loadingSubs === 0) {
-			$(".ytbsp-loader","#ytbsp-ls").hide();
-			$("#ytbsp-refresh","#ytbsp-ls").show();
+			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
+			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
 			loadingVids--;
 			// All vids loaded. (In case async loading of videos is faster.)
 			if(loadingVids === 0) {
@@ -272,19 +272,19 @@ var GoogleAuth;
 	// Create an div for us.
 	var maindiv = document.createElement("div");
 	maindiv.id = "YTBSP";
-	var headerHtml = '<span id="ytbsp-ls">' + LOADER + '<div id="ytbsp-refresh" class="ytbsp-func">&#x27F3;</div></span>' +
-		'<span class="ytbsp-func toggleytbsp">toggle YTBSP</span> ' +
-		'<span class="ytbsp-func removeAllVideos">remove all videos</span>' +
-		'<span class="ytbsp-func resetAllVideos">reset all videos</span> ' +
-		'<span class="ytbsp-func backup">backup video info</span>' +
-		'<label for="hideSeenCb" class="ytbsp-func hideSeen">'+
-		'<input id="hideSeenCb" type="checkbox" ' + (hideSeen ? 'checked="checked" ' : '') +'/>Hide seen videos' +
+	var headerHtml = '<span id="ytbsp-loaderSpan" class="ytbsp-hideWhenNative">' + LOADER + '<div id="ytbsp-refresh" class="ytbsp-func">&#x27F3;</div></span>' +
+		'<span id="ytbsp-togglePage" class="ytbsp-func">toggle YTBSP</span> ' +
+		'<span id="ytbsp-removeAllVideos" class="ytbsp-func ytbsp-hideWhenNative">remove all videos</span>' +
+		'<span id="ytbsp-resetAllVideos" class="ytbsp-func ytbsp-hideWhenNative">reset all videos</span> ' +
+		'<span id="ytbsp-backup" class="ytbsp-func ytbsp-hideWhenNative">backup video info</span>' +
+		'<label for="ytbsp-hideSeenVideosCb" class="ytbsp-func ytbsp-hideWhenNative">'+
+		'<input id="ytbsp-hideSeenVideosCb" type="checkbox" ' + (hideSeenVideos ? 'checked="checked" ' : '') +'/>Hide seen videos' +
 		'</label>' +
-		'<label for="hideSubsCb" class="ytbsp-func hide">' +
-		'<input id="hideSubsCb" type="checkbox" ' + (hideSubs ? '' : 'checked="checked" ') + '/>Show empty' +
+		'<label for="ytbsp-hideEmptySubsCb" class="ytbsp-func ytbsp-hideWhenNative">' +
+		'<input id="ytbsp-hideEmptySubsCb" type="checkbox" ' + (hideEmptySubs ? '' : 'checked="checked" ') + '/>Show empty subs' +
 		'</label>';
 
-	maindiv.innerHTML = '<div id="ytbsp-header">' + headerHtml + '</div>' +
+	maindiv.innerHTML = '<div id="ytbsp-menuStrip">' + headerHtml + '</div>' +
 		'<ul id="ytbsp-subs"></ul>' +
 		'<div id="ytbsp-modal-darken">' +
 		'<div id="ytbsp-modal">' +
@@ -298,15 +298,15 @@ var GoogleAuth;
 	// Set functions affecting all subs:
 	// Set click event for refresh button, updating all videos for all subs.
 	function updateAllSubs(){
-		$(".ytbsp-loader","#ytbsp-ls").show();
-		$("#ytbsp-refresh","#ytbsp-ls").hide();
+		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
+		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
         setTimeout(function() {
             loadingVids++;
             subs.forEach(function(sub, i) {
                 subs[i].updateVideos();
             });
-            $(".ytbsp-loader","#ytbsp-ls").hide();
-            $("#ytbsp-refresh","#ytbsp-ls").show();
+            $(".ytbsp-loader","#ytbsp-loaderSpan").hide();
+            $("#ytbsp-refresh","#ytbsp-loaderSpan").show();
             loadingVids--;
             // All vids loaded. (In case async loading of videos is faster.)
             if(loadingVids === 0) {
@@ -319,30 +319,33 @@ var GoogleAuth;
     function shownative() {
         $(YT_STARTPAGE_BODY).show();
         subList.hide();
+		$('.ytbsp-hideWhenNative').css('visibility','hidden');
+		isNative = true;
 	}
 
     function hidenative() {
         $(YT_STARTPAGE_BODY).hide();
         subList.show();
+		$('.ytbsp-hideWhenNative').css('visibility','');
+		isNative = false;
 	}
     // Now set click event for the toggle native button.
 	function toggleytbsp() {
-		isNative = !isNative;
 		if(isNative){
-            shownative();
-        }else{
             hidenative();
+        }else{
+			shownative();
         }
 	}
-	$(".ytbsp-func.toggleytbsp", maindiv).click(toggleytbsp);
+	$(".ytbsp-func#ytbsp-togglePage", maindiv).click(toggleytbsp);
 
 	// Remove all videos button.
 	function removeAllVideos() {
 		if(!confirm("delete all videos?")) {
 			return;
 		}
-		$(".ytbsp-loader","#ytbsp-ls").show();
-		$("#ytbsp-refresh","#ytbsp-ls").hide();
+		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
+		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -357,19 +360,19 @@ var GoogleAuth;
 				subs[i].buildList();
 			});
 			saveList();
-			$(".ytbsp-loader","#ytbsp-ls").hide();
-			$("#ytbsp-refresh","#ytbsp-ls").show();
+			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
+			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
 		}, 0);
 	}
-	$(".ytbsp-func.removeAllVideos", maindiv).click(removeAllVideos);
+	$(".ytbsp-func#ytbsp-removeAllVideos", maindiv).click(removeAllVideos);
 
 	// Reset videos button.
 	function resetAllVideos() {
 		if(!confirm("reset all videos?")) {
 			return;
 		}
-		$(".ytbsp-loader","#ytbsp-ls").show();
-		$("#ytbsp-refresh","#ytbsp-ls").hide();
+		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
+		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -384,37 +387,37 @@ var GoogleAuth;
 				subs[i].buildList();
 			});
 			saveList();
-			$(".ytbsp-loader","#ytbsp-ls").hide();
-			$("#ytbsp-refresh","#ytbsp-ls").show();
+			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
+			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
 		}, 0);
 	}
-	$(".ytbsp-func.resetAllVideos", maindiv).click(resetAllVideos);
+	$(".ytbsp-func#ytbsp-resetAllVideos", maindiv).click(resetAllVideos);
 
 	// Hide seen videos buttons.
-	function hideSeenVideos() {
-		localStorage.setItem("YTBSPhideSeen", hideSeen ? "0" : "1");
-		hideSeen = !hideSeen;
+	function toggleHideSeenVideos() {
+		localStorage.setItem("YTBSPhideSeen", hideSeenVideos ? "0" : "1");
+		hideSeenVideos = !hideSeenVideos;
 		subs.forEach(function(sub, i) {
 			subs[i].buildList();
 		});
-		$("input.ytbsp-func.hideSeen", maindiv).prop("checked", hideSeen);
+		$("input.ytbsp-func#ytbsp-hideSeenVideosCb", maindiv).prop("checked", hideSeenVideos);
 	}
-	$("#hideSeenCb", maindiv).change(hideSeenVideos);
+	$("#ytbsp-hideSeenVideosCb", maindiv).change(toggleHideSeenVideos);
 
 	// Hide empty subscriptions button.
-	function hideSubsFunc() {
-		localStorage.setItem("YTBSPhide", hideSubs ? "0" : "1");
-		hideSubs = !hideSubs;
+	function toggleHideEmptySubs() {
+		localStorage.setItem("YTBSPhide", hideEmptySubs ? "0" : "1");
+		hideEmptySubs = !hideEmptySubs;
 		subs.forEach(function(sub, i) {
 			subs[i].handleVisablility();
 		});
-		$("input.ytbsp-func.hide", maindiv).prop("checked", !hideSubs);
+		$("input.ytbsp-func#ytbsp-hideEmptySubsCb", maindiv).prop("checked", !hideEmptySubs);
 	}
-	$("#hideSubsCb", maindiv).change(hideSubsFunc);
+	$("#ytbsp-hideEmptySubsCb", maindiv).change(toggleHideEmptySubs);
 
 	// Open backup dialog.
 	function openBackupDialog() {
-		if($(".ytbsp-loader","#ytbsp-ls").is(':visible')) {
+		if($(".ytbsp-loader","#ytbsp-loaderSpan").is(':visible')) {
 			alert("Not so fast. Let it load the sub list first.");
 			return;
 		}
@@ -465,7 +468,7 @@ var GoogleAuth;
 
 		openModal(content);
 	}
-	$(".ytbsp-func.backup", maindiv).click(openBackupDialog);
+	$(".ytbsp-func#ytbsp-backup", maindiv).click(openBackupDialog);
 
 	// Show backup dialog modal
 	function openModal(content) {
@@ -576,7 +579,7 @@ var GoogleAuth;
 		updateVideos: function(){
 			loadingVids++;
 			this.showLoader();
-			
+
 			buildApiRequest(
 				processRequestVids,
 				'GET',
@@ -588,7 +591,7 @@ var GoogleAuth;
 					'playlistId': this.id.replace(/^UC/, 'UU')
 				}
 			);
-			
+
 			var self = this;
 
 			function processRequestVids(response) {
@@ -601,7 +604,7 @@ var GoogleAuth;
 				if(cacheSub.length == 1) {
 					cacheVideos = cacheSub[0].videos;
 				}
-				
+
 				response.items.forEach(function(video) {
 					var thumb;
 					var thumb_large;
@@ -631,7 +634,7 @@ var GoogleAuth;
 						vid = video.snippet.resourceId.videoId;
 					} catch(e) {}
 
-					// Merge cache info if available.				
+					// Merge cache info if available.
 					var cacheVideo = $.grep(cacheVideos, function(cVideo) {
 						return cVideo.vid == vid;
 					});
@@ -680,7 +683,7 @@ var GoogleAuth;
 			this.videos.forEach(function(video, i) {
 
 				// If that video is removed search for it and remove it when found.
-				if(video.isRemoved() || (hideSeen && video.isSeen())) {
+				if(video.isRemoved() || (hideSeenVideos && video.isSeen())) {
 					var thumbNode = $("#YTBSPthumb_" + video.vid, this.videoList, true)[0];
 					var index = alreadyIn.index(thumbNode);
 					if(thumbNode && index !== -1) {
@@ -735,7 +738,7 @@ var GoogleAuth;
 
 		// Hides subscription if needed.
 		handleVisablility: function() {
-			this.row.style.display = this.isEmpty && hideSubs ? "none" : "";
+			this.row.style.display = this.isEmpty && hideEmptySubs ? "none" : "";
 			updateSubsInView();
 		},
 
@@ -744,9 +747,10 @@ var GoogleAuth;
 			var loadph = $(".ytbsp-loaderph", this.row);
 			var loader = $(".ytbsp-loader", this.row);
 			if(loadph && loader) {
-				loader.css("opacity", "1");
-				loader.css("display", "block");
 				loadph.css("width", "16px");
+				setTimeout(function() {
+					loader.css("opacity", "1");
+				}, 200);
 			}
 		},
 
@@ -757,7 +761,6 @@ var GoogleAuth;
 			if(loadph && loader) {
 				loader.css("opacity", "0");
 				setTimeout(function() {
-					loader.css("display", "none");
 					loadph.css("width", "0px");
 				}, 200);
 			}
@@ -1149,7 +1152,7 @@ var GoogleAuth;
 
 		css.innerHTML =
 			// header
-			'#ytbsp-header { margin: 20px 9px; white-space: nowrap; display:flex; }' +
+			'#ytbsp-menuStrip { margin: 20px 9px; white-space: nowrap; display:flex; }' +
 			'#YTBSP input { vertical-align: text-top; }' +
 
 			// overall list
@@ -1195,12 +1198,12 @@ var GoogleAuth;
 
 			// loader
 			'.ytbsp-loaderph { float: left; width: 16px; height: 16px; margin-right: 5px; ' +
-			'-webkit-transition: width 0.4s; -moz-transition: width 0.4s; -o-transition: width 0.4s; }' +
-			'#ytbsp-ls { margin-left: -10px; width: 21px; margin-right: 1px;}' +
+			'-webkit-transition: width 0.2s; -moz-transition: width 0.2s; -o-transition: width 0.2s; }' +
+			'#ytbsp-loaderSpan { margin-left: -10px; width: 21px; margin-right: 1px;}' +
 			'#YTBSP #ytbsp-refresh {display: none; padding: 1px 3px;}' +
 			'.ytbsp-loader { border: 3px solid #bbb; border-top: 3px solid #555; border-left: 3px solid #bbb; border-bottom: 3px solid #555; ' +
-			'border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; -webkit-transition: opacity 0.3s; ' +
-			'-moz-transition: opacity 0.3s; -o-transition: opacity 0.3s;}' +
+			'border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; -webkit-transition: opacity 0.2s; ' +
+			'-moz-transition: opacity 0.2s; -o-transition: opacity 0.2s;}' +
 			'@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}' +
 
 			// modal
@@ -1274,10 +1277,8 @@ var GoogleAuth;
         }
         if(location.pathname.length > 1) {
             shownative();
-            isNative=true;
         }else{
             hidenative();
-            isNative=false;
         }
     }
     function injectYTBSP(){
