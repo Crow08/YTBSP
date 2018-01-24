@@ -576,15 +576,7 @@ var GoogleAuth;
 		updateVideos: function(){
 			loadingVids++;
 			this.showLoader();
-			// If videos for sub are in cache find them.
-			var self = this;
-			var cacheSub = $.grep(cache, function(subs) {
-				return subs.id == self.id;
-			});
-			var cacheVideos = [];
-			if(cacheSub.length == 1) {
-				cacheVideos = cacheSub[0].videos;
-			}
+			
 			buildApiRequest(
 				processRequestVids,
 				'GET',
@@ -596,9 +588,20 @@ var GoogleAuth;
 					'playlistId': this.id.replace(/^UC/, 'UU')
 				}
 			);
+			
+			var self = this;
 
 			function processRequestVids(response) {
 				self.videos = [];
+				// If videos for sub are in cache find them.
+				var cacheSub = $.grep(cache, function(subs) {
+					return subs.id == self.id;
+				});
+				var cacheVideos = [];
+				if(cacheSub.length == 1) {
+					cacheVideos = cacheSub[0].videos;
+				}
+				
 				response.items.forEach(function(video) {
 					var thumb;
 					var thumb_large;
@@ -628,7 +631,7 @@ var GoogleAuth;
 						vid = video.snippet.resourceId.videoId;
 					} catch(e) {}
 
-					// Merge cache info if available.
+					// Merge cache info if available.				
 					var cacheVideo = $.grep(cacheVideos, function(cVideo) {
 						return cVideo.vid == vid;
 					});
@@ -1093,15 +1096,17 @@ var GoogleAuth;
 		localStorage.setItem("YTBSPcorruptcache", 1);
 		var newcache = JSON.stringify(saveObj);
 		localStorage.setItem("YTBSP", newcache);
-		var savedcache = localStorage.getItem("YTBSP");
-		if(newcache === savedcache) {
+		var oldcache = cache;
+		cache = localStorage.getItem("YTBSP");
+		if(newcache === cache) {
 			localStorage.setItem("YTBSPcorruptcache", 0);
 			localStorage.setItem("YTBSPbackup", newcache);
 		} else {
+			cache = oldcache
 			console.log("cache save error!");
 		}
 		newcache = null;
-		savedcache = null;
+		oldcache = null;
 	}
 
 	// Now we just need to generate a stylesheet
