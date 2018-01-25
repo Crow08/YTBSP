@@ -196,13 +196,34 @@ var GoogleAuth;
 	// End OAuth Stuff.
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	var loadingSubs = 1; // 0: all subs loaded.
-	var loadingVids = 1; // 0: all vids loaded.
+	var loading = 0; // 0: all subs / vids loaded.
+
+	// Function to handle loading, showing and hiding loaders when needed.
+	function loadingProgress(loadingDelta, sub){
+		loading += loadingDelta;
+        if (typeof sub !== 'undefined'){
+            if(loadingDelta < 0){
+                sub.removeLoader();
+            }else{
+                sub.showLoader();
+            }
+        }
+		// All subs loaded.
+		if(loading === 0) {
+			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
+			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
+			saveList();
+		}else{
+			$(".ytbsp-loader","#ytbsp-loaderSpan").show();
+			$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
+		}
+	}
 
 	var subs = []; // Main Sub array contains all subs and in extension all videos.
 
 	// Gets subs from api. (Called after successful OAuth-login.)
 	function requestSubs() {
+		loadingProgress(1);
 		buildApiRequest(
 			processRequestSubs,
 			'GET',
@@ -222,11 +243,12 @@ var GoogleAuth;
 			console.error("OAuth failed! retrying...");
 			GoogleAuth.disconnect();
 			setSigninStatus();
+			loadingProgress(-1);
 			return;
 		}
 		// If there is another page of subs request it.
 		if(response.nextPageToken !== undefined && response.nextPageToken !== null) {
-			loadingSubs++;
+			loadingProgress(1);
 			buildApiRequest(
 				processRequestSubs,
 				'GET',
@@ -243,17 +265,7 @@ var GoogleAuth;
 		response.items.forEach(function(item) {
 			subs.push(new Subscription(item.snippet));
 		});
-		loadingSubs--;
-		// All subs loaded.
-		if(loadingSubs === 0) {
-			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
-			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
-			loadingVids--;
-			// All vids loaded. (In case async loading of videos is faster.)
-			if(loadingVids === 0) {
-				saveList();
-			}
-		}
+		loadingProgress(-1);
 	}
 
 	// Variables for inView check.
@@ -298,20 +310,10 @@ var GoogleAuth;
 	// Set functions affecting all subs:
 	// Set click event for refresh button, updating all videos for all subs.
 	function updateAllSubs(){
-		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
-		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
         setTimeout(function() {
-            loadingVids++;
             subs.forEach(function(sub, i) {
                 subs[i].updateVideos();
             });
-            $(".ytbsp-loader","#ytbsp-loaderSpan").hide();
-            $("#ytbsp-refresh","#ytbsp-loaderSpan").show();
-            loadingVids--;
-            // All vids loaded. (In case async loading of videos is faster.)
-            if(loadingVids === 0) {
-                saveList();
-            }
         }, 0);
 	}
 	$(".ytbsp-func#ytbsp-refresh", maindiv).click(updateAllSubs);
@@ -344,8 +346,7 @@ var GoogleAuth;
 		if(!confirm("delete all videos?")) {
 			return;
 		}
-		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
-		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
+		loadingProgress(1);
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -359,9 +360,7 @@ var GoogleAuth;
 			toRebuild.forEach(function(i) {
 				subs[i].buildList();
 			});
-			saveList();
-			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
-			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
+			loadingProgress(-1);
 		}, 0);
 	}
 	$(".ytbsp-func#ytbsp-removeAllVideos", maindiv).click(removeAllVideos);
@@ -371,8 +370,7 @@ var GoogleAuth;
 		if(!confirm("reset all videos?")) {
 			return;
 		}
-		$(".ytbsp-loader","#ytbsp-loaderSpan").show();
-		$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
+		loadingProgress(1);
 		setTimeout(function() {
 			var toRebuild = [];
 			subs.forEach(function(sub, i) {
@@ -386,9 +384,7 @@ var GoogleAuth;
 			toRebuild.forEach(function(i) {
 				subs[i].buildList();
 			});
-			saveList();
-			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
-			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
+			loadingProgress(-1);
 		}, 0);
 	}
 	$(".ytbsp-func#ytbsp-resetAllVideos", maindiv).click(resetAllVideos);
@@ -417,7 +413,7 @@ var GoogleAuth;
 
 	// Open backup dialog.
 	function openBackupDialog() {
-		if($(".ytbsp-loader","#ytbsp-loaderSpan").is(':visible')) {
+		if(loading !== 0) {
 			alert("Not so fast. Let it load the sub list first.");
 			return;
 		}
@@ -577,9 +573,7 @@ var GoogleAuth;
 		isInView: false,
 
 		updateVideos: function(){
-			loadingVids++;
-			this.showLoader();
-
+			loadingProgress(1,this);
 			buildApiRequest(
 				processRequestVids,
 				'GET',
@@ -661,13 +655,8 @@ var GoogleAuth;
 				});
 				// Rebuild the list.
 				self.buildList();
-				self.removeLoader();
 
-				loadingVids--;
-				// All vids loaded.
-				if(loadingVids === 0) {
-					saveList();
-				}
+				loadingProgress(-1,self);
 			}
 		},
 
@@ -914,6 +903,7 @@ var GoogleAuth;
 		createThumb: function(inView) {
 			var self = this;
 			if(this.duration == "0:00") {
+				loadingProgress(1);
 				buildApiRequest(
 					function(response) {
                         var duration;
@@ -938,6 +928,7 @@ var GoogleAuth;
 						self.clicks = viewCount;
 
 						self.updateThumb(inView);
+						loadingProgress(-1);
 					},
 					'GET',
 					'/youtube/v3/videos',
