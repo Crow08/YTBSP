@@ -501,6 +501,7 @@ var GoogleAuth;
 		// Now build the overview.
 		this.row = document.createElement("li");
 		this.row.className = "ytbsp-subscription";
+        this.row.style.display = hideEmptySubs ? "none" : "";
 
 		// Create content.
 		this.row.innerHTML = '<div class="ytbsp-subinfo">' +
