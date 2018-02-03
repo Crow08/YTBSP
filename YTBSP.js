@@ -268,6 +268,35 @@ var GoogleAuth;
 		loadingProgress(-1);
 	}
 
+	// check if subscription is still subscribed and if so append it.
+    function checkAndAppendSub(forChannelId){
+        loadingProgress(1);
+        buildApiRequest(
+            processCheckedSubs,
+            'GET',
+            '/youtube/v3/subscriptions',
+            {
+                'mine': 'true',
+                'part': 'snippet',
+                'forChannelId': forChannelId,
+                'fields': 'items(snippet(resourceId/channelId,title)),pageInfo)'
+            });
+    }
+	
+	// Parses api results into subs if still subscribed.
+    function processCheckedSubs(response){
+        // No longer subscribed
+        if(response.pageInfo.totalResults == 0){
+            loadingProgress(-1);
+            return;
+        }
+        // Create subs from the api response.
+		response.items.forEach(function(item) {
+			subs.push(new Subscription(item.snippet));
+		});
+		loadingProgress(-1);
+    }
+
 	// Variables for inView check.
 	var lastScroll = Date.now(); // The last time the page was moved or resized.
 	var screenTop = 0;
@@ -1082,8 +1111,26 @@ var GoogleAuth;
 			};
 		}
 	};
+	
+	// list for manually checked and potentially unsubscribed or deleted channels.
+	var manuallyCheckedSubs = [];
 
 	function saveList() {
+		// Check if all subs in cache are loaded properly.
+		for (var i = 0; i < cache.length; i++) {
+			if(!manuallyCheckedSubs.includes(cache[i].id) &&
+				($.grep(subs, function(sub) {
+					return sub.id == cache[i].id;
+				})).length == 0){
+				// if subscription was not loaded check if still subscribed.
+				checkAndAppendSub(cache[i].id);
+				manuallyCheckedSubs.push(cache[i].id);
+				return;
+			}
+		};
+		// clear manuallyCheckedSubs because new cache will be created.
+		manuallyCheckedSubs = [];
+		
 		var saveObj = [];
 		subs.forEach(function(sub) {
 			saveObj.push(sub.getSaveable());
