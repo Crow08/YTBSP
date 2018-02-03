@@ -282,7 +282,7 @@ var GoogleAuth;
                 'fields': 'items(snippet(resourceId/channelId,title)),pageInfo)'
             });
     }
-	
+
 	// Parses api results into subs if still subscribed.
     function processCheckedSubs(response){
         // No longer subscribed
@@ -972,22 +972,22 @@ var GoogleAuth;
 
 			this.thumbLi.id = "YTBSPthumb_" + this.vid;
 			this.thumbLi.className = "ytbsp-video-item";
-			this.thumbLi.innerHTML = '<div class="ytbsp-clip" data-vid=' + this.vid + '>' +
+			this.thumbLi.innerHTML = '<a class="ytbsp-clip" href="/watch?v=' + this.vid + '" data-vid=' + this.vid + '>' +
 				'<div class="ytbsp-x">X</div>' +
 				'<img class="ytbsp-thumb" />' +
 				'<ytd-thumbnail-overlay-time-status-renderer></ytd-thumbnail-overlay-time-status-renderer>' +
 				'<input type="hidden" class="ytbsp-thumb-large-url" />' +
-				'</div>' +
+				'</a>' +
                 '<a class="ytbsp-title" href="/watch?v=' + this.vid + '" data-vid=' + this.vid + '></a>' +
 				'<p class="ytbsp-seemarker' + (this.isSeen() ? ' seen">already seen' : '">mark as seen') + '</p>' +
 				'<p class="ytbsp-views"/>' +
                 '<p class="ytbsp-uploaded"/>';
 
             $(".ytbsp-clip, .ytbsp-title", this.thumbLi).click(function(event){
+				event.preventDefault();
                 if(event.target.classList.contains("ytbsp-x")){
 					return;
                 }
-                event.preventDefault();
                 openVideoWithSPF($(this).attr('data-vid'));
             });
 
@@ -1069,7 +1069,7 @@ var GoogleAuth;
 			// Save information elements.
 			this.thumbItem = $(".ytbsp-thumb", this.thumbLi)[0];
 			this.thumblargeItem = $(".ytbsp-thumb-large-url", this.thumbLi)[0];
-			this.durationItem = $("div.ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi)[0];
+			this.durationItem = $(".ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi)[0];
 			this.clicksItem = $(".ytbsp-views", this.thumbLi)[0];
 			this.uploadItem = $(".ytbsp-uploaded", this.thumbLi)[0];
 			this.titleItem = $("a.ytbsp-title", this.thumbLi)[0];
@@ -1111,7 +1111,7 @@ var GoogleAuth;
 			};
 		}
 	};
-	
+
 	// list for manually checked and potentially unsubscribed or deleted channels.
 	var manuallyCheckedSubs = [];
 
@@ -1127,10 +1127,10 @@ var GoogleAuth;
 				manuallyCheckedSubs.push(cache[i].id);
 				return;
 			}
-		};
+		}
 		// clear manuallyCheckedSubs because new cache will be created.
 		manuallyCheckedSubs = [];
-		
+
 		var saveObj = [];
 		subs.forEach(function(sub) {
 			saveObj.push(sub.getSaveable());
@@ -1200,7 +1200,7 @@ var GoogleAuth;
 			'.ytbsp-subscription { border: 1px solid ' + stdBorderColor + '; padding: 0 4px; margin-top: -1px; }' +
 			'.ytbsp-subvids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
 			'.ytbsp-video-item { display: inline-block; width: 122px; height: 152px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
-			'.ytbsp-video-item a { display: block; height: 2.3em; line-height: 1.2em; overflow: hidden; color: ' + stdFontColor + '; }' +
+			'.ytbsp-video-item .ytbsp-title { display: block; height: 2.3em; line-height: 1.2em; overflow: hidden; color: ' + stdFontColor + '; }' +
 			'.ytbsp-video-item p { color: ' + subtextColor + '; margin: 3px; }' +
 			'.ytbsp-subinfo { height: 25px; margin: 4px 4px 3px; }' +
 			'#YTBSP .right { float: right; }' +
@@ -1210,7 +1210,7 @@ var GoogleAuth;
 			'border-width: 0px 3px 3px 3px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px; top: -2px;}' +
 
 			// image part
-			'.ytbsp-clip { position: relative; width: 124px; height: 70px; border: none; cursor: pointer;}' +
+			'.ytbsp-clip { position: relative; width: 124px; height: 70px; border: none; cursor: pointer; display: block;}' +
 			'.ytbsp-clip-large { z-index: 1; width: 320px; height: 180px; top: -45px; left: -100px; margin-bottom: -40px; border: none; }' +
 			'.ytbsp-video-item .ytbsp-x { position: absolute; z-index: 2; top: 2px; right: 2px; opacity: 0.6; width: 14px; height: 14px; ' +
 			'line-height: 14px; text-align: center; background-color: #000; color: #fff; font-size: 12px; font-weight: bold; ' +
