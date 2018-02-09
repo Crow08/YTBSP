@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         YouTube Better Startpage D-edition
+// @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
 // @version      1.3.0
 // @namespace    ytbsp
@@ -39,12 +39,13 @@ var GoogleAuth;
     const MAXITEMSPERSUB = 36; 			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by ITEMSPERROW).
     const SCREENLOADTHREADSHOLD = 500; 	// DEFAULT: 500.
     const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
-	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in ms).
+	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in s).
+    const SAVEDATAREMOTE = true;
 
     // OAuth
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
-    const DISCOVERYDOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest'];
-    const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly';
+    const DISCOVERYDOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest', 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
+    const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/drive.appdata';
 
     // Slectors:
     const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
@@ -60,31 +61,12 @@ var GoogleAuth;
 	var hideSeenVideos = false;
 	var hideEmptySubs = false;
 
-	// Get Cache from localStorage and set config.
-	cache = localStorage.getItem("YTBSP");
-	corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
-	// If last save process was inerrupted: try to load backup.
-	if(corruptCache) {
-		console.warn("cache corruption detected!");
-		console.warn("restoring old cache...");
-		cache = localStorage.getItem("YTBSPbackup");
-	}
+    var defaultSaveData = {
+        hideSeenVideos: hideSeenVideos ? "1" : "0",
+        hideEmptySubs: hideEmptySubs ? "1" : "0"
+    };
 
-	// Parse the config.
-	hideSeenVideos = localStorage.getItem("YTBSPhideSeen") === "1"; // DEFAULT: false.
-	hideEmptySubs = localStorage.getItem("YTBSPhide") === "1"; // DEFAULT: false.
-
-	// If we have a cache parse it.
-	if(cache === null || cache === "") {
-		cache = [];
-	} else {
-		try {
-			cache = JSON.parse(cache);
-		} catch(e) {
-			console.error("Error parsing cache!");
-			cache = [];
-		}
-	}
+    var remoteSaveFileID = null;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 	// Start OAuth Stuff
@@ -112,12 +94,13 @@ var GoogleAuth;
 		var user = GoogleAuth.currentUser.get();
 		var isAuthorized = user.hasGrantedScopes(SCOPE);
 		if(isAuthorized) {
-			requestSubs();
+            // start loading save data.
+            getSaveData();
 		} else {
 			GoogleAuth.signIn().then(
 				function() {
-					// Signin successful then start loading subs.
-					requestSubs();
+					// Signin successful then start loading save data.
+					getSaveData();
 				},
 				function(error) {
 					// Display popup-blocked message.
@@ -127,38 +110,6 @@ var GoogleAuth;
 				}
 			);
 		}
-	}
-
-	// Prepare request properties.
-	function createResource(properties) {
-		var resource = [];
-		var normalizedProps = properties;
-		for(var p in properties) {
-			var value = properties[p];
-			if(p && p.substr(-2, 2) == '[]') {
-				var adjustedName = p.replace('[]', '');
-				if(value) {
-					normalizedProps[adjustedName] = value.split(',');
-				}
-				delete normalizedProps[p];
-			}
-		}
-		for(var p2 in normalizedProps) {
-			// Leave properties that don't have values out of inserted resource.
-			if(normalizedProps.hasOwnProperty(p2) && normalizedProps[p2]) {
-				var propArray = p2.split('.');
-				var ref = resource;
-				for(var pa = 0; pa < propArray.length; pa++) {
-					var key = propArray[pa];
-					if(pa == propArray.length - 1) {
-						ref[key] = normalizedProps[p2];
-					} else {
-						ref = ref[key] = ref[key] || {};
-					}
-				}
-			}
-		}
-		return resource;
 	}
 
 	// Prevent unnecessary request parameters.
@@ -176,9 +127,8 @@ var GoogleAuth;
 		params = removeEmptyParams(params);
 		var request;
 		if(properties) {
-			var resource = createResource(properties);
 			request = gapi.client.request({
-				'body': resource,
+				'body': properties,
 				'method': requestMethod,
 				'path': path,
 				'params': params
@@ -196,7 +146,7 @@ var GoogleAuth;
 	// End OAuth Stuff.
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-	var loading = 0; // 0: all subs / vids loaded.
+    var loading = 0; // 0: all subs / vids loaded.
 
 	// Function to handle loading, showing and hiding loaders when needed.
 	function loadingProgress(loadingDelta, sub){
@@ -219,9 +169,116 @@ var GoogleAuth;
 		}
 	}
 
+    function getSaveData()	{
+        if(SAVEDATAREMOTE){
+            buildApiRequest(
+                function(response){
+                    var files = response.files;
+                    if (files && files.length > 0) {
+                        remoteSaveFileID = files[0].id;
+                        buildApiRequest(
+                            function(response){
+                                parseSaveDataRemote(response, files[0].appProperties);
+								requestSubs();
+                            },
+                            'GET',
+                            '/drive/v3/files/'+remoteSaveFileID,
+                            {alt: "media"}
+                        );
+                    }else{
+                        createSaveFile();
+                    }
+                },
+                'GET',
+                '/drive/v3/files',
+                {
+                    'q': "name = 'YTBSP.json'",
+                    'fields': "files(appProperties,id,name)",
+                    'spaces': "appDataFolder"
+                }
+            );
+        }else{
+            parseSaveDataLocal();
+        }
+    }
+
+    function createSaveFile(){
+        buildApiRequest(
+            function(response){
+                remoteSaveFileID = response.id;
+                parseSaveDataRemote([], response.appProperties);
+                requestSubs();
+            },
+            'POST',
+            '/drive/v3/files',
+            {'fields': "appProperties,id,name"},
+            {
+                "parents" : ["appDataFolder"],
+                "name":"YTBSP.json",
+                "appProperties": defaultSaveData
+            }
+        );
+    }
+
+    function parseSaveDataRemote(data, appProperties){
+        // Set data from GDrive and set config.
+        cache = data;
+
+        // Parse the config.
+        hideSeenVideos = appProperties.hideSeenVideos === "1";
+        hideEmptySubs = appProperties.hideEmptySubs === "1";
+
+        // If we have a cache parse it.
+        if(cache === null || cache === "") {
+            console.error("Error parsing cache!");
+            cache = [];
+        }
+    }
+
+    function parseSaveDataLocal(){
+        // Get Cache from localStorage and set config.
+        cache = localStorage.getItem("YTBSP");
+        corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
+        // If last save process was inerrupted: try to load backup.
+        if(corruptCache) {
+            console.warn("cache corruption detected!");
+            console.warn("restoring old cache...");
+            cache = localStorage.getItem("YTBSPbackup");
+        }
+
+        // Parse the config.
+        hideSeenVideos = localStorage.getItem("YTBSPhideSeen") === "1"; // DEFAULT: false.
+        hideEmptySubs = localStorage.getItem("YTBSPhide") === "1"; // DEFAULT: false.
+
+        // If we have a cache parse it.
+        if(cache === null || cache === "") {
+            cache = [];
+        } else {
+            try {
+                cache = JSON.parse(cache);
+            } catch(e) {
+                console.error("Error parsing cache!");
+                cache = [];
+            }
+        }
+    }
+
+    function updateConfig(){
+        buildApiRequest(
+            function(){},
+            'PATCH',
+            '/drive/v3/files/'+remoteSaveFileID,
+            {},
+            {"appProperties" : {
+                hideSeenVideos: hideSeenVideos ? "1" : "0",
+                hideEmptySubs: hideEmptySubs ? "1" : "0"
+            }}
+        );
+    }
+
 	var subs = []; // Main Sub array contains all subs and in extension all videos.
 
-	// Gets subs from api. (Called after successful OAuth-login.)
+	// Gets subs from api. (Called after successful OAuth-login and save data loading.)
 	function requestSubs() {
 		loadingProgress(1);
 		buildApiRequest(
@@ -420,8 +477,12 @@ var GoogleAuth;
 
 	// Hide seen videos buttons.
 	function toggleHideSeenVideos() {
-		localStorage.setItem("YTBSPhideSeen", hideSeenVideos ? "0" : "1");
-		hideSeenVideos = !hideSeenVideos;
+        hideSeenVideos = !hideSeenVideos;
+        if(SAVEDATAREMOTE){
+            updateConfig();
+        }else{
+            localStorage.setItem("YTBSPhideSeen", hideSeenVideos ? "1" : "0");
+        }
 		subs.forEach(function(sub, i) {
 			subs[i].buildList();
 		});
@@ -431,8 +492,12 @@ var GoogleAuth;
 
 	// Hide empty subscriptions button.
 	function toggleHideEmptySubs() {
-		localStorage.setItem("YTBSPhide", hideEmptySubs ? "0" : "1");
-		hideEmptySubs = !hideEmptySubs;
+        hideEmptySubs = !hideEmptySubs;
+        if(SAVEDATAREMOTE){
+            updateConfig();
+        }else{
+            localStorage.setItem("YTBSPhide", hideEmptySubs ? "1" : "0");
+        }
 		subs.forEach(function(sub, i) {
 			subs[i].handleVisablility();
 		});
@@ -1116,7 +1181,7 @@ var GoogleAuth;
 	var manuallyCheckedSubs = [];
 
 	function saveList() {
-		// Check if all subs in cache are loaded properly.
+        // Check if all subs in cache are loaded properly.
 		for (var i = 0; i < cache.length; i++) {
 			if(!manuallyCheckedSubs.includes(cache[i].id) &&
 				($.grep(subs, function(sub) {
@@ -1135,20 +1200,69 @@ var GoogleAuth;
 		subs.forEach(function(sub) {
 			saveObj.push(sub.getSaveable());
 		});
+
+        var newcache = JSON.stringify(saveObj);
+
+        if(SAVEDATAREMOTE){
+            var contentBlob = new  Blob([newcache], {
+                'type': 'text/plain'
+            });
+            updateFile(remoteSaveFileID, {}, contentBlob, function(response) {
+                cache = saveObj;
+            });
+            newcache = null;
+            return;
+        }
+
 		localStorage.setItem("YTBSPcorruptcache", 1);
-		var newcache = JSON.stringify(saveObj);
 		localStorage.setItem("YTBSP", newcache);
 		var savedcache = localStorage.getItem("YTBSP");
 		if(newcache === savedcache) {
-			cache = JSON.parse(savedcache);
+			cache = saveObj;
 			localStorage.setItem("YTBSPcorruptcache", 0);
 			localStorage.setItem("YTBSPbackup", newcache);
 		} else {
-			console.log("cache save error!");
+			console.error("cache save error!");
 		}
 		newcache = null;
 		savedcache = null;
 	}
+
+    function updateFile(fileId, fileMetadata, fileData, callback) {
+        const boundary = '-------314159265358979323846';
+        const delimiter = "\r\n--" + boundary + "\r\n";
+        const close_delim = "\r\n--" + boundary + "--";
+
+        var reader = new FileReader();
+        reader.readAsBinaryString(fileData);
+        reader.onload = function(e) {
+            var contentType = fileData.type || 'application/octet-stream';
+            // Updating the metadata is optional and you can instead use the value from drive.files.get.
+            var base64Data = btoa(reader.result);
+            var multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify(fileMetadata) +
+                delimiter +
+                'Content-Type: ' + contentType + '\r\n' +
+                'Content-Transfer-Encoding: base64\r\n' +
+                '\r\n' +
+                base64Data +
+                close_delim;
+
+            var request = gapi.client.request({
+                'path': '/upload/drive/v2/files/' + fileId,
+                'method': 'PUT',
+                'params': {'uploadType': 'multipart', 'alt': 'json'},
+                'headers': {
+                    'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+                },
+                'body': multipartRequestBody});
+            if (callback) {
+                request.execute(callback);
+            }
+        }
+    }
 
 	// Now we just need to generate a stylesheet
 
