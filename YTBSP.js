@@ -334,8 +334,8 @@ var GoogleAuth;
                 close_delim;
 
             var request = gapi.client.request({
-                'path': '/upload/drive/v2/files/' + remoteSaveFileID, // Workaround:  G-Drive API v3 doesn't support this request!
-                'method': 'PUT',
+                'path': '/upload/drive/v3/files/' + remoteSaveFileID, // Workaround:  G-Drive API v3 doesn't support this request!
+                'method': 'PATCH',
                 'params': {'uploadType': 'multipart', 'alt': 'json'},
                 'headers': {
                     'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
