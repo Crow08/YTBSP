@@ -41,7 +41,7 @@ var GoogleAuth;
     const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
 	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in s).
     const SAVEDATAREMOTE = true;
-	
+
 	var corruptCache = false;
 	var hideSeenVideos = false;
 	var hideEmptySubs = true;
@@ -259,6 +259,9 @@ var GoogleAuth;
             console.error("Error parsing cache!");
             cache = [];
         }
+
+		$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
+		$("#ytbsp-hideEmptySubsCb").prop("checked", !hideEmptySubs);
     }
 
 	// loads and parses local storage data to usable config and cache data.
@@ -290,7 +293,7 @@ var GoogleAuth;
         }
     }
 
-	// Save config to G-Drive file. 
+	// Save config to G-Drive file.
     function saveConfigRemote(){
 		loadingProgress(1);
         buildApiRequest(
@@ -306,7 +309,7 @@ var GoogleAuth;
             }}
         );
     }
-	
+
 	// Save video information to G-Drive file.
 	function updateSaveFileContent(fileData, callback) {
         const boundary = '-------314159265358979323846';
@@ -485,7 +488,8 @@ var GoogleAuth;
 		$('.ytbsp-hideWhenNative').css('visibility','');
 		isNative = false;
 	}
-    // Now set click event for the toggle native button.
+
+	// Now set click event for the toggle native button.
 	function toggleytbsp() {
 		if(isNative){
             hidenative();
@@ -554,7 +558,7 @@ var GoogleAuth;
 		subs.forEach(function(sub, i) {
 			subs[i].buildList();
 		});
-		$("input.ytbsp-func#ytbsp-hideSeenVideosCb", maindiv).prop("checked", hideSeenVideos);
+		$("#ytbsp-hideSeenVideosCb", maindiv).prop("checked", hideSeenVideos);
 	}
 	$("#ytbsp-hideSeenVideosCb", maindiv).change(toggleHideSeenVideos);
 
@@ -569,7 +573,7 @@ var GoogleAuth;
 		subs.forEach(function(sub, i) {
 			subs[i].handleVisablility();
 		});
-		$("input.ytbsp-func#ytbsp-hideEmptySubsCb", maindiv).prop("checked", !hideEmptySubs);
+		$("#ytbsp-hideEmptySubsCb", maindiv).prop("checked", !hideEmptySubs);
 	}
 	$("#ytbsp-hideEmptySubsCb", maindiv).change(toggleHideEmptySubs);
 
@@ -1466,7 +1470,8 @@ var GoogleAuth;
             hidenative();
         }
     }
-    function injectYTBSP(){
+
+	function injectYTBSP(){
         $(YT_CONTENT).prepend(maindiv);
         addYTBSPStyleSheet();
         $(window).scrollTop(0);
