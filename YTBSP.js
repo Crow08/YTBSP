@@ -41,13 +41,22 @@ var GoogleAuth;
     const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
 	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in s).
     const SAVEDATAREMOTE = true;
+	
+	var corruptCache = false;
+	var hideSeenVideos = false;
+	var hideEmptySubs = true;
 
-    // OAuth
+    var defaultSaveData = {
+        hideSeenVideos: hideSeenVideos ? "1" : "0",
+        hideEmptySubs: hideEmptySubs ? "1" : "0"
+    };
+
+    // OAuth2 variables:
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
     const DISCOVERYDOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest', 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
     const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/drive.appdata';
 
-    // Slectors:
+    // Slectors for external HTML elements:
     const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
     const YT_CHANNELLINK = "#owner-name > a";
@@ -55,17 +64,7 @@ var GoogleAuth;
 
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
-	//initialisation of chache-variables
-	var cache = null;
-	var corruptCache = false;
-	var hideSeenVideos = false;
-	var hideEmptySubs = false;
-
-    var defaultSaveData = {
-        hideSeenVideos: hideSeenVideos ? "1" : "0",
-        hideEmptySubs: hideEmptySubs ? "1" : "0"
-    };
-
+	var cache = [];
     var remoteSaveFileID = null;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -169,25 +168,25 @@ var GoogleAuth;
 		}
 	}
 
+	// loads configuration and video information from local storage or G-Drive.
     function getSaveData()	{
         if(SAVEDATAREMOTE){
+			// check if save file exists or has to be created.
+			loadingProgress(1);
             buildApiRequest(
                 function(response){
                     var files = response.files;
+					// save file exists.
                     if (files && files.length > 0) {
                         remoteSaveFileID = files[0].id;
-                        buildApiRequest(
-                            function(response){
-                                parseSaveDataRemote(response, files[0].appProperties);
-								requestSubs();
-                            },
-                            'GET',
-                            '/drive/v3/files/'+remoteSaveFileID,
-                            {alt: "media"}
-                        );
+						// load save file content.
+						loadSaveFileContent(files[0].appProperties);
+					// save file does not exist.
                     }else{
+						// create save file.
                         createSaveFile();
                     }
+					loadingProgress(-1);
                 },
                 'GET',
                 '/drive/v3/files',
@@ -198,16 +197,42 @@ var GoogleAuth;
                 }
             );
         }else{
-            parseSaveDataLocal();
+			// parse config and video information.
+            loadAndParseSaveDataLocal();
+			// start requesting subs.
+			requestSubs();
         }
     }
 
+	// Load video information from G-Drive file.
+	function loadSaveFileContent(appProperties){
+		// request file content from API.
+		loadingProgress(1);
+		buildApiRequest(
+			function(response){
+				// parse config and video information.
+				parseSaveDataRemote(response, appProperties);
+				// start requesting subs.
+				requestSubs();
+				loadingProgress(-1);
+			},
+			'GET',
+			'/drive/v3/files/'+remoteSaveFileID,
+			{alt: "media"}
+		);
+	}
+
+	// create new save file on G-Drive
     function createSaveFile(){
+		loadingProgress(1);
         buildApiRequest(
             function(response){
                 remoteSaveFileID = response.id;
-                parseSaveDataRemote([], response.appProperties);
+				// parse config with default values.
+                parseSaveDataRemote([], defaultSaveData);
+				// start requesting subs.
                 requestSubs();
+				loadingProgress(-1);
             },
             'POST',
             '/drive/v3/files',
@@ -220,6 +245,7 @@ var GoogleAuth;
         );
     }
 
+	// parses API results to usable config and cache data.
     function parseSaveDataRemote(data, appProperties){
         // Set data from GDrive and set config.
         cache = data;
@@ -235,7 +261,8 @@ var GoogleAuth;
         }
     }
 
-    function parseSaveDataLocal(){
+	// loads and parses local storage data to usable config and cache data.
+    function loadAndParseSaveDataLocal(){
         // Get Cache from localStorage and set config.
         cache = localStorage.getItem("YTBSP");
         corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
@@ -263,9 +290,13 @@ var GoogleAuth;
         }
     }
 
-    function updateConfig(){
+	// Save config to G-Drive file. 
+    function saveConfigRemote(){
+		loadingProgress(1);
         buildApiRequest(
-            function(){},
+            function(){
+				loadingProgress(-1);
+			},
             'PATCH',
             '/drive/v3/files/'+remoteSaveFileID,
             {},
@@ -274,6 +305,43 @@ var GoogleAuth;
                 hideEmptySubs: hideEmptySubs ? "1" : "0"
             }}
         );
+    }
+	
+	// Save video information to G-Drive file.
+	function updateSaveFileContent(fileData, callback) {
+        const boundary = '-------314159265358979323846';
+        const delimiter = "\r\n--" + boundary + "\r\n";
+        const close_delim = "\r\n--" + boundary + "--";
+
+        var reader = new FileReader();
+        reader.readAsBinaryString(fileData);
+        reader.onload = function(e) {
+            var contentType = fileData.type || 'application/octet-stream';
+            // Updating the metadata is optional and you can instead use the value from drive.files.get.
+            var base64Data = btoa(reader.result);
+            var multipartRequestBody =
+                delimiter +
+                'Content-Type: application/json\r\n\r\n' +
+                JSON.stringify({}) + // Metadata goes here.
+                delimiter +
+                'Content-Type: ' + contentType + '\r\n' +
+                'Content-Transfer-Encoding: base64\r\n' +
+                '\r\n' +
+                base64Data +
+                close_delim;
+
+            var request = gapi.client.request({
+                'path': '/upload/drive/v2/files/' + remoteSaveFileID, // Workaround:  G-Drive API v3 doesn't support this request!
+                'method': 'PUT',
+                'params': {'uploadType': 'multipart', 'alt': 'json'},
+                'headers': {
+                    'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+                },
+                'body': multipartRequestBody});
+            if (callback) {
+                request.execute(callback);
+            }
+        }
     }
 
 	var subs = []; // Main Sub array contains all subs and in extension all videos.
@@ -479,7 +547,7 @@ var GoogleAuth;
 	function toggleHideSeenVideos() {
         hideSeenVideos = !hideSeenVideos;
         if(SAVEDATAREMOTE){
-            updateConfig();
+            saveConfigRemote();
         }else{
             localStorage.setItem("YTBSPhideSeen", hideSeenVideos ? "1" : "0");
         }
@@ -494,7 +562,7 @@ var GoogleAuth;
 	function toggleHideEmptySubs() {
         hideEmptySubs = !hideEmptySubs;
         if(SAVEDATAREMOTE){
-            updateConfig();
+            saveConfigRemote();
         }else{
             localStorage.setItem("YTBSPhide", hideEmptySubs ? "1" : "0");
         }
@@ -1207,7 +1275,7 @@ var GoogleAuth;
             var contentBlob = new  Blob([newcache], {
                 'type': 'text/plain'
             });
-            updateFile(remoteSaveFileID, {}, contentBlob, function(response) {
+            updateSaveFileContent(contentBlob, function(response) {
                 cache = saveObj;
             });
             newcache = null;
@@ -1227,42 +1295,6 @@ var GoogleAuth;
 		newcache = null;
 		savedcache = null;
 	}
-
-    function updateFile(fileId, fileMetadata, fileData, callback) {
-        const boundary = '-------314159265358979323846';
-        const delimiter = "\r\n--" + boundary + "\r\n";
-        const close_delim = "\r\n--" + boundary + "--";
-
-        var reader = new FileReader();
-        reader.readAsBinaryString(fileData);
-        reader.onload = function(e) {
-            var contentType = fileData.type || 'application/octet-stream';
-            // Updating the metadata is optional and you can instead use the value from drive.files.get.
-            var base64Data = btoa(reader.result);
-            var multipartRequestBody =
-                delimiter +
-                'Content-Type: application/json\r\n\r\n' +
-                JSON.stringify(fileMetadata) +
-                delimiter +
-                'Content-Type: ' + contentType + '\r\n' +
-                'Content-Transfer-Encoding: base64\r\n' +
-                '\r\n' +
-                base64Data +
-                close_delim;
-
-            var request = gapi.client.request({
-                'path': '/upload/drive/v2/files/' + fileId,
-                'method': 'PUT',
-                'params': {'uploadType': 'multipart', 'alt': 'json'},
-                'headers': {
-                    'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
-                },
-                'body': multipartRequestBody});
-            if (callback) {
-                request.execute(callback);
-            }
-        }
-    }
 
 	// Now we just need to generate a stylesheet
 
