@@ -61,6 +61,7 @@ var GoogleAuth;
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
     const YT_CHANNELLINK = "#owner-name > a";
 	const YT_CONTENT = "#content";
+    const YT_GUIDE = "app-drawer#guide";
 
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
@@ -475,11 +476,17 @@ var GoogleAuth;
 	}
 	$(".ytbsp-func#ytbsp-refresh", maindiv).click(updateAllSubs);
 
+    var toggleGuide = false;
+
     function shownative() {
         $(YT_STARTPAGE_BODY).show();
         subList.hide();
 		$('.ytbsp-hideWhenNative').css('visibility','hidden');
 		isNative = true;
+        // toggle guide if on viewpage
+        if(toggleGuide){
+            $(YT_GUIDE).removeAttr('opened');
+        }
 	}
 
     function hidenative() {
@@ -487,6 +494,10 @@ var GoogleAuth;
         subList.show();
 		$('.ytbsp-hideWhenNative').css('visibility','');
 		isNative = false;
+        // toggle guide if on viewpage
+        if (toggleGuide) {
+            $(YT_GUIDE).attr('opened', '');
+        }
 	}
 
 	// Now set click event for the toggle native button.
@@ -1306,7 +1317,8 @@ var GoogleAuth;
 	// (When loaded this rule has to be removed, to prevent feedpages from loadig with display: none)
     var loading_body_style = YT_STARTPAGE_BODY + ' { background: transparent; display:none; }';
 	var startpage_body_style = YT_STARTPAGE_BODY + ' { margin-top: -30px; margin-left: 120px; background: transparent; }';
-    var video_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -10px; }';
+    var video_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -10px; }' +
+    YT_GUIDE + '{ z-index: 0; width: var(--app-drawer-width, 256px); }';
     var search_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -50px; }';
     var default_body_style = YT_STARTPAGE_BODY + ' { background: transparent; }';
 	function setYTStyleSheet(body_style){
@@ -1450,7 +1462,11 @@ var GoogleAuth;
 	}
     setYTStyleSheet(loading_body_style);
 
+    markAsSeenTimeout = null;
+
     function handlePageChange(){
+        clearTimeout(markAsSeenTimeout);
+        toggleGuide = false;
         // forces some images to reload...
         window.dispatchEvent(new Event('resize'));
         // If we are on the startpage (or feed pages).
@@ -1458,6 +1474,7 @@ var GoogleAuth;
             setYTStyleSheet(startpage_body_style);
 		} else if(/^\/?watch$/.test(location.pathname)) {
             setYTStyleSheet(video_body_style);
+            toggleGuide = true;
             watchpage();
         }else if (/^\/?results$/.test(location.pathname)){
             setYTStyleSheet(search_body_style);
@@ -1470,6 +1487,28 @@ var GoogleAuth;
             hidenative();
         }
     }
+
+    function watchpage(){
+        hideMAToolbar();
+		// Mark as seen after at least X secounds.
+        markAsSeenTimeout = setTimeout(function() {
+            var vid = location.href.match(/v=([^&]{11})/)[1];
+            if(vid) {
+                var sid = $(YT_CHANNELLINK).attr('href').match(/\/channel\/([^&]*)/)[1];
+                subs.forEach(function(sub, i) {
+                    if(sub.id == sid) {
+                        sub.videos.forEach(function(video, j) {
+                            if(video.vid == vid) {
+                                subs[i].videos[j].see();
+                                subs[i].buildList();
+                                saveList();
+                            }
+                        });
+                    }
+                });
+            }
+        }, TIMETOMARKASSEEN * 1000);
+	}
 
 	function injectYTBSP(){
         $(YT_CONTENT).prepend(maindiv);
@@ -1501,28 +1540,6 @@ var GoogleAuth;
 		css.innerHTML = MA_TOOLBAR + '{display: none;}' +
 			YT_VIDEOTITLE + ' {display: block;}';
 		document.head.appendChild(css);
-	}
-
-    function watchpage(){
-        hideMAToolbar();
-		// Mark as seen after at least 10 secounds.
-        setTimeout(function() {
-            var vid = location.href.match(/v=([^&]{11})/)[1];
-            if(vid) {
-                var sid = $(YT_CHANNELLINK).attr('href').match(/\/channel\/([^&]*)/)[1];
-                subs.forEach(function(sub, i) {
-                    if(sub.id == sid) {
-                        sub.videos.forEach(function(video, j) {
-                            if(video.vid == vid) {
-                                subs[i].videos[j].see();
-                                subs[i].buildList();
-                                saveList();
-                            }
-                        });
-                    }
-                });
-            }
-        }, TIMETOMARKASSEEN * 1000);
 	}
 
     function openVideoWithSPF(vid){
