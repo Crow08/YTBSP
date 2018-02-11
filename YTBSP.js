@@ -58,6 +58,7 @@ var GoogleAuth;
 
     // Slectors for external HTML elements:
     const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
+    const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
     const YT_CHANNELLINK = "#owner-name > a";
 	const YT_CONTENT = "#content";
@@ -1321,6 +1322,8 @@ var GoogleAuth;
     YT_GUIDE + '{ z-index: 0; width: var(--app-drawer-width, 256px); }';
     var search_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -50px; }';
     var default_body_style = YT_STARTPAGE_BODY + ' { background: transparent; }';
+    var playlist_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -60px; }' +
+    YT_STARTPAGE_BODY + " " + YT_PLAYLIST_SIDEBAR + ' {padding-top: 54px;}';
 	function setYTStyleSheet(body_style){
         $("#ytbsp-yt-css").remove();
         var css = document.createElement("style");
@@ -1478,6 +1481,8 @@ var GoogleAuth;
             watchpage();
         }else if (/^\/?results$/.test(location.pathname)){
             setYTStyleSheet(search_body_style);
+        }else if (/^\/?playlist$/.test(location.pathname)){
+            setYTStyleSheet(playlist_body_style);
 		}else{
             setYTStyleSheet(default_body_style);
         }
