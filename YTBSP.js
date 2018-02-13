@@ -6,7 +6,7 @@
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
 // @require      https://apis.google.com/js/api.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.slim.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js
 // @grant        none
 // ==/UserScript==
@@ -96,12 +96,12 @@ var GoogleAuth;
 		var isAuthorized = user.hasGrantedScopes(SCOPE);
 		if(isAuthorized) {
             // start loading save data.
-            getSaveData();
+            startAPIRequests();
 		} else {
 			GoogleAuth.signIn().then(
 				function() {
 					// Signin successful then start loading save data.
-					getSaveData();
+					startAPIRequests();
 				},
 				function(error) {
 					// Display popup-blocked message.
@@ -170,22 +170,38 @@ var GoogleAuth;
 		}
 	}
 
-	// loads configuration and video information from local storage or G-Drive.
-    function getSaveData()	{
+	// This function is called after successful OAuth login.
+	// Loads configuration and video information from local storage or G-Drive.
+	// then loads subscription and video information.
+    function startAPIRequests()	{
         if(SAVEDATAREMOTE){
-			// check if save file exists or has to be created.
+			// If cache save location is remote:
+			// Check if save file exists or has to be created.
+			// Additionally this request recieves app configuration if save file is found.
 			loadingProgress(1);
             buildApiRequest(
                 function(response){
                     var files = response.files;
-					// save file exists.
+					// Save file exists.
                     if (files && files.length > 0) {
                         remoteSaveFileID = files[0].id;
-						// load save file content.
-						loadSaveFileContent(files[0].appProperties);
-					// save file does not exist.
+						// Get save file content.
+						loadingProgress(1);
+						getSaveDataRemote(function(saveData){
+							// Check if save data is valid.
+							if(saveData === null || saveData === "") {
+								console.error("Error parsing cache!");
+								saveData = [];
+							}
+							// Parse config and video information.
+							loadSaveData(saveData, files[0].appProperties);
+							// Start requesting subs.
+							requestSubs();
+							loadingProgress(-1);
+						});
+					// Save file does not exist.
                     }else{
-						// create save file.
+						// Create new save file.
                         createSaveFile();
                     }
 					loadingProgress(-1);
@@ -199,30 +215,21 @@ var GoogleAuth;
                 }
             );
         }else{
-			// parse config and video information.
-            loadAndParseSaveDataLocal();
+			// If cache save location is local:
+			// Get app configuration from local storage.
+			var appProperties = {
+				hideSeenVideos: localStorage.getItem("YTBSPhideSeen"),
+				hideEmptySubs: localStorage.getItem("YTBSPhide")
+			}
+			// Get save data from local storage.
+            getSaveDataLocal(function(saveData){
+				// Parse config and video information.
+				loadSaveData(saveData, appProperties);
+			});
 			// start requesting subs.
 			requestSubs();
         }
     }
-
-	// Load video information from G-Drive file.
-	function loadSaveFileContent(appProperties){
-		// request file content from API.
-		loadingProgress(1);
-		buildApiRequest(
-			function(response){
-				// parse config and video information.
-				parseSaveDataRemote(response, appProperties);
-				// start requesting subs.
-				requestSubs();
-				loadingProgress(-1);
-			},
-			'GET',
-			'/drive/v3/files/'+remoteSaveFileID,
-			{alt: "media"}
-		);
-	}
 
 	// create new save file on G-Drive
     function createSaveFile(){
@@ -231,7 +238,7 @@ var GoogleAuth;
             function(response){
                 remoteSaveFileID = response.id;
 				// parse config with default values.
-                parseSaveDataRemote([], defaultSaveData);
+                loadSaveData([], defaultSaveData);
 				// start requesting subs.
                 requestSubs();
 				loadingProgress(-1);
@@ -247,29 +254,21 @@ var GoogleAuth;
         );
     }
 
-	// parses API results to usable config and cache data.
-    function parseSaveDataRemote(data, appProperties){
-        // Set data from GDrive and set config.
-        cache = data;
-
-        // Parse the config.
-        hideSeenVideos = appProperties.hideSeenVideos === "1";
-        hideEmptySubs = appProperties.hideEmptySubs === "1";
-
-        // If we have a cache parse it.
-        if(cache === null || cache === "") {
-            console.error("Error parsing cache!");
-            cache = [];
-        }
-
-		$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
-		$("#ytbsp-hideEmptySubsCb").prop("checked", !hideEmptySubs);
-    }
+	// Load video information from G-Drive file.
+	function getSaveDataRemote(callback){
+		// request file content from API.
+		buildApiRequest(
+			callback,
+			'GET',
+			'/drive/v3/files/'+remoteSaveFileID,
+			{alt: "media"}
+		);
+	}
 
 	// loads and parses local storage data to usable config and cache data.
-    function loadAndParseSaveDataLocal(){
+    function getSaveDataLocal(callback){
         // Get Cache from localStorage and set config.
-        cache = localStorage.getItem("YTBSP");
+        var cache = localStorage.getItem("YTBSP");
         corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
         // If last save process was inerrupted: try to load backup.
         if(corruptCache) {
@@ -277,11 +276,6 @@ var GoogleAuth;
             console.warn("restoring old cache...");
             cache = localStorage.getItem("YTBSPbackup");
         }
-
-        // Parse the config.
-        hideSeenVideos = localStorage.getItem("YTBSPhideSeen") === "1"; // DEFAULT: false.
-        hideEmptySubs = localStorage.getItem("YTBSPhide") === "1"; // DEFAULT: false.
-
         // If we have a cache parse it.
         if(cache === null || cache === "") {
             cache = [];
@@ -293,6 +287,20 @@ var GoogleAuth;
                 cache = [];
             }
         }
+		callback(cache);
+    }
+
+	// parses API results to usable config and cache data.
+    function loadSaveData(data, appProperties){
+        // Set data from GDrive and set config.
+        cache = data;
+
+        // Parse the config.
+        hideSeenVideos = appProperties.hideSeenVideos === "1";
+        hideEmptySubs = appProperties.hideEmptySubs === "1";
+
+		$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
+		$("#ytbsp-hideEmptySubsCb").prop("checked", !hideEmptySubs);
     }
 
 	// Save config to G-Drive file.
@@ -314,14 +322,17 @@ var GoogleAuth;
 
 	// Save video information to G-Drive file.
 	function updateSaveFileContent(fileData, callback) {
+        var contentBlob = new  Blob([fileData], {
+            'type': 'text/plain'
+        });
         const boundary = '-------314159265358979323846';
         const delimiter = "\r\n--" + boundary + "\r\n";
         const close_delim = "\r\n--" + boundary + "--";
 
         var reader = new FileReader();
-        reader.readAsBinaryString(fileData);
+        reader.readAsBinaryString(contentBlob);
         reader.onload = function(e) {
-            var contentType = fileData.type || 'application/octet-stream';
+            var contentType = contentBlob.type || 'application/octet-stream';
             // Updating the metadata is optional and you can instead use the value from drive.files.get.
             var base64Data = btoa(reader.result);
             var multipartRequestBody =
@@ -349,7 +360,7 @@ var GoogleAuth;
         }
     }
 
-	var subs = []; // Main Sub array contains all subs and in extension all videos.
+	var subs = []; // Main subscription array contains all subs and in extension all videos.
 
 	// Gets subs from api. (Called after successful OAuth-login and save data loading.)
 	function requestSubs() {
@@ -436,7 +447,21 @@ var GoogleAuth;
 	var isNative = false;
 
 	// Universal loader as resource.
+    // TODO: Create loaders with function.
 	const LOADER = '<div class="ytbsp-loader"></div>';
+    function getLoader(id){
+        var loader = $("<div/>", {"class": "ytbsp-loader"});
+        return loader
+    }
+
+	// Make slider as resource.
+    function getSlider(id, checked, onChange){
+        var slider = $("<label/>",{"class": "ytbsp-slider"});
+        slider.append($("<input/>", {"class": "ytbsp-slider-cb", "type": "checkbox", "id": id, "checked": checked, on: { change: onChange } }));
+        slider.append($("<div/>", {"class": "ytbsp-slider-rail"}));
+        slider.append($("<div/>", {"class": "ytbsp-slider-knob"}));
+        return slider;
+    }
 
 	// Let's build the new site:
 
@@ -457,11 +482,7 @@ var GoogleAuth;
 
 	maindiv.innerHTML = '<div id="ytbsp-menuStrip">' + headerHtml + '</div>' +
 		'<ul id="ytbsp-subs"></ul>' +
-		'<div id="ytbsp-modal-darken">' +
-		'<div id="ytbsp-modal">' +
-		'<div id="ytbsp-modal-content"></div>' +
-		'</div>' +
-		'</div>';
+		'<div id="ytbsp-modal"><div id="ytbsp-modal-content"></div></div>';
 
 	// Save a reference for the subList.
 	var subList = $("#ytbsp-subs", maindiv);
@@ -484,9 +505,10 @@ var GoogleAuth;
         subList.hide();
 		$('.ytbsp-hideWhenNative').css('visibility','hidden');
 		isNative = true;
-        // toggle guide if on viewpage
+        // Toggle guide if on viewpage.
         if(toggleGuide){
-            $(YT_GUIDE).removeAttr('opened');
+            var ytdApp = document.querySelector('ytd-app');
+            ytdApp.fire("yt-guide-toggle", {});
         }
 	}
 
@@ -495,9 +517,12 @@ var GoogleAuth;
         subList.show();
 		$('.ytbsp-hideWhenNative').css('visibility','');
 		isNative = false;
-        // toggle guide if on viewpage
+        // Toggle guide if on viewpage.
         if (toggleGuide) {
-            $(YT_GUIDE).attr('opened', '');
+            var ytdApp = document.querySelector('ytd-app');
+            ytdApp.fire("yt-guide-toggle", {});
+            // Workaround: After opening guide sidebar scroll information gets lost...
+            setTimeout(function(){ $('body').attr('style', 'overflow: auto'); console.log("test"); },200);
         }
 	}
 
@@ -592,77 +617,96 @@ var GoogleAuth;
 	// Open backup dialog.
 	function openBackupDialog() {
 		if(loading !== 0) {
-			alert("Not so fast. Let it load the sub list first.");
+			alert("Not so fast. Let it load the subscription list first.");
 			return;
 		}
+		if(SAVEDATAREMOTE){
+			loadingProgress(1);
+			getSaveDataRemote(function(saveData){
+				createBackupDialog(JSON.stringify(saveData));
+				loadingProgress(-1);
+			});
+		}else{
+			createBackupDialog(localStorage.getItem("YTBSP"));
+		}
+	}
 
-		var content = document.createElement("div");
+	function createBackupDialog(saveData){
+		var backupDialog = $("<div/>",{id: "backupDialog"});
+		backupDialog.append($("<h1/>",{html:"Backup video information"}));
+		backupDialog.append($("<p/>",{html:"This Feature allows you to save which videos you have seen and removed and import them again on another " +
+			"browser/computer or just to make save you don't loose these informations over night."}));
+		backupDialog.append($("<h1/>",{html:"How do I do this?"}));
+		backupDialog.append($("<p/>",{html:"Just copy the content of the following textbox and save it somewhere.<br />" +
+			"To import it again copy it into the textbox and press import data."}));
+        backupDialog.append($("<p/>",{html:"The save data from local storage and Google Drive are compatible and interchangeable."}));
+		backupDialog.append($("<textarea/>",{id:"ytbsp-export-import-textarea", html: saveData }));
 
-		var header = document.createElement("h1");
-		header.textContent = "Backup video information";
-		content.appendChild(header);
+		var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"});
+		endDiv.append($("<h2/>",{html:"Local Storage"}));
 
-		var text = document.createElement("p");
-		text.innerHTML = "This Feature allows you to save which videos you have seen and removed and import them again on another browser/computer" +
-			" or just to make save you don't loose these informations over night.";
-		content.appendChild(text);
+        var backupSwitch = function(){
+            if($("#ytbsp-backup-switch").prop("checked")){
+                $("#ytbsp-export-import-textarea").empty();
+                loadingProgress(1);
+                getSaveDataRemote(function(saveData){
+                    $("#ytbsp-export-import-textarea").val(JSON.stringify(saveData));
+                    loadingProgress(-1);
+                });
+            }else{
+                $("#ytbsp-export-import-textarea").empty();
+                $("#ytbsp-export-import-textarea").val(localStorage.getItem("YTBSP"));
+            }
+        };
+		endDiv.append(getSlider("ytbsp-backup-switch", SAVEDATAREMOTE, backupSwitch));
 
-		header = document.createElement("h1");
-		header.textContent = "How do I do this?";
-		content.appendChild(header);
+		endDiv.append($("<h2/>",{html:"Google Drive"}));
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "close", on: {
+				click: function() { closeModal(); }
+			}}));
 
-		text = document.createElement("p");
-		text.innerHTML = "Just copy the content of the following textbox and save it somewhere.<br />" +
-			"To import it again copy it into the textbox and press import data.<br />" +
-			"Note that this information will be merged with the already existing one so you can savely import old/multible backups. " +
-			"Importing backups can only mark video's as seen or remove them. Not the other way around.";
-		content.appendChild(text);
-
-		var exportArea = document.createElement("textarea");
-		exportArea.id = "export-import-textarea";
-		exportArea.textContent = localStorage.getItem("YTBSP");
-		content.appendChild(exportArea);
-
-		var bottom = document.createElement("div");
-		bottom.id = "bottom-div";
-		bottom.innerHTML = '<input type="submit" class="close-modal" value="close" />' +
-			'<input type="submit" class="save-import close-modal" value="import data" />';
-		content.appendChild(bottom);
-
-		$(".save-import", bottom).click(function() {
-			localStorage.setItem("YTBSP", document.getElementById("export-import-textarea").value);
-			setTimeout(function() {
-				location.reload();
-			}, 500);
-		});
-
-		$(".close-modal", bottom).click(function() {
-			closeModal();
-		});
-
-		openModal(content);
+        var importData = function() {
+            loadingProgress(1); // Don't clear loading before reload because if loading finishes  data gets saved.
+            if($("#ytbsp-backup-switch").prop("checked")){
+                updateSaveFileContent($("#ytbsp-export-import-textarea").val(), function(){
+                    closeModal();
+                    location.reload();
+                })
+            }else{
+                localStorage.setItem("YTBSP", $("#ytbsp-export-import-textarea").val());
+                setTimeout(function() {
+                    closeModal();
+                    location.reload();
+                }, 500);
+            }
+        }
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "import data",
+			on: {
+				click: importData
+			}}));
+		backupDialog.append(endDiv);
+		openModal(backupDialog);
 	}
 	$(".ytbsp-func#ytbsp-backup", maindiv).click(openBackupDialog);
 
 	// Show backup dialog modal
 	function openModal(content) {
-		var innerModal = document.getElementById("ytbsp-modal-content");
-		var modal = document.getElementById("ytbsp-modal-darken");
-		if(!innerModal || !modal) throw new Error("Modal disapeared");
-		innerModal.innerHTML = "";
-		innerModal.appendChild(content);
-		modal.style.display = "block";
+		if($("#ytbsp-modal-content").length == 0 || $("#ytbsp-modal").length == 0){
+			console.error("could not open modal!");
+		}
+		$("#ytbsp-modal-content").empty();
+		$("#ytbsp-modal-content").append(content);
+		$("#ytbsp-modal").css("display", "block");
 		setTimeout(function() {
-			modal.style.opacity = "1";
+			$("#ytbsp-modal").css("opacity", "1");
 		}, 0);
 	}
 
 	// Hide backup dialog modal
 	function closeModal() {
-		var modal = document.getElementById("ytbsp-modal-darken");
-		if(modal) {
-			modal.style.display = "none";
-			modal.style.opacity = "0";
+		if($("#ytbsp-modal").length != 0) {
+			$("#ytbsp-modal").css("display", "none");
+			$("#ytbsp-modal").css("opacity", "0");
 		}
 	}
 
@@ -1288,32 +1332,29 @@ var GoogleAuth;
         var newcache = JSON.stringify(saveObj);
 
         if(SAVEDATAREMOTE){
-            var contentBlob = new  Blob([newcache], {
-                'type': 'text/plain'
-            });
-            updateSaveFileContent(contentBlob, function(response) {
+            updateSaveFileContent(newcache, function(response) {
                 cache = saveObj;
             });
             newcache = null;
-            return;
+        }else{
+            localStorage.setItem("YTBSPcorruptcache", 1);
+            localStorage.setItem("YTBSP", newcache);
+            var savedcache = localStorage.getItem("YTBSP");
+            if(newcache === savedcache) {
+                cache = saveObj;
+                localStorage.setItem("YTBSPcorruptcache", 0);
+                localStorage.setItem("YTBSPbackup", newcache);
+            } else {
+                console.error("cache save error!");
+            }
+            newcache = null;
+            savedcache = null;
         }
-
-		localStorage.setItem("YTBSPcorruptcache", 1);
-		localStorage.setItem("YTBSP", newcache);
-		var savedcache = localStorage.getItem("YTBSP");
-		if(newcache === savedcache) {
-			cache = saveObj;
-			localStorage.setItem("YTBSPcorruptcache", 0);
-			localStorage.setItem("YTBSPbackup", newcache);
-		} else {
-			console.error("cache save error!");
-		}
-		newcache = null;
-		savedcache = null;
 	}
 
 	// Now we just need to generate a stylesheet
 
+    // Stylerules depening on the loaded page.
 	// Startpage_body display: none is defined via stylesheet to not fash up when loaded.
 	// (When loaded this rule has to be removed, to prevent feedpages from loadig with display: none)
     var loading_body_style = YT_STARTPAGE_BODY + ' { background: transparent; display:none; }';
@@ -1410,15 +1451,26 @@ var GoogleAuth;
 			'-moz-transition: opacity 0.2s; -o-transition: opacity 0.2s;}' +
 			'@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); }}' +
 
+			// slider
+			'.ytbsp-slider { display: inline-block; padding: 0px 10px; width: 34px; vertical-align: middle; cursor: pointer;}' +
+			'.ytbsp-slider-rail { position: absolute; width: 34px; height: 14px; border-radius: 8px; background-color: ' + altBorderColor + '; ' +
+			'opacity: 0.2; -webkit-transition: .1s; transition: .1s; }' +
+			'.ytbsp-slider-knob { position: relative; top: -3px; left: 0; height: 20px; width: 20px; border-radius: 50%; background-color: #fff; ' +
+			'box-shadow: 0 1px 5px 0 rgba(0, 0, 0, 0.6); -webkit-transition: .4s; transition: .4s; }' +
+			'.ytbsp-slider-cb:checked ~ .ytbsp-slider-knob { left: 16px; }' +
+			'.ytbsp-slider-cb:checked ~ .ytbsp-slider-rail { background-color: ' + stdFontColor + '; opacity: 0.9; -webkit-transition: .8s; transition: .8s; }' +
+			'.ytbsp-slider-cb {display:none;}' +
+
 			// modal
-			'#ytbsp-modal-darken { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,.4); z-index: 3;' +
+			'#ytbsp-modal { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,.4); z-index: 3;' +
 			'-webkit-transition: opacity .2s; -moz-transition: opacity .2s; -o-transition: opacity .2s; opacity: 0; overflow: auto; display: none; }' +
-			'#ytbsp-modal { margin: 0 auto; width: 600px; min-height: 20px; margin-top: 30px; padding: 5px; background: ' + altBgColor + '; ' +
+			'#ytbsp-modal-content { margin: 0 auto; width: 600px; min-height: 20px; margin-top: 30px; padding: 10px; background: ' + altBgColor + '; ' +
 			' position: sticky; top: 60px; -moz-border-radius: 3px; border-radius: 3px; box-shadow: 0 5px 20px rgba(0,0,0,.4); }' +
-			'#ytbsp-modal textarea { width: 595px; height: 400px; resize: none; margin: 20px 0; }' +
-			'#ytbsp-modal #bottom-div { display: inline-block; width: 100%; }' +
-			'#ytbsp-modal-content p, h1 {color:' + stdFontColor + '}' +
-			'.close-modal { float: right }';
+			'#ytbsp-modal-content textarea { width: 595px; height: 400px; resize: none; margin: 20px 0; }' +
+			'#ytbsp-modal-content p, h1, h2 {color:' + stdFontColor + '}' +
+			'#ytbsp-modal-content h2 {display: inline-block; }' +
+			'#ytbsp-modal-end-div { display: inline-block; width: 100%; }' +
+			'#ytbsp-modal-end-div input{ float: right; }';
 
 		document.head.appendChild(css);
 	}
@@ -1477,7 +1529,6 @@ var GoogleAuth;
             setYTStyleSheet(startpage_body_style);
 		} else if(/^\/?watch$/.test(location.pathname)) {
             setYTStyleSheet(video_body_style);
-            toggleGuide = true;
             watchpage();
         }else if (/^\/?results$/.test(location.pathname)){
             setYTStyleSheet(search_body_style);
@@ -1488,6 +1539,9 @@ var GoogleAuth;
         }
         if(location.pathname.length > 1) {
             shownative();
+            if(/^\/?watch$/.test(location.pathname)) {
+                toggleGuide = true;
+            }
         }else{
             hidenative();
         }
