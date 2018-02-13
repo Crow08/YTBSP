@@ -971,9 +971,11 @@ var GoogleAuth;
 			var loadph = $(".ytbsp-loaderph", this.row);
 			var loader = $(".ytbsp-loader", this.row);
 			if(loadph && loader) {
-				loader.css("opacity", "0");
 				setTimeout(function() {
-					loadph.css("width", "0px");
+					loader.css("opacity", "0");
+					setTimeout(function() {
+						loadph.css("width", "0px");
+					}, 200);
 				}, 200);
 			}
 		},
