@@ -1,3 +1,2 @@
-- update import / export to support google drive
 - expand appProperties to support all configuration options
 - create settings page
