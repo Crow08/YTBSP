@@ -148,11 +148,13 @@ var GoogleAuth;
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
     var loading = 0; // 0: all subs / vids loaded.
+    var saveQueued = false;
 
 	// Function to handle loading, showing, hiding loaders when needed and
-	// saving when loading has finished
-	function loadingProgress(loadingDelta, sub){
+	// saving when loading has finished if saving flag was set at least once
+	function loadingProgress(loadingDelta, saveWhenDone = false ,sub){
 		loading += loadingDelta;
+        saveQueued = saveQueued || saveWhenDone;
         if (typeof sub !== 'undefined'){
             if(loadingDelta < 0){
                 sub.removeLoader();
@@ -164,7 +166,10 @@ var GoogleAuth;
 		if(loading === 0) {
 			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
 			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
-			saveList();
+			if(saveQueued){
+				saveQueued = false
+				saveList();
+			}
 		}else{
 			$(".ytbsp-loader","#ytbsp-loaderSpan").show();
 			$("#ytbsp-refresh","#ytbsp-loaderSpan").hide();
@@ -198,7 +203,7 @@ var GoogleAuth;
 							loadSaveData(saveData, files[0].appProperties);
 							// Start requesting subs.
 							requestSubs();
-							loadingProgress(-1);
+							loadingProgress(-1, true);
 						});
 					// Save file does not exist.
                     }else{
@@ -242,7 +247,7 @@ var GoogleAuth;
                 loadSaveData([], defaultSaveData);
 				// start requesting subs.
                 requestSubs();
-				loadingProgress(-1);
+				loadingProgress(-1, true);
             },
             'POST',
             '/drive/v3/files',
@@ -429,14 +434,14 @@ var GoogleAuth;
     function processCheckedSubs(response){
         // No longer subscribed
         if(response.pageInfo.totalResults == 0){
-            loadingProgress(-1);
+            loadingProgress(-1, true);
             return;
         }
         // Create subs from the api response.
 		response.items.forEach(function(item) {
 			subs.push(new Subscription(item.snippet));
 		});
-		loadingProgress(-1);
+		loadingProgress(-1, true);
     }
 
 	// Variables for inView check.
@@ -562,7 +567,7 @@ var GoogleAuth;
 			toRebuild.forEach(function(i) {
 				subs[i].buildList();
 			});
-			loadingProgress(-1);
+			loadingProgress(-1, true);
 		}, 0);
 	}
 	$(".ytbsp-func#ytbsp-removeAllVideos", maindiv).click(removeAllVideos);
@@ -586,7 +591,7 @@ var GoogleAuth;
 			toRebuild.forEach(function(i) {
 				subs[i].buildList();
 			});
-			loadingProgress(-1);
+			loadingProgress(-1, true);
 		}, 0);
 	}
 	$(".ytbsp-func#ytbsp-resetAllVideos", maindiv).click(resetAllVideos);
@@ -673,16 +678,18 @@ var GoogleAuth;
 			}}));
 
         var importData = function() {
-            loadingProgress(1); // Don't clear loading before reload because if loading finishes  data gets saved.
+            loadingProgress(1);
             if($("#ytbsp-backup-switch").prop("checked")){
                 updateSaveFileContent($("#ytbsp-export-import-textarea").val(), function(){
                     closeModal();
+					loadingProgress(-1);
                     location.reload();
                 })
             }else{
                 localStorage.setItem("YTBSP", $("#ytbsp-export-import-textarea").val());
                 setTimeout(function() {
                     closeModal();
+					loadingProgress(-1);
                     location.reload();
                 }, 500);
             }
@@ -732,7 +739,7 @@ var GoogleAuth;
 
 		// Create content.
 		var subMenuStrip = $("<div/>",{"class":"ytbsp-subMenuStrip"});
-		
+
 		subMenuStrip.append($("<div/>",{css: {"float": "right"}})
 			.append($("<button/>",{"class": "ytbsp-func ytbsp-subRemoveAllVideos", html: "remove all"}))
 			.append($("<button/>",{"class": "ytbsp-func ytbsp-subResetAllVideos", html: "reset all"}))
@@ -810,7 +817,7 @@ var GoogleAuth;
 		isInView: false,
 
 		updateVideos: function(){
-			loadingProgress(1,this);
+			loadingProgress(1, false, this);
 			buildApiRequest(
 				processRequestVids,
 				'GET',
@@ -893,7 +900,7 @@ var GoogleAuth;
 				// Rebuild the list.
 				self.buildList();
 
-				loadingProgress(-1,self);
+				loadingProgress(-1, false, self);
 			}
 		},
 
@@ -1227,7 +1234,6 @@ var GoogleAuth;
 			$(".ytbsp-clip", this.thumbLi).mouseover(enlarge);
 
 			function enlargecancel(){
-				allowenlarge=true;
 				if(self.vid.replace('-', '$') in timeouts && timeouts[self.vid.replace('-', '$')] > 0){
 					clearTimeout(timeouts[self.vid.replace('-', '$')]);
 				}
@@ -1245,13 +1251,14 @@ var GoogleAuth;
 
 			$(this.thumbLi).mouseleave(enlargecancel);
 
-			function enlargecanclex(){
+			function enlargecancleTimeout(){
 				if(self.vid.replace('-', '$') in timeouts){
 					clearTimeout(timeouts[self.vid.replace('-', '$')]);
 					timeouts[self.vid.replace('-', '$')] = -2;
 				}
 			}
-			$(".ytbsp-x", this.thumbLi).mouseover(enlargecanclex);
+			$(".ytbsp-x", this.thumbLi).mouseover(enlargecancleTimeout);
+			$(".ytbsp-clip", this.thumbLi).mouseleave(enlargecancleTimeout);
 
 			function enlargeresume(){
 				var clip = $(".ytbsp-clip:hover", this.parentElement.parentElement);
