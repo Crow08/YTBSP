@@ -1,3 +1,2 @@
-- expand appProperties to support all configuration options
-- create settings page
 - handle multi tab usage with the script
+- design overhaul
