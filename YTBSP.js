@@ -34,22 +34,15 @@ var GoogleAuth;
 
 (function(unsafeWindow) {
     // Config:
-    const LOADSIMSUBCOUNT = 10; 		// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
-    const ITEMSPERROW = 9; 				// DEFAULT: 9.
-    const MAXITEMSPERSUB = 36; 			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by ITEMSPERROW).
-    const SCREENLOADTHREADSHOLD = 500; 	// DEFAULT: 500.
-    const ENLARGETIMEOUT = 500;         // DEFAULT: 500 (in ms).
-	const TIMETOMARKASSEEN = 10;		// DEFAILT: 10 (in s).
-    const SAVEDATAREMOTE = true;
-
-	var corruptCache = false;
+	var useRemoteData = true;		// DEFAULT: true (using Google Drive as remote storage)
+    var maxSimSubLoad = 10;			// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
+    var maxVidsPerRow = 9;			// DEFAULT: 9.
+    var maxVidsPerSub = 36;			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
+    var enlargeDelay = 500;			// DEFAULT: 500 (in ms).
+	var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
+	var screenThreshold = 500;		// DEFAULT: 500.
 	var hideSeenVideos = false;
 	var hideEmptySubs = true;
-
-    var defaultSaveData = {
-        hideSeenVideos: hideSeenVideos ? "1" : "0",
-        hideEmptySubs: hideEmptySubs ? "1" : "0"
-    };
 
     // OAuth2 variables:
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
@@ -57,16 +50,18 @@ var GoogleAuth;
     const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/drive.appdata';
 
     // Slectors for external HTML elements:
+	// YouTube selectors:
     const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
     const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
     const YT_CHANNELLINK = "#owner-name > a";
 	const YT_CONTENT = "#content";
     const YT_GUIDE = "app-drawer#guide";
-
+	// MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
-	var cache = [];
+	var corruptCache = false;
+	var cachedVideoinformation = [];
     var remoteSaveFileID = null;
 
 	///////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -86,7 +81,7 @@ var GoogleAuth;
 			// Handle initial sign-in state. (Determine if user is already signed in.)
 			setSigninStatus();
 		}, function(reason) {
-			//console.log(reason); // Error!
+			console.error("Google API client initialization failed:\n" + reason);
 		});
 	}
 
@@ -107,6 +102,8 @@ var GoogleAuth;
 					// Display popup-blocked message.
 					if(error.error == "popup_blocked_by_browser") {
 						alert('please allow popups for this page and reload!');
+					}else{
+						console.error("Google user sign-in failed:\n" + error);
 					}
 				}
 			);
@@ -124,24 +121,28 @@ var GoogleAuth;
 	}
 
 	// Build proper OAuth request.
-	function buildApiRequest(callback, requestMethod, path, params, properties) {
-		params = removeEmptyParams(params);
-		var request;
-		if(properties) {
-			request = gapi.client.request({
-				'body': properties,
-				'method': requestMethod,
-				'path': path,
-				'params': params
+	function buildApiRequest(requestMethod, path, params, properties) {
+		return new Promise(function(resolve, reject){
+			params = removeEmptyParams(params);
+			var request;
+			if(properties) {
+				request = gapi.client.request({
+					'body': properties,
+					'method': requestMethod,
+					'path': path,
+					'params': params
+				});
+			} else {
+				request = gapi.client.request({
+					'method': requestMethod,
+					'path': path,
+					'params': params
+				});
+			}
+			request.execute(function(response){
+				resolve(response);
 			});
-		} else {
-			request = gapi.client.request({
-				'method': requestMethod,
-				'path': path,
-				'params': params
-			});
-		}
-		request.execute(callback);
+		});
 	}
 
 	// End OAuth Stuff.
@@ -152,10 +153,10 @@ var GoogleAuth;
 
 	// Function to handle loading, showing, hiding loaders when needed and
 	// saving when loading has finished if saving flag was set at least once
-	function loadingProgress(loadingDelta, saveWhenDone = false ,sub){
+	function loadingProgress(loadingDelta, saveWhenDone = false ,sub = null){
 		loading += loadingDelta;
         saveQueued = saveQueued || saveWhenDone;
-        if (typeof sub !== 'undefined'){
+        if (sub !== null){
             if(loadingDelta < 0){
                 sub.removeLoader();
             }else{
@@ -167,7 +168,7 @@ var GoogleAuth;
 			$(".ytbsp-loader","#ytbsp-loaderSpan").hide();
 			$("#ytbsp-refresh","#ytbsp-loaderSpan").show();
 			if(saveQueued){
-				saveQueued = false
+				saveQueued = false;
 				saveList();
 			}
 		}else{
@@ -176,42 +177,67 @@ var GoogleAuth;
 		}
 	}
 
+    useRemoteData = localStorage.getItem("YTBSP_useRemoteData") !== "0";
+
 	// This function is called after successful OAuth login.
-	// Loads configuration and video information from local storage or G-Drive.
-	// then loads subscription and video information.
+	// Loads configuration and video information from local storage or G-Drive,
+	// then starts loading subscriptions.
     function startAPIRequests()	{
-        if(SAVEDATAREMOTE){
-			// If cache save location is remote:
-			// Check if save file exists or has to be created.
-			// Additionally this request recieves app configuration if save file is found.
+		// Get app configuration.
+		loadConfig().then(function(){
+			// -> Get save data.
+			loadVideoInformation().then(function(){
+				// -> start requesting subs.
+				requestSubs();
+			});
+		});
+    }
+
+	// Load G-Drive File Id only.
+	function loadRemoteFileId(){
+		return new Promise(function(resolve, reject){
 			loadingProgress(1);
             buildApiRequest(
-                function(response){
-                    var files = response.files;
+                'GET',
+                '/drive/v3/files',
+                {
+                    'q': "name = 'YTBSP.json'",
+                    'fields': "files(id)",
+                    'spaces': "appDataFolder"
+                }
+            ).then(function(response){
+				var files = response.files;
+				// Check if save file exists or has to be created.
+				if (files && files.length > 0) {
 					// Save file exists.
-                    if (files && files.length > 0) {
-                        remoteSaveFileID = files[0].id;
-						// Get save file content.
-						loadingProgress(1);
-						getSaveDataRemote(function(saveData){
-							// Check if save data is valid.
-							if(saveData === null || saveData === "") {
-								console.error("Error parsing cache!");
-								saveData = [];
-							}
-							// Parse config and video information.
-							loadSaveData(saveData, files[0].appProperties);
-							// Start requesting subs.
-							requestSubs();
-							loadingProgress(-1, true);
-						});
+					remoteSaveFileID = files[0].id;
+				}else{
 					// Save file does not exist.
-                    }else{
-						// Create new save file.
-                        createSaveFile();
-                    }
-					loadingProgress(-1);
-                },
+					// Create new save file.
+					createRemoteSaveData().then(function(){
+						resolve();
+					});
+				}
+				loadingProgress(-1);
+                resolve();
+			});
+		});
+	}
+
+	// Load Script configuration.
+	function loadConfig(){
+		if(useRemoteData){
+			return loadRemoteConfig();
+        }else{
+			return loadLocalConfig();
+		}
+	}
+
+	// Load Script configuration from G-Drive file.
+	function loadRemoteConfig(){
+		return new Promise(function(resolve, reject){
+			loadingProgress(1);
+            buildApiRequest(
                 'GET',
                 '/drive/v3/files',
                 {
@@ -219,152 +245,307 @@ var GoogleAuth;
                     'fields': "files(appProperties,id,name)",
                     'spaces': "appDataFolder"
                 }
-            );
-        }else{
-			// If cache save location is local:
-			// Get app configuration from local storage.
-			var appProperties = {
-				hideSeenVideos: localStorage.getItem("YTBSPhideSeen"),
-				hideEmptySubs: localStorage.getItem("YTBSPhide")
-			}
-			// Get save data from local storage.
-            getSaveDataLocal(function(saveData){
-				// Parse config and video information.
-				loadSaveData(saveData, appProperties);
+            ).then(function(response){
+				var files = response.files;
+				// Check if save file exists or has to be created.
+				if (files && files.length > 0) {
+					// Save file exists.
+					remoteSaveFileID = files[0].id;
+					// Parse the config.
+					useRemoteData = files[0].appProperties.useRemoteData !== "0";
+					hideSeenVideos = files[0].appProperties.hideSeenVideos !== "0";
+					hideEmptySubs = files[0].appProperties.hideEmptySubs !== "0";
+					maxSimSubLoad = files[0].appProperties.maxSimSubLoad;
+					maxVidsPerRow = files[0].appProperties.maxVidsPerRow;
+					maxVidsPerSub = files[0].appProperties.maxVidsPerSub;
+					enlargeDelay = files[0].appProperties.enlargeDelay;
+					timeToMarkAsSeen = files[0].appProperties.timeToMarkAsSeen;
+					screenThreshold = files[0].appProperties.screenThreshold;
+					$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
+					$("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+				}else{
+					// Save file does not exist.
+					// Create new save file.
+					createRemoteSaveData().then(function(){
+						resolve();
+					});
+				}
+				loadingProgress(-1);
+                resolve();
 			});
-			// start requesting subs.
-			requestSubs();
-        }
-    }
-
-	// create new save file on G-Drive
-    function createSaveFile(){
-		loadingProgress(1);
-        buildApiRequest(
-            function(response){
-                remoteSaveFileID = response.id;
-				// parse config with default values.
-                loadSaveData([], defaultSaveData);
-				// start requesting subs.
-                requestSubs();
-				loadingProgress(-1, true);
-            },
-            'POST',
-            '/drive/v3/files',
-            {'fields': "appProperties,id,name"},
-            {
-                "parents" : ["appDataFolder"],
-                "name":"YTBSP.json",
-                "appProperties": defaultSaveData
-            }
-        );
-    }
-
-	// Load video information from G-Drive file.
-	function getSaveDataRemote(callback){
-		// request file content from API.
-		buildApiRequest(
-			callback,
-			'GET',
-			'/drive/v3/files/'+remoteSaveFileID,
-			{alt: "media"}
-		);
+		});
 	}
 
-	// loads and parses local storage data to usable config and cache data.
-    function getSaveDataLocal(callback){
-        // Get Cache from localStorage and set config.
-        var cache = localStorage.getItem("YTBSP");
-        corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
-        // If last save process was inerrupted: try to load backup.
-        if(corruptCache) {
-            console.warn("cache corruption detected!");
-            console.warn("restoring old cache...");
-            cache = localStorage.getItem("YTBSPbackup");
-        }
-        // If we have a cache parse it.
-        if(cache === null || cache === "") {
-            cache = [];
-        } else {
-            try {
-                cache = JSON.parse(cache);
-            } catch(e) {
-                console.error("Error parsing cache!");
-                cache = [];
-            }
-        }
-		callback(cache);
+	// Load Script configuration from local storage
+	function loadLocalConfig(){
+		return new Promise(function(resolve, reject){
+			useRemoteData = localStorage.getItem("YTBSP_useRemoteData") !== "0";
+			hideSeenVideos = localStorage.getItem("YTBSP_hideSeenVideos") !== "0";
+			hideEmptySubs = localStorage.getItem("YTBSP_hideEmptySubs")  !== "0";
+			maxSimSubLoad = localStorage.getItem("YTBSP_maxSimSubLoad");
+			maxVidsPerRow = localStorage.getItem("YTBSP_maxVidsPerRow");
+			maxVidsPerSub = localStorage.getItem("YTBSP_maxVidsPerSub");
+			enlargeDelay = localStorage.getItem("YTBSP_enlargeDelay");
+			timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+			screenThreshold = localStorage.getItem("YTBSP_screenThreshold");
+			$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
+			$("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+			resolve();
+		});
+	}
+
+	// Create new save file on G-Drive.
+    function createRemoteSaveData(){
+		return new Promise(function(resolve, reject){
+			loadingProgress(1);
+			buildApiRequest(
+				'POST',
+				'/drive/v3/files',
+				{'fields': "appProperties,id,name"},
+				{
+					"parents" : ["appDataFolder"],
+					"name":"YTBSP.json",
+					"appProperties": {
+						useRemoteData: useRemoteData,
+						hideSeenVideos: hideSeenVideos,
+						hideEmptySubs: hideEmptySubs,
+						maxSimSubLoad: maxSimSubLoad,
+						maxVidsPerRow: maxVidsPerRow,
+						maxVidsPerSub: maxVidsPerSub,
+						enlargeDelay: enlargeDelay,
+						timeToMarkAsSeen: timeToMarkAsSeen,
+						screenThreshold: screenThreshold
+					}
+				}
+			).then(function(response){
+				remoteSaveFileID = response.id;
+				// config variables are already initialized with default values.
+				$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
+				$("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+				loadingProgress(-1, true);
+				resolve();
+			});
+		});
     }
 
-	// parses API results to usable config and cache data.
-    function loadSaveData(data, appProperties){
-        // Set data from GDrive and set config.
-        cache = data;
-
-        // Parse the config.
-        hideSeenVideos = appProperties.hideSeenVideos === "1";
-        hideEmptySubs = appProperties.hideEmptySubs === "1";
-
-		$("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
-		$("#ytbsp-hideEmptySubsCb").prop("checked", !hideEmptySubs);
+	// delete save file on G-Drive.
+	function deleteRemoteSaveData(){
+		return new Promise(function(resolve, reject){
+			if(remoteSaveFileID === null){
+				loadRemoteFileId().then(function(){
+					deleteRemoteSaveData().then(function(){resolve();});
+				});
+			}else{
+				buildApiRequest(
+					'DELETE',
+					'/drive/v3/files/'+remoteSaveFileID,
+					{}
+				).then(function(response){
+					remoteSaveFileID = null;
+					resolve();
+				});
+			}
+		});
     }
 
-	// Save config to G-Drive file.
-    function saveConfigRemote(){
-		loadingProgress(1);
-        buildApiRequest(
-            function(){
-				loadingProgress(-1);
-			},
-            'PATCH',
-            '/drive/v3/files/'+remoteSaveFileID,
-            {},
-            {"appProperties" : {
-                hideSeenVideos: hideSeenVideos ? "1" : "0",
-                hideEmptySubs: hideEmptySubs ? "1" : "0"
-            }}
-        );
+	// Load video information.
+	function loadVideoInformation(){
+		return new Promise(function(resolve, reject){
+			getVideoInformation().then(function(data){
+				cachedVideoinformation = data;
+				resolve();
+			});
+		});
+	}
+
+	// Gets and returns video information in resolved promise.
+	function getVideoInformation(){
+		if(useRemoteData){
+			return getRemoteVideoInformation();
+        }else{
+			return getLocalVideoInformation();
+		}
+	}
+
+	// Load video information from G-Drive file.
+	function getRemoteVideoInformation(){
+		return new Promise(function(resolve, reject){
+			if(remoteSaveFileID === null){
+				loadRemoteFileId().then(function(){
+					getRemoteVideoInformation().then(function(data){resolve(data);});
+				});
+			}else{
+				// request file content from API.
+				buildApiRequest(
+					'GET',
+					'/drive/v3/files/'+remoteSaveFileID,
+					{alt: "media"}
+				).then(function(data){
+					if(typeof data === 'undefined' || data === null || data === "") {
+						console.error("Error parsing video information!");
+						data = [];
+					}
+					resolve(data);
+				});
+			}
+		});
+	}
+
+	// loads and parses local storage data.
+    function getLocalVideoInformation(){
+		return new Promise(function(resolve, reject){
+			// Get Cache from localStorage and set config.
+			var cache = localStorage.getItem("YTBSP");
+			corruptCache = localStorage.getItem("YTBSPcorruptcache") === "1"; // DEFAULT: false.
+			// If last save process was inerrupted: try to load backup.
+			if(corruptCache) {
+				console.warn("cache corruption detected!");
+				console.warn("restoring old cache...");
+				cache = localStorage.getItem("YTBSPbackup");
+			}
+			// If we have a cache parse it.
+			if(cache === null || cache === "") {
+				cache = [];
+			} else {
+				try {
+					cache = JSON.parse(cache);
+				} catch(e) {
+					console.error("Error parsing cache!");
+					cache = [];
+				}
+			}
+			resolve(cache);
+		});
     }
+
+	// Save configuration.
+	function saveConfig(){
+		if(useRemoteData){
+			return saveRemoteConfig();
+        }else{
+			return saveLocalConfig();
+		}
+	}
+
+	// Save configuration to G-Drive file.
+    function saveRemoteConfig(){
+		return new Promise(function(resolve, reject){
+			if(remoteSaveFileID === null){
+				loadRemoteFileId().then(function(){
+					saveRemoteConfig().then(function(){resolve();});
+				});
+			}else{
+				buildApiRequest(
+					'PATCH',
+					'/drive/v3/files/'+remoteSaveFileID,
+					{},
+					{"appProperties" : {
+						useRemoteData: useRemoteData ? "1" : "0",
+						hideSeenVideos: hideSeenVideos ? "1" : "0",
+						hideEmptySubs: hideEmptySubs ? "1" : "0",
+						maxSimSubLoad: maxSimSubLoad,
+						maxVidsPerRow: maxVidsPerRow,
+						maxVidsPerSub: maxVidsPerSub,
+						enlargeDelay: enlargeDelay,
+						timeToMarkAsSeen: timeToMarkAsSeen,
+						screenThreshold: screenThreshold
+					}}
+				).then(function(response){
+					localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
+					resolve();
+				});
+			}
+		});
+    }
+
+	// Save config to local storage file.
+    function saveLocalConfig(){
+		return new Promise(function(resolve, reject){
+			localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
+			localStorage.setItem("YTBSP_hideSeenVideos", hideSeenVideos ? "1" : "0");
+			localStorage.setItem("YTBSP_hideEmptySubs", hideEmptySubs ? "1" : "0");
+			localStorage.setItem("YTBSP_maxSimSubLoad", maxSimSubLoad);
+			localStorage.setItem("YTBSP_maxVidsPerRow", maxVidsPerRow);
+			localStorage.setItem("YTBSP_maxVidsPerSub", maxVidsPerSub);
+			localStorage.setItem("YTBSP_enlargeDelay", enlargeDelay);
+			localStorage.setItem("YTBSP_timeToMarkAsSeen", timeToMarkAsSeen);
+			localStorage.setItem("YTBSP_screenThreshold", screenThreshold);
+			resolve();
+		});
+    }
+
+	function saveVideoInformation(){
+		if(useRemoteData){
+			return saveRemoteVideoInformation();
+        }else{
+			return saveLocalVideoInformation();
+		}
+	}
 
 	// Save video information to G-Drive file.
-	function updateSaveFileContent(fileData, callback) {
-        var contentBlob = new  Blob([fileData], {
-            'type': 'text/plain'
-        });
-        const boundary = '-------314159265358979323846';
-        const delimiter = "\r\n--" + boundary + "\r\n";
-        const close_delim = "\r\n--" + boundary + "--";
+	function saveRemoteVideoInformation() {
+		return new Promise(function(resolve, reject){
+			if(remoteSaveFileID === null){
+				loadRemoteFileId().then(function(){
+					saveRemoteVideoInformation().then(function(){resolve();});
+				});
+			}else{
+				var contentString = JSON.stringify(cachedVideoinformation);
+				const boundary = '-------314159265358979323846';
+				const delimiter = "\r\n--" + boundary + "\r\n";
+				const close_delim = "\r\n--" + boundary + "--";
 
-        var reader = new FileReader();
-        reader.readAsBinaryString(contentBlob);
-        reader.onload = function(e) {
-            var contentType = contentBlob.type || 'application/octet-stream';
-            // Updating the metadata is optional and you can instead use the value from drive.files.get.
-            var base64Data = btoa(reader.result);
-            var multipartRequestBody =
-                delimiter +
-                'Content-Type: application/json\r\n\r\n' +
-                JSON.stringify({}) + // Metadata goes here.
-                delimiter +
-                'Content-Type: ' + contentType + '\r\n' +
-                'Content-Transfer-Encoding: base64\r\n' +
-                '\r\n' +
-                base64Data +
-                close_delim;
+				var contentType = 'text/plain' || 'application/octet-stream';
+				// Updating the metadata is optional and you can instead use the value from drive.files.get.
+				var base64Data =  btoa(encodeURIComponent(contentString).replace(/%([0-9A-F]{2})/g,
+					function toSolidBytes(match, p1) {
+						return String.fromCharCode('0x' + p1);
+				}));
+				var multipartRequestBody =
+					delimiter +
+					'Content-Type: application/json\r\n\r\n' +
+					JSON.stringify({}) + // Metadata goes here.
+					delimiter +
+					'Content-Type: ' + contentType + '\r\n' +
+					'Content-Transfer-Encoding: base64\r\n' +
+					'\r\n' +
+					base64Data +
+					close_delim;
 
-            var request = gapi.client.request({
-                'path': '/upload/drive/v3/files/' + remoteSaveFileID, // Workaround:  G-Drive API v3 doesn't support this request!
-                'method': 'PATCH',
-                'params': {'uploadType': 'multipart', 'alt': 'json'},
-                'headers': {
-                    'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
-                },
-                'body': multipartRequestBody});
-            if (callback) {
-                request.execute(callback);
-            }
-        }
+				var request = gapi.client.request({
+					'path': '/upload/drive/v3/files/' + remoteSaveFileID,
+					'method': 'PATCH',
+					'params': {'uploadType': 'multipart', 'alt': 'json'},
+					'headers': {
+						'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
+					},
+					'body': multipartRequestBody});
+				request.execute(function(response){
+					resolve();
+				});
+			}
+		});
     }
+
+	// Save video information to local storage.
+	function saveLocalVideoInformation() {
+		return new Promise(function(resolve, reject){
+			var newcache = JSON.stringify(cachedVideoinformation);
+            localStorage.setItem("YTBSPcorruptcache", 1);
+            localStorage.setItem("YTBSP", newcache);
+            var savedcache = localStorage.getItem("YTBSP");
+            if(newcache === savedcache) {
+                localStorage.setItem("YTBSPcorruptcache", 0);
+                localStorage.setItem("YTBSPbackup", newcache);
+            } else {
+                console.error("cache save error!");
+				reject();
+            }
+            newcache = null;
+            savedcache = null;
+			resolve();
+		});
+	}
 
 	var subs = []; // Main subscription array contains all subs and in extension all videos.
 
@@ -372,15 +553,14 @@ var GoogleAuth;
 	function requestSubs() {
 		loadingProgress(1);
 		buildApiRequest(
-			processRequestSubs,
 			'GET',
 			'/youtube/v3/subscriptions',
 			{
 				'mine': 'true',
 				'part': 'snippet',
-				'maxResults': LOADSIMSUBCOUNT,
+				'maxResults': maxSimSubLoad,
 				'fields': 'items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken'
-			});
+			}).then(processRequestSubs);
 	}
 
 	// Parses api results into subs and requests recursively more subpages if needed.
@@ -397,16 +577,15 @@ var GoogleAuth;
 		if(response.nextPageToken !== undefined && response.nextPageToken !== null) {
 			loadingProgress(1);
 			buildApiRequest(
-				processRequestSubs,
 				'GET',
 				'/youtube/v3/subscriptions',
 				{
 					'mine': 'true',
 					'part': 'snippet',
-					'maxResults': LOADSIMSUBCOUNT,
+					'maxResults': maxSimSubLoad,
 					'pageToken': response.nextPageToken,
 					'fields': 'items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken'
-				});
+				}).then(processRequestSubs);
 		}
 		// Create subs from the api response.
 		response.items.forEach(function(item) {
@@ -419,7 +598,6 @@ var GoogleAuth;
     function checkAndAppendSub(forChannelId){
         loadingProgress(1);
         buildApiRequest(
-            processCheckedSubs,
             'GET',
             '/youtube/v3/subscriptions',
             {
@@ -427,7 +605,7 @@ var GoogleAuth;
                 'part': 'snippet',
                 'forChannelId': forChannelId,
                 'fields': 'items(snippet(resourceId/channelId,title)),pageInfo)'
-            });
+            }).then(processCheckedSubs);
     }
 
 	// Parses api results into subs if still subscribed.
@@ -457,7 +635,7 @@ var GoogleAuth;
 	const LOADER = '<div class="ytbsp-loader"></div>';
     function getLoader(id){
         var loader = $("<div/>", {"class": "ytbsp-loader"});
-        return loader
+        return loader;
     }
 
 	// Make slider as resource.
@@ -488,8 +666,9 @@ var GoogleAuth;
 	);
 	menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
 		.append($("<input/>", {id: "ytbsp-hideEmptySubsCb", type: "checkbox", checked: hideEmptySubs}))
-		.append("Show empty subs")
+		.append("Hide empty subs")
 	);
+	menuStrip.append($("<button/>", {id: "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative", html:"&#x2699;"}));
 	maindiv.append(menuStrip);
 	maindiv.append($("<ul/>", {id: "ytbsp-subs"}));
 	maindiv.append($("<div/>", {id: "ytbsp-modal"})
@@ -599,11 +778,8 @@ var GoogleAuth;
 	// Hide seen videos buttons.
 	function toggleHideSeenVideos() {
         hideSeenVideos = !hideSeenVideos;
-        if(SAVEDATAREMOTE){
-            saveConfigRemote();
-        }else{
-            localStorage.setItem("YTBSPhideSeen", hideSeenVideos ? "1" : "0");
-        }
+		loadingProgress(1);
+		saveConfig().then(function(){loadingProgress(-1);});
 		subs.forEach(function(sub, i) {
 			subs[i].buildList();
 		});
@@ -614,37 +790,26 @@ var GoogleAuth;
 	// Hide empty subscriptions button.
 	function toggleHideEmptySubs() {
         hideEmptySubs = !hideEmptySubs;
-        if(SAVEDATAREMOTE){
-            saveConfigRemote();
-        }else{
-            localStorage.setItem("YTBSPhide", hideEmptySubs ? "1" : "0");
-        }
+		loadingProgress(1);
+		saveConfig().then(function(){loadingProgress(-1);});
 		subs.forEach(function(sub, i) {
 			subs[i].handleVisablility();
 		});
-		$("#ytbsp-hideEmptySubsCb", maindiv).prop("checked", !hideEmptySubs);
+		$("#ytbsp-hideEmptySubsCb", maindiv).prop("checked", hideEmptySubs);
 	}
 	$("#ytbsp-hideEmptySubsCb", maindiv).change(toggleHideEmptySubs);
 
 	// Open backup dialog.
 	function openBackupDialog() {
-		if(loading !== 0) {
-			alert("Not so fast. Let it load the subscription list first.");
-			return;
-		}
-		if(SAVEDATAREMOTE){
-			loadingProgress(1);
-			getSaveDataRemote(function(saveData){
-				createBackupDialog(JSON.stringify(saveData));
-				loadingProgress(-1);
-			});
-		}else{
-			createBackupDialog(localStorage.getItem("YTBSP"));
-		}
+		loadingProgress(1);
+		getVideoInformation().then(function(saveData){
+			createBackupDialog(JSON.stringify(saveData));
+			loadingProgress(-1);
+		});
 	}
 
 	function createBackupDialog(saveData){
-		var backupDialog = $("<div/>",{id: "backupDialog"});
+		var backupDialog = $("<div/>");
 		backupDialog.append($("<h1/>",{html:"Backup video information"}));
 		backupDialog.append($("<p/>",{html:"This Feature allows you to save which videos you have seen and removed and import them again on another " +
 			"browser/computer or just to make save you don't loose these informations over night."}));
@@ -661,47 +826,128 @@ var GoogleAuth;
             if($("#ytbsp-backup-switch").prop("checked")){
                 $("#ytbsp-export-import-textarea").empty();
                 loadingProgress(1);
-                getSaveDataRemote(function(saveData){
+                getRemoteVideoInformation().then(function(saveData){
                     $("#ytbsp-export-import-textarea").val(JSON.stringify(saveData));
                     loadingProgress(-1);
                 });
             }else{
-                $("#ytbsp-export-import-textarea").empty();
-                $("#ytbsp-export-import-textarea").val(localStorage.getItem("YTBSP"));
+                getLocalVideoInformation().then(function(saveData){
+                    $("#ytbsp-export-import-textarea").val(JSON.stringify(saveData));
+                    loadingProgress(-1);
+                });
             }
         };
-		endDiv.append(getSlider("ytbsp-backup-switch", SAVEDATAREMOTE, backupSwitch));
+		endDiv.append(getSlider("ytbsp-backup-switch", useRemoteData, backupSwitch));
 
 		endDiv.append($("<h2/>",{html:"Google Drive"}));
-		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "close", on: {
-				click: function() { closeModal(); }
-			}}));
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "close", on: { click: closeModal }}));
 
         var importData = function() {
             loadingProgress(1);
+			cachedVideoinformation = JSON.parse($("#ytbsp-export-import-textarea").val());
             if($("#ytbsp-backup-switch").prop("checked")){
-                updateSaveFileContent($("#ytbsp-export-import-textarea").val(), function(){
+                saveRemoteVideoInformation().then(function(){
                     closeModal();
 					loadingProgress(-1);
                     location.reload();
-                })
+                });
             }else{
-                localStorage.setItem("YTBSP", $("#ytbsp-export-import-textarea").val());
-                setTimeout(function() {
-                    closeModal();
-					loadingProgress(-1);
-                    location.reload();
-                }, 500);
+                saveLocalVideoInformation().then(function(){
+					setTimeout(function() {
+						closeModal();
+						loadingProgress(-1);
+						location.reload();
+					}, 200);
+				});
             }
-        }
-		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "import data",
-			on: {
-				click: importData
-			}}));
+        };
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "import data", on: { click: importData }}));
 		backupDialog.append(endDiv);
 		openModal(backupDialog);
 	}
 	$(".ytbsp-func#ytbsp-backup", maindiv).click(openBackupDialog);
+
+
+	function openSettingsDialog() {
+		var settingsDialog = $("<div/>");
+        settingsDialog.append($("<h1/>",{html:"Settings"}));
+		var settingsTable = $("<table/>",{id:"ytbsp-settings-table"});
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html:"Hide empty subs"}))
+			.append($("<td>").append(getSlider("ytbsp-settings-hideEmptySubs", hideEmptySubs)))
+            .append($("<td>"))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html:"Hide seen videos"}))
+			.append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", hideSeenVideos)))
+            .append($("<td>"))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html: "Use Google Drive"}))
+			.append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", useRemoteData)))
+            .append($("<td>"), {html: "Allows synchronization between browsers. May result in slower loading times."})
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html: "Max number of subscriptions loading simultaneously"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"1", max:"50", id: "ytbsp-settings-maxSimSubLoad", value: maxSimSubLoad})))
+            .append($("<td>", {html: "Default: 10 | Range: 1-50 | Higher numbers result in slower loading of single items but overall faster laoding."}))
+		);
+        settingsTable.append($("<tr>")
+			.append($("<td>", {html: "Max number of videos per row"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"1", max:"50", id: "ytbsp-settings-maxVidsPerRow", value: maxVidsPerRow})))
+            .append($("<td>", {html: "Default: 9 | Range: 1-50"}))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html:"Max number of videos per subscription"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"1", max:"50", id: "ytbsp-settings-maxVidsPerSub", value: maxVidsPerSub})))
+            .append($("<td>", {html: "Default: 27 | Range: 1-50 | Should be dividable by videos per row."}))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html:"Watch time to mark video as seen"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"0", id: "ytbsp-settings-timeToMarkAsSeen", value: timeToMarkAsSeen})).append(" s"))
+            .append($("<td>", {html: "Default: 10"}))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html: "Delay for thumbnail enlarge"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"0", id: "ytbsp-settings-enlargeDelay", value: enlargeDelay})).append(" ms"))
+            .append($("<td>", {html: "Default: 500"}))
+		);
+		settingsTable.append($("<tr>")
+			.append($("<td>", {html: "threshold to preload thumbnails"}))
+			.append($("<td>").append($("<input>", {type: "number", min:"0", id: "ytbsp-settings-screenThreshold", value: screenThreshold})).append(" px"))
+            .append($("<td>", {html: "Default: 500 | Higer threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."}))
+		);
+		settingsDialog.append(settingsTable);
+
+		var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"});
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "close", on: { click: closeModal }}));
+
+        var saveSettings = function() {
+            loadingProgress(1);
+
+			useRemoteData = $("#ytbsp-settings-useRemoteData").prop("checked");
+			hideEmptySubs = $("#ytbsp-settings-hideEmptySubs").prop("checked");
+			hideSeenVideos = $("#ytbsp-settings-hideSeenVideos").prop("checked");
+			maxSimSubLoad = $("#ytbsp-settings-maxSimSubLoad").val();
+			maxVidsPerRow = $("#ytbsp-settings-maxVidsPerRow").val();
+			maxVidsPerSub = $("#ytbsp-settings-maxVidsPerSub").val();
+			timeToMarkAsSeen = $("#ytbsp-settings-timeToMarkAsSeen").val();
+			enlargeDelay = $("#ytbsp-settings-enlargeDelay").val();
+			screenThreshold = $("#ytbsp-settings-screenThreshold").val();
+
+			saveConfig().then(function(){
+				setTimeout(function() {
+					closeModal();
+					loadingProgress(-1);
+					location.reload();
+				}, 200);
+			});
+        };
+		endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "save settings", on: { click: saveSettings }}));
+		settingsDialog.append(endDiv);
+		openModal(settingsDialog);
+	}
+	$(".ytbsp-func#ytbsp-settings", maindiv).click(openSettingsDialog);
 
 	// Show backup dialog modal
 	function openModal(content) {
@@ -819,23 +1065,22 @@ var GoogleAuth;
 		updateVideos: function(){
 			loadingProgress(1, false, this);
 			buildApiRequest(
-				processRequestVids,
 				'GET',
 				'/youtube/v3/playlistItems',
 				{
-					'maxResults': MAXITEMSPERSUB,
+					'maxResults': maxVidsPerSub,
 					'part': 'snippet',
 					'fields': 'items(snippet(publishedAt,resourceId/videoId,thumbnails(maxres,medium),title)),nextPageToken,pageInfo,prevPageToken',
 					'playlistId': this.id.replace(/^UC/, 'UU')
 				}
-			);
+			).then(processRequestVids);
 
 			var self = this;
 
 			function processRequestVids(response) {
 				self.videos = [];
 				// If videos for sub are in cache find them.
-				var cacheSub = $.grep(cache, function(subs) {
+				var cacheSub = $.grep(cachedVideoinformation, function(subs) {
 					return subs.id == self.id;
 				});
 				var cacheVideos = [];
@@ -911,7 +1156,7 @@ var GoogleAuth;
 
 			var alreadyIn = $(".ytbsp-video-item", this.videoList);
 			var visableItems = 0;
-			var limit = this.showall ? MAXITEMSPERSUB : ITEMSPERROW;
+			var limit = this.showall ? maxVidsPerSub : maxVidsPerRow;
 			// Now loop through the videos.
 			this.videos.forEach(function(video, i) {
 
@@ -956,6 +1201,13 @@ var GoogleAuth;
 						}
 					}
 					++visableItems;
+					if(visableItems % maxVidsPerRow == 0){
+						if(visableItems < alreadyIn.length) {
+							alreadyIn[visableItems].before($("<br/>"));
+						} else {
+							this.videoList.append($("<br/>"));
+						}
+					}
 				}
 			}, this);
 
@@ -1015,8 +1267,8 @@ var GoogleAuth;
 			var offsetTop = this.videoList ? this.videoList.offset().top : 0;
 
             this.isInView = (this.videoList &&
-				offsetTop - SCREENLOADTHREADSHOLD < screenBottom &&
-				offsetTop + SCREENLOADTHREADSHOLD > screenTop
+				offsetTop - screenThreshold < screenBottom &&
+				offsetTop + screenThreshold > screenTop
 			);
 			return this.isInView;
 		},
@@ -1155,31 +1407,6 @@ var GoogleAuth;
 			if(this.duration == "0:00") {
 				loadingProgress(1);
 				buildApiRequest(
-					function(response) {
-                        var duration;
-                        var viewCount;
-						try {
-							duration = moment.duration(response.items[0].contentDetails.duration);
-						} catch(e) {}
-						try {
-							viewCount = response.items[0].statistics.viewCount + " Views";
-						} catch(e) {}
-                        var time;
-						if(duration.hours() === 0) {
-							try {
-								time = moment(duration.minutes() + ':' + duration.seconds(), 'm:s').format('mm:ss');
-							} catch(e) {}
-						} else {
-							try {
-								time = moment(duration.hours() + ':' + duration.minutes() + ':' + duration.seconds(), 'h:m:s').format('HH:mm:ss');
-							} catch(e) {}
-						}
-						self.duration = time;
-						self.clicks = viewCount;
-
-						self.updateThumb(inView);
-						loadingProgress(-1);
-					},
 					'GET',
 					'/youtube/v3/videos',
 					{
@@ -1187,7 +1414,31 @@ var GoogleAuth;
 						'fields': 'items(contentDetails/duration,statistics/viewCount)',
 						'id': self.vid
 					}
-				);
+				).then(function(response) {
+					var duration;
+					var viewCount;
+					try {
+						duration = moment.duration(response.items[0].contentDetails.duration);
+					} catch(e) {}
+					try {
+						viewCount = response.items[0].statistics.viewCount + " Views";
+					} catch(e) {}
+					var time;
+					if(duration.hours() === 0) {
+						try {
+							time = moment(duration.minutes() + ':' + duration.seconds(), 'm:s').format('mm:ss');
+						} catch(e) {}
+					} else {
+						try {
+							time = moment(duration.hours() + ':' + duration.minutes() + ':' + duration.seconds(), 'h:m:s').format('HH:mm:ss');
+						} catch(e) {}
+					}
+					self.duration = time;
+					self.clicks = viewCount;
+
+					self.updateThumb(inView);
+					loadingProgress(-1);
+				});
 			}
 			this.thumbLi.empty();
 			this.thumbLi.append($("<a/>", {href: "/watch?v=" + this.vid, "class": "ytbsp-clip", "data-vid": this.vid})
@@ -1209,6 +1460,7 @@ var GoogleAuth;
                 openVideoWithSPF($(this).attr('data-vid'));
             });
 
+            // Enlarge thumbnail and load higher resolution image.
 			function enlarge(){
 				if ($(".ytbsp-x:hover", this).length !== 0) {
 					return;
@@ -1228,11 +1480,12 @@ var GoogleAuth;
 						title.addClass('ytbsp-title-large');
 						clip.addClass('ytbsp-clip-large');
 						infos.hide();
-					}, ENLARGETIMEOUT);
+					}, enlargeDelay);
 				}
 			}
 			$(".ytbsp-clip", this.thumbLi).mouseover(enlarge);
 
+            // reset tumbnail to original size
 			function enlargecancel(){
 				if(self.vid.replace('-', '$') in timeouts && timeouts[self.vid.replace('-', '$')] > 0){
 					clearTimeout(timeouts[self.vid.replace('-', '$')]);
@@ -1247,37 +1500,18 @@ var GoogleAuth;
 				title.removeClass('ytbsp-title-large');
 				clip.removeClass('ytbsp-clip-large');
 				infos.show();
-			}
-
+            }
 			$(this.thumbLi).mouseleave(enlargecancel);
 
+            // abort enlargement process if not already open.
 			function enlargecancleTimeout(){
 				if(self.vid.replace('-', '$') in timeouts){
 					clearTimeout(timeouts[self.vid.replace('-', '$')]);
-					timeouts[self.vid.replace('-', '$')] = -2;
+					timeouts[self.vid.replace('-', '$')] = -1;
 				}
 			}
 			$(".ytbsp-x", this.thumbLi).mouseover(enlargecancleTimeout);
 			$(".ytbsp-clip", this.thumbLi).mouseleave(enlargecancleTimeout);
-
-			function enlargeresume(){
-				var clip = $(".ytbsp-clip:hover", this.parentElement.parentElement);
-				var thumb = clip.parent();
-				if (clip.length != 0) {
-					timeouts[self.vid.replace('-', '$')] = setTimeout(function(){
-						var img = $('.ytbsp-thumb',clip);
-						var title = $('.ytbsp-title', thumb);
-						var infos = $('p', thumb);
-						img.attr('src', $('.ytbsp-thumb-large-url',clip).val());
-						img.addClass('ytbsp-thumb-large');
-						title.addClass('ytbsp-title-large');
-						clip.addClass('ytbsp-clip-large');
-						infos.hide();
-					}, ENLARGETIMEOUT);
-			   }
-			}
-
-			$(".ytbsp-x", this.thumbLi).mouseleave(enlargeresume);
 
 			// Save information elements.
 			this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
@@ -1325,51 +1559,38 @@ var GoogleAuth;
 		}
 	};
 
-	// list for manually checked and potentially unsubscribed or deleted channels.
+	// List for manually checked and potentially unsubscribed or deleted channels.
 	var manuallyCheckedSubs = [];
 
 	function saveList() {
         // Check if all subs in cache are loaded properly.
-		for (var i = 0; i < cache.length; i++) {
-			if(!manuallyCheckedSubs.includes(cache[i].id) &&
-				($.grep(subs, function(sub) {
-					return sub.id == cache[i].id;
-				})).length == 0){
-				// if subscription was not loaded check if still subscribed.
-				checkAndAppendSub(cache[i].id);
-				manuallyCheckedSubs.push(cache[i].id);
+		for (var i = 0; i < cachedVideoinformation.length; i++) {
+			// If cached subscription was not alredy checked and is not in current sub list.
+			if(!manuallyCheckedSubs.includes(cachedVideoinformation[i].id) &&
+				(
+				$.grep(subs, function(sub) {
+					return sub.id == cachedVideoinformation[i].id;
+				})
+				).length == 0){
+				// If subscription was not loaded check if still subscribed.
+				checkAndAppendSub(cachedVideoinformation[i].id);
+				manuallyCheckedSubs.push(cachedVideoinformation[i].id);
+				// After subscription is checked this function is called again.
 				return;
 			}
 		}
-		// clear manuallyCheckedSubs because new cache will be created.
+		// Clear manuallyCheckedSubs because new cache will be created when saving.
 		manuallyCheckedSubs = [];
 
+		// Construct new cache from current subs.
 		var saveObj = [];
 		subs.forEach(function(sub) {
 			saveObj.push(sub.getSaveable());
 		});
 
-        var newcache = JSON.stringify(saveObj);
-
-        if(SAVEDATAREMOTE){
-            updateSaveFileContent(newcache, function(response) {
-                cache = saveObj;
-            });
-            newcache = null;
-        }else{
-            localStorage.setItem("YTBSPcorruptcache", 1);
-            localStorage.setItem("YTBSP", newcache);
-            var savedcache = localStorage.getItem("YTBSP");
-            if(newcache === savedcache) {
-                cache = saveObj;
-                localStorage.setItem("YTBSPcorruptcache", 0);
-                localStorage.setItem("YTBSPbackup", newcache);
-            } else {
-                console.error("cache save error!");
-            }
-            newcache = null;
-            savedcache = null;
-        }
+		// Save new video information cache.
+		cachedVideoinformation = saveObj;
+		saveVideoInformation();
 	}
 
 	// Now we just need to generate a stylesheet
@@ -1378,13 +1599,17 @@ var GoogleAuth;
 	// Startpage_body display: none is defined via stylesheet to not fash up when loaded.
 	// (When loaded this rule has to be removed, to prevent feedpages from loadig with display: none)
     var loading_body_style = YT_STARTPAGE_BODY + ' { background: transparent; display:none; }';
-	var startpage_body_style = YT_STARTPAGE_BODY + ' { margin-top: -30px; margin-left: 120px; background: transparent; }';
+	var startpage_body_style = YT_STARTPAGE_BODY + ' { margin-top: -30px; margin-left: 120px; background: transparent; }' +
+        YT_GUIDE + '{ z-index: 0 !important;}';
     var video_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -10px; }' +
-    YT_GUIDE + '{ z-index: 0; width: var(--app-drawer-width, 256px); }';
-    var search_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -50px; }';
-    var default_body_style = YT_STARTPAGE_BODY + ' { background: transparent; }';
+        YT_GUIDE + '{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }';
+    var search_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -50px; }' +
+        YT_GUIDE + '{ z-index: 0; !important;}';
+    var default_body_style = YT_STARTPAGE_BODY + ' { background: transparent; }' +
+        YT_GUIDE + '{ z-index: 0; !important;}';
     var playlist_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -60px; }' +
-    YT_STARTPAGE_BODY + " " + YT_PLAYLIST_SIDEBAR + ' {padding-top: 54px;}';
+        YT_GUIDE + '{ z-index: 0; !important;}' +
+        YT_STARTPAGE_BODY + " " + YT_PLAYLIST_SIDEBAR + ' {padding-top: 54px;}';
 	function setYTStyleSheet(body_style){
         $("#ytbsp-yt-css").remove();
         var css = document.createElement("style");
@@ -1400,7 +1625,7 @@ var GoogleAuth;
 		css.type = "text/css";
 		css.id="ytbsp-css";
 
-		// check if we got a dark design
+		// Check if we got a dark theme.
 		var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
 		var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
 		var dark = document.documentElement.getAttribute("dark");
@@ -1489,7 +1714,12 @@ var GoogleAuth;
 			'#ytbsp-modal-content p, h1, h2 {color:' + stdFontColor + '; }' +
 			'#ytbsp-modal-content h2 {display: inline-block; }' +
 			'#ytbsp-modal-end-div { display: inline-block; width: 100%; }' +
-			'#ytbsp-modal-end-div input{ float: right; }';
+			'#ytbsp-modal-end-div input{ float: right; }' +
+            '#ytbsp-settings-table { margin: 50px 0px; color:' + stdFontColor + '; border-collapse: collapse;}' +
+            '#ytbsp-settings-table tr { border-bottom: 1px solid ' + stdBorderColor + '; min-height:45px;}' +
+            '#ytbsp-settings-table td { font-size: 1.4rem; padding:5px; min-width: 80px;}' +
+            '#ytbsp-settings-table td:nth-child(3) { font-size: 1.0rem;}' +
+            '#ytbsp-settings-table input[type="number"] { width: 50px; }';
 
 		document.head.appendChild(css);
 	}
@@ -1585,7 +1815,7 @@ var GoogleAuth;
                     }
                 });
             }
-        }, TIMETOMARKASSEEN * 1000);
+        }, timeToMarkAsSeen * 1000);
 	}
 
 	function injectYTBSP(){
