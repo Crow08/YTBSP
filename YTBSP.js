@@ -7,7 +7,7 @@
 // @include      https://*youtube.com*
 // @require      https://apis.google.com/js/api.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
-// @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js
 // @grant        none
 // ==/UserScript==
 /**
@@ -1157,6 +1157,7 @@ var GoogleAuth;
             var alreadyIn = $(".ytbsp-video-item", this.videoList);
             var visableItems = 0;
             var limit = this.showall ? maxVidsPerSub : maxVidsPerRow;
+            $("br", this.videoList).remove();
             // Now loop through the videos.
             this.videos.forEach(function(video, i) {
 
@@ -1201,11 +1202,11 @@ var GoogleAuth;
                         }
                     }
                     ++visableItems;
-                    if(visableItems % maxVidsPerRow == 0){
+                    if(visableItems < limit && visableItems % maxVidsPerRow == 0){
                         if(visableItems < alreadyIn.length) {
-                            alreadyIn[visableItems].before($("<br/>"));
+                            $("</br>").insertBefore(alreadyIn[visableItems]);
                         } else {
-                            this.videoList.append($("<br/>"));
+                            this.videoList.append($("</br>"));
                         }
                     }
                 }
