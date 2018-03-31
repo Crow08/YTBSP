@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.0
+// @version      1.3.1
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
 // @require      https://apis.google.com/js/api.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js
+// @downloadURL  https://raw.githubusercontent.com/Crow08/YTBSP/master/YTBSP.js
+// @updateURL    https://raw.githubusercontent.com/Crow08/YTBSP/master/YTBSP.js
 // @grant        none
 // ==/UserScript==
 /**
@@ -34,13 +36,14 @@ var GoogleAuth;
 
 (function(unsafeWindow) {
     // Config:
-    var useRemoteData = true;		// DEFAULT: true (using Google Drive as remote storage)
+    var useRemoteData = true;		// DEFAULT: true (using Google Drive as remote storage).
     var maxSimSubLoad = 10;			// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
     var maxVidsPerRow = 9;			// DEFAULT: 9.
     var maxVidsPerSub = 36;			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
     var enlargeDelay = 500;			// DEFAULT: 500 (in ms).
+    var enlargeFactor = 1.4;        // Default: 1.4 (x * 320p).
     var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
-    var screenThreshold = 500;		// DEFAULT: 500.
+    var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
     var hideSeenVideos = false;
     var hideEmptySubs = true;
 
@@ -1643,45 +1646,44 @@ var GoogleAuth;
 
         css.innerHTML =
             // header
-            '#ytbsp-menuStrip { margin: 20px 9px; white-space: nowrap; display:flex; }' +
+            '#ytbsp-menuStrip { white-space: nowrap; padding: 10px 0px 20px 80px;}' +
             '#YTBSP input { vertical-align: text-top; }' +
 
             // overall list
-            '#ytbsp-subs { overflow: visible; margin: -30px 0 0 -30px; padding: 31px 0px 10px 30px; width: 1180px; box-shadow: none; ' +
-            'list-style-type: none;}' +
-            '.ytbsp-subscription { border: 1px solid ' + stdBorderColor + '; padding: 0 4px; margin-top: -1px; }' +
+            '#ytbsp-subs { overflow: visible; padding: 0px; width: fit-content; margin: auto; list-style-type: none;}' +
+            '.ytbsp-subscription { border-bottom: 1px solid ' + stdBorderColor + '; padding: 0 4px; border-top: 1px solid ' + stdBorderColor + '; margin-top: -1px;}' +
             '.ytbsp-subVids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
-            '.ytbsp-video-item { display: inline-block; width: 122px; height: 152px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
-            '.ytbsp-video-item .ytbsp-title { display: block; height: 2.3em; line-height: 1.2em; overflow: hidden; color: ' + stdFontColor + '; }' +
-            '.ytbsp-video-item p { color: ' + subtextColor + '; margin: 3px; }' +
+            '.ytbsp-video-item { display: inline-block; width: 160px; height: 180px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
+            '.ytbsp-video-item .ytbsp-title { display: block; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
+            '.ytbsp-video-item p { color: ' + subtextColor + '; margin: 3px; font-size: 1.2rem;}' +
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
-            '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute;}' +
-            '#YTBSP {margin-left: 240px; margin-top: 60px; zoom: 1.2;}' +
-            '#ytbsp-subs .ytbsp-title-large{ width: 316px; left: -103px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
+            '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
+            '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
+            '#ytbsp-subs .ytbsp-title-large{ width:' + (320 * enlargeFactor - 4) + 'px; left: ' + -((320 * enlargeFactor)/2 - 80) + 'px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
             'border-width: 0px 3px 3px 3px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px; top: -2px;}' +
 
             // image part
-            '.ytbsp-clip { position: relative; width: 124px; height: 70px; border: none; cursor: pointer; display: block;}' +
-            '.ytbsp-clip-large { z-index: 1; width: 320px; height: 180px; top: -45px; left: -100px; margin-bottom: -40px; border: none; }' +
+            '.ytbsp-clip { position: relative; width: 160px; height: 90px; border: none; cursor: pointer; display: block;}' +
+            '.ytbsp-clip-large { z-index: 1; width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; top: -45px; left:' + -((320 * enlargeFactor)/2 - 83) + 'px; margin-bottom: -40px; border: none; }' +
             '.ytbsp-x { position: absolute; z-index: 2; top: 2px; right: 2px; opacity: 0.6; width: 14px; height: 14px; ' +
             'line-height: 14px; text-align: center; background-color: #000; color: #fff; font-size: 12px; font-weight: bold; ' +
             'border-radius: 3px; -moz-border-radius: 3px; display: none; cursor: pointer;}' +
             '.ytbsp-video-item:hover .ytbsp-x { display: block; }' +
             '.ytbsp-x:hover { opacity: 1; }' +
-            '.ytbsp-thumb { display: block; position: absolute; height: 68px;  width: 121px; border: 1px solid rgb(115, 115, 114); }' +
-            '.ytbsp-thumb-large { width: 320px; height: 180px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
+            '.ytbsp-thumb { display: block; position: absolute; height: 90px;  width: 160px;}' +
+            '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
 
             // infos
-            '.ytbsp-seemarker { background-color: ' + altBgColor + '; color: ' + stdFontColor + '; border-radius: 1px;  padding: 1px 0px; ' +
-            'text-align: center; opacity: 0.6; border: 1px solid ' + stdBorderColor + '; cursor: pointer}' +
+            '.ytbsp-seemarker { background-color: transparent; color: ' + stdFontColor + '; padding: 1px 0px; text-align: center; opacity: 0.6; cursor: pointer}' +
             '.ytbsp-seemarker:hover { opacity: 1; }' +
             '.ytbsp-seemarker:active { opacity: 0.4; }' +
-            '.ytbsp-seemarker.seen { opacity: 1; }' +
+            '.ytbsp-seemarker.seen { opacity: 1;  font-weight: 500;}' +
             '.ytbsp-seemarker.seen:hover { opacity: 0.6; }' +
 
             // functionbuttons
-            '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: 1px solid ' + stdBorderColor + '; z-index: 1;' +
-            'background-color: ' + altBgColor + '; padding: 1px 10px; margin: 0px 2px; opacity: 0.6; font-size: 10px; outline: none; }' +
+            '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: none; z-index: 1;' +
+            'background-color: transparent; padding: 1px 10px; margin: 0px 2px; opacity: 0.6; font-size: 1.4rem; font-weight: 400;}' +
+            '#YTBSP label.ytbsp-func {padding-top: 3px;}' +
             '#YTBSP .ytbsp-func:hover { opacity: 1; }' +
             '#YTBSP .ytbsp-func:active { opacity: 0.4; }' +
             '#YTBSP .ytbsp-func input{ vertical-align: middle; margin: -2px 5px -1px 0px;}' +
@@ -1689,7 +1691,7 @@ var GoogleAuth;
             // loader
             '.ytbsp-loaderph { float: left; width: 16px; height: 16px; margin-right: 5px; ' +
             '-webkit-transition: width 0.2s; -moz-transition: width 0.2s; -o-transition: width 0.2s; }' +
-            '#ytbsp-loaderSpan { margin-left: -10px; width: 21px; margin-right: 1px;}' +
+            '#ytbsp-loaderSpan { width: 21px; margin-right: 1px; display: inline-block;}' +
             '#YTBSP #ytbsp-refresh {display: none; padding: 1px 3px;}' +
             '.ytbsp-loader { border: 3px solid #bbb; border-top: 3px solid #555; border-left: 3px solid #bbb; border-bottom: 3px solid #555; ' +
             'border-radius: 50%; width: 10px; height: 10px; animation: spin 1s linear infinite; -webkit-transition: opacity 0.2s; ' +
