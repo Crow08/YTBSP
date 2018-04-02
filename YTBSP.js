@@ -1052,9 +1052,9 @@ var GoogleAuth;
         function subShowMore() {
             self.showall = !self.showall;
             if(self.showall) {
-                $(".ytbsp-func.ytbsp-subShowMore", self.row).text("show less");
+                $(".ytbsp-func.ytbsp-subShowMore", self.row).text("Show less");
             } else {
-                $(".ytbsp-func.ytbsp-subShowMore", self.row).text("show more");
+                $(".ytbsp-func.ytbsp-subShowMore", self.row).text("Show more");
             }
             self.buildList();
         }
