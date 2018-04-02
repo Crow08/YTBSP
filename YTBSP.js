@@ -1426,7 +1426,16 @@ var GoogleAuth;
                         duration = moment.duration(response.items[0].contentDetails.duration);
                     } catch(e) {}
                     try {
-                        viewCount = response.items[0].statistics.viewCount + " Views";
+                        var count = parseInt(response.items[0].statistics.viewCount);
+                        if (count > 1000000) {
+                            viewCount = (Math.round(count / 1000000 * 10) / 10) + "M views"; // round to one decimal
+                        }
+                        else if (count > 10000) {
+                            viewCount = Math.round(count / 1000) + "K views";
+                        }
+                        else {
+                            viewCount = count + " views";
+                        }
                     } catch(e) {}
                     var time;
                     if(duration.hours() === 0) {
