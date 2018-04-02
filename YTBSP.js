@@ -1665,7 +1665,7 @@ var GoogleAuth;
             '.ytbsp-subscription { border-bottom: 1px solid ' + stdBorderColor + '; padding: 0 4px; border-top: 1px solid ' + stdBorderColor + '; margin-top: -1px;}' +
             '.ytbsp-subVids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
             '.ytbsp-video-item { display: inline-block; width: 160px; height: 165px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
-            '.ytbsp-video-item .ytbsp-title { display: block; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
+            '.ytbsp-video-item .ytbsp-title { display: block; margin-top: 5px; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
             '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
             '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
@@ -1684,9 +1684,9 @@ var GoogleAuth;
             '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
 
             // infos
-            '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 10px 0px 0px 0px; font-size: 1.2rem; }' +            
+            '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 5px 0px 0px 0px; font-size: 1.2rem; }' +            
             '.ytbsp-views:after { content: "•"; margin: 0 4px; }' +            
-            '.ytbsp-seemarker { font-size: 1.2rem; background-color: transparent; color: ' + subtextColor + '; padding: 1px 0px; margin-top: 5px; text-align: center; opacity: 0.88; cursor: pointer; display: block; }' +
+            '.ytbsp-seemarker { font-size: 1.2rem; background-color: transparent; color: ' + subtextColor + '; padding: 1px 0px; margin: 5px 0px 0px 0px; text-align: center; opacity: 0.88; cursor: pointer; display: block; }' +
             '.ytbsp-seemarker:hover { opacity: 1; }' +
             '.ytbsp-seemarker:active { opacity: 0.4; }' +
             '.ytbsp-seemarker.seen { opacity: 1;  font-weight: 500; background-color: #474747; }' +
