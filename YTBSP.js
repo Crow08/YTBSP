@@ -1453,9 +1453,9 @@ var GoogleAuth;
                                 .append($("<input/>", {"class": "ytbsp-thumb-large-url", "type": "hidden"}))
                                );
             this.thumbLi.append($("<a/>", {href: "/watch?v=" + this.vid, "class": "ytbsp-title", "data-vid": this.vid}));
-            this.thumbLi.append($("<p/>", {"class": "ytbsp-seemarker" + (this.isSeen() ? " seen" : ""), html: (this.isSeen() ? "already seen" : "mark as seen")}));
             this.thumbLi.append($("<p/>", {"class": "ytbsp-views"}));
             this.thumbLi.append($("<p/>", {"class": "ytbsp-uploaded"}));
+            this.thumbLi.append($("<p/>", {"class": "ytbsp-seemarker" + (this.isSeen() ? " seen" : ""), html: (this.isSeen() ? "already seen" : "mark as seen")}));
 
             $(".ytbsp-clip, .ytbsp-title, .ytbsp-x", this.thumbLi).click(function(event){
                 event.preventDefault();
@@ -1639,6 +1639,7 @@ var GoogleAuth;
 
         var stdFontColor = dark ? "#e1e1e1" : "#111111";
         var subtextColor = dark ? "#ffffffff" : "#141414";
+        var viewsAndUploadedInfoColor = dark ? "#888888" : "#11111199";
         var stdBorderColor = dark ? "#2c2c2c" : "#e2e2e2";
         var altBorderColor = dark ? "#737373" : "#737373";
         var stdBgColor = dark ? "#141414" : "#F9F9F9";
@@ -1654,9 +1655,8 @@ var GoogleAuth;
             '#ytbsp-subs { overflow: visible; padding: 0px; width: fit-content; margin: auto; list-style-type: none; min-width:' + maxVidsPerRow * 168 + 'px;}' +
             '.ytbsp-subscription { border-bottom: 1px solid ' + stdBorderColor + '; padding: 0 4px; border-top: 1px solid ' + stdBorderColor + '; margin-top: -1px;}' +
             '.ytbsp-subVids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
-            '.ytbsp-video-item { display: inline-block; width: 160px; height: 180px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
+            '.ytbsp-video-item { display: inline-block; width: 160px; height: 165px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
             '.ytbsp-video-item .ytbsp-title { display: block; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
-            '.ytbsp-video-item p { color: ' + subtextColor + '; margin: 3px; font-size: 1.2rem;}' +
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
             '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
             '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
@@ -1675,10 +1675,12 @@ var GoogleAuth;
             '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
 
             // infos
-            '.ytbsp-seemarker { background-color: transparent; color: ' + stdFontColor + '; padding: 1px 0px; text-align: center; opacity: 0.6; cursor: pointer}' +
+            '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 10px 0px 0px 0px; font-size: 1.2rem; }' +            
+            '.ytbsp-views:after { content: "•"; margin: 0 4px; }' +            
+            '.ytbsp-seemarker { font-size: 1.2rem; background-color: transparent; color: ' + subtextColor + '; padding: 1px 0px; margin-top: 5px; text-align: center; opacity: 0.88; cursor: pointer; display: block; }' +
             '.ytbsp-seemarker:hover { opacity: 1; }' +
             '.ytbsp-seemarker:active { opacity: 0.4; }' +
-            '.ytbsp-seemarker.seen { opacity: 1;  font-weight: 500;}' +
+            '.ytbsp-seemarker.seen { opacity: 1;  font-weight: 500; background-color: #474747; }' +
             '.ytbsp-seemarker.seen:hover { opacity: 0.6; }' +
 
             // functionbuttons
