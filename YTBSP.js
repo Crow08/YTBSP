@@ -659,10 +659,10 @@ var GoogleAuth;
                      .append(getLoader("ytbsp-main-loader"))
                      .append($("<button/>", {id: "ytbsp-refresh", "class": "ytbsp-func", html:"&#x27F3;"}))
                     );
-    menuStrip.append($("<button/>", {id: "ytbsp-togglePage", "class": "ytbsp-func", html:"toggle YTBSP"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"remove all videos"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"reset all videos"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", html:"backup video info"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-togglePage", "class": "ytbsp-func", html:"Toggle YTBSP"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Remove all videos"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Reset all videos"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Backup video info"}));
     menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
                      .append($("<input/>", {id: "ytbsp-hideSeenVideosCb", type: "checkbox", checked: hideSeenVideos}))
                      .append("Hide seen videos")
@@ -923,7 +923,8 @@ var GoogleAuth;
         settingsDialog.append(settingsTable);
 
         var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"});
-        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "close", on: { click: closeModal }}));
+        endDiv.append($("<a/>",{html:"https://github.com/Crow08/YTBSP", href:"https://github.com/Crow08/YTBSP", target:"_blank", "class": "ytbsp-func", style:"font-size: 1rem;"}));
+        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}));
 
         var saveSettings = function() {
             loadingProgress(1);
@@ -946,7 +947,7 @@ var GoogleAuth;
                 }, 200);
             });
         };
-        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "save settings", on: { click: saveSettings }}));
+        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
         settingsDialog.append(endDiv);
         openModal(settingsDialog);
     }
@@ -990,10 +991,10 @@ var GoogleAuth;
         var subMenuStrip = $("<div/>",{"class":"ytbsp-subMenuStrip"});
 
         subMenuStrip.append($("<div/>",{css: {"float": "right"}})
-                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subRemoveAllVideos", html: "remove all"}))
-                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subResetAllVideos", html: "reset all"}))
-                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subSeenAllVideos", html: "mark all as seen"}))
-                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subShowMore", html: "show more"}))
+                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subRemoveAllVideos", html: "Remove all"}))
+                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subResetAllVideos", html: "Reset all"}))
+                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subSeenAllVideos", html: "Mark all as seen"}))
+                            .append($("<button/>",{"class": "ytbsp-func ytbsp-subShowMore", html: "Show more"}))
                            );
         subMenuStrip.append($("<div/>",{"class": "ytbsp-loaderph"})
                             .append(getLoader("loader_" + this.id)));
@@ -1637,7 +1638,7 @@ var GoogleAuth;
             (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
 
         var stdFontColor = dark ? "#e1e1e1" : "#111111";
-        var subtextColor = dark ? "#BDBDBD" : "#141414";
+        var subtextColor = dark ? "#ffffffe0" : "#141414";
         var stdBorderColor = dark ? "#2c2c2c" : "#e2e2e2";
         var altBorderColor = dark ? "#737373" : "#737373";
         var stdBgColor = dark ? "#141414" : "#F9F9F9";
@@ -1682,7 +1683,7 @@ var GoogleAuth;
 
             // functionbuttons
             '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: none; z-index: 1;' +
-            'background-color: transparent; padding: 1px 10px; margin: 0px 2px; opacity: 0.6; font-size: 1.4rem; font-weight: 400;}' +
+            'background-color: transparent; padding: 1px 10px; margin: 0px 2px; font-size: 1.4rem; font-weight: 400; font-family: Roboto, Noto, sans-serif;}' +
             '#YTBSP label.ytbsp-func {padding-top: 3px;}' +
             '#YTBSP .ytbsp-func:hover { opacity: 1; }' +
             '#YTBSP .ytbsp-func:active { opacity: 0.4; }' +
@@ -1714,7 +1715,7 @@ var GoogleAuth;
             '#ytbsp-modal-content { margin: 0 auto; width: 600px; min-height: 20px; margin-top: 30px; padding: 10px; background: ' + altBgColor + '; ' +
             ' position: sticky; top: 60px; -moz-border-radius: 3px; border-radius: 3px; box-shadow: 0 5px 20px rgba(0,0,0,.4); }' +
             '#ytbsp-modal-content textarea { width: 595px; height: 400px; resize: none; margin: 20px 0; }' +
-            '#ytbsp-modal-content p, h1, h2 {color:' + stdFontColor + '; }' +
+            '#ytbsp-modal-content p, h1, h2 {color:' + stdFontColor + '; font-weight: 400;}' +
             '#ytbsp-modal-content h2 {display: inline-block; }' +
             '#ytbsp-modal-end-div { display: inline-block; width: 100%; }' +
             '#ytbsp-modal-end-div input{ float: right; }' +
