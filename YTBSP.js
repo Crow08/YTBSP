@@ -1638,7 +1638,7 @@ var GoogleAuth;
             (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
 
         var stdFontColor = dark ? "#e1e1e1" : "#111111";
-        var subtextColor = dark ? "#ffffffe0" : "#141414";
+        var subtextColor = dark ? "#ffffffff" : "#141414";
         var stdBorderColor = dark ? "#2c2c2c" : "#e2e2e2";
         var altBorderColor = dark ? "#737373" : "#737373";
         var stdBgColor = dark ? "#141414" : "#F9F9F9";
@@ -1682,11 +1682,12 @@ var GoogleAuth;
             '.ytbsp-seemarker.seen:hover { opacity: 0.6; }' +
 
             // functionbuttons
-            '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: none; z-index: 1;' +
+            '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: none; z-index: 1; opacity: 0.88;' +
             'background-color: transparent; padding: 1px 10px; margin: 0px 2px; font-size: 1.4rem; font-weight: 400; font-family: Roboto, Noto, sans-serif;}' +
             '#YTBSP label.ytbsp-func {padding-top: 3px;}' +
             '#YTBSP .ytbsp-func:hover { opacity: 1; }' +
-            '#YTBSP .ytbsp-func:active { opacity: 0.4; }' +
+            '#YTBSP .ytbsp-func:active { opacity: 0.6; }' +
+            '#YTBSP .ytbsp-func:focus { outline-style: none; }' +
             '#YTBSP .ytbsp-func input{ vertical-align: middle; margin: -2px 5px -1px 0px;}' +
 
             // loader
