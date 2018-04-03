@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.2
+// @version      1.3.3
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -1657,7 +1657,7 @@ var GoogleAuth;
 
         css.innerHTML =
             // header
-            '#ytbsp-menuStrip { white-space: nowrap; padding: 10px 0px 20px 80px;}' +
+            '#ytbsp-menuStrip { white-space: nowrap; padding: 10px 0px 20px 80px; display: flex;}' +
             '#YTBSP input { vertical-align: text-top; }' +
 
             // overall list
@@ -1684,8 +1684,8 @@ var GoogleAuth;
             '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
 
             // infos
-            '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 5px 0px 0px 0px; font-size: 1.2rem; }' +            
-            '.ytbsp-views:after { content: "•"; margin: 0 4px; }' +            
+            '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 5px 0px 0px 0px; font-size: 1.2rem; }' +
+            '.ytbsp-views:after { content: "•"; margin: 0 4px; }' +
             '.ytbsp-seemarker { font-size: 1.2rem; background-color: transparent; color: ' + subtextColor + '; padding: 1px 0px; margin: 5px 0px 0px 0px; text-align: center; opacity: 0.88; cursor: pointer; display: block; }' +
             '.ytbsp-seemarker:hover { opacity: 1; }' +
             '.ytbsp-seemarker:active { opacity: 0.4; }' +
