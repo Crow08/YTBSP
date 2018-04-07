@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.3
+// @version      1.3.4
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -66,6 +66,62 @@ var GoogleAuth;
     var corruptCache = false;
     var cachedVideoinformation = [];
     var remoteSaveFileID = null;
+
+    // Variables for inView check.
+    var lastScroll = Date.now(); // The last time the page was moved or resized.
+    var screenTop = 0;
+    var screenBottom = screenTop + window.innerHeight;
+
+    // Start page is YTBSP.
+    var isNative = false;
+
+    // Universal loader as resource.
+    // TODO: Create loaders with function.
+    const LOADER = '<div class="ytbsp-loader"></div>';
+    function getLoader(id){
+        var loader = $("<div/>", {"class": "ytbsp-loader"});
+        return loader;
+    }
+
+    // Make slider as resource.
+    function getSlider(id, checked, onChange){
+        var slider = $("<label/>",{"class": "ytbsp-slider"});
+        slider.append($("<input/>", {"class": "ytbsp-slider-cb", "type": "checkbox", "id": id, "checked": checked, on: { change: onChange } }));
+        slider.append($("<div/>", {"class": "ytbsp-slider-rail"}));
+        slider.append($("<div/>", {"class": "ytbsp-slider-knob"}));
+        return slider;
+    }
+
+    // Let's build the new site:
+
+    // Create an div for us.
+    var maindiv = $("<div/>",{id: "YTBSP"});
+    var menuStrip = $("<div/>",{id: "ytbsp-menuStrip"});
+    menuStrip.append($("<div/>", {id: "ytbsp-loaderSpan"})
+                     .append(getLoader("ytbsp-main-loader"))
+                     .append($("<button/>", {id: "ytbsp-refresh", "class": "ytbsp-func", html:"&#x27F3;"}))
+                    );
+    menuStrip.append($("<button/>", {id: "ytbsp-togglePage", "class": "ytbsp-func", html:"Toggle YTBSP"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Remove all videos"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Reset all videos"}));
+    menuStrip.append($("<button/>", {id: "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Backup video info"}));
+    menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
+                     .append($("<input/>", {id: "ytbsp-hideSeenVideosCb", type: "checkbox", checked: hideSeenVideos}))
+                     .append("Hide seen videos")
+                    );
+    menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
+                     .append($("<input/>", {id: "ytbsp-hideEmptySubsCb", type: "checkbox", checked: hideEmptySubs}))
+                     .append("Hide empty subs")
+                    );
+    menuStrip.append($("<button/>", {id: "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative", html:"&#x2699;"}));
+    maindiv.append(menuStrip);
+    maindiv.append($("<ul/>", {id: "ytbsp-subs"}));
+    maindiv.append($("<div/>", {id: "ytbsp-modal"})
+                   .append($("<div/>", {id: "ytbsp-modal-content"}))
+                  );
+
+    // Save a reference for the subList.
+    var subList = $("#ytbsp-subs", maindiv);
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Start OAuth Stuff
@@ -624,62 +680,6 @@ var GoogleAuth;
         });
         loadingProgress(-1, true);
     }
-
-    // Variables for inView check.
-    var lastScroll = Date.now(); // The last time the page was moved or resized.
-    var screenTop = 0;
-    var screenBottom = screenTop + window.innerHeight;
-
-    // Start page is YTBSP.
-    var isNative = false;
-
-    // Universal loader as resource.
-    // TODO: Create loaders with function.
-    const LOADER = '<div class="ytbsp-loader"></div>';
-    function getLoader(id){
-        var loader = $("<div/>", {"class": "ytbsp-loader"});
-        return loader;
-    }
-
-    // Make slider as resource.
-    function getSlider(id, checked, onChange){
-        var slider = $("<label/>",{"class": "ytbsp-slider"});
-        slider.append($("<input/>", {"class": "ytbsp-slider-cb", "type": "checkbox", "id": id, "checked": checked, on: { change: onChange } }));
-        slider.append($("<div/>", {"class": "ytbsp-slider-rail"}));
-        slider.append($("<div/>", {"class": "ytbsp-slider-knob"}));
-        return slider;
-    }
-
-    // Let's build the new site:
-
-    // Create an div for us.
-    var maindiv = $("<div/>",{id: "YTBSP"});
-    var menuStrip = $("<div/>",{id: "ytbsp-menuStrip"});
-    menuStrip.append($("<div/>", {id: "ytbsp-loaderSpan"})
-                     .append(getLoader("ytbsp-main-loader"))
-                     .append($("<button/>", {id: "ytbsp-refresh", "class": "ytbsp-func", html:"&#x27F3;"}))
-                    );
-    menuStrip.append($("<button/>", {id: "ytbsp-togglePage", "class": "ytbsp-func", html:"Toggle YTBSP"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Remove all videos"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Reset all videos"}));
-    menuStrip.append($("<button/>", {id: "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", html:"Backup video info"}));
-    menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
-                     .append($("<input/>", {id: "ytbsp-hideSeenVideosCb", type: "checkbox", checked: hideSeenVideos}))
-                     .append("Hide seen videos")
-                    );
-    menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
-                     .append($("<input/>", {id: "ytbsp-hideEmptySubsCb", type: "checkbox", checked: hideEmptySubs}))
-                     .append("Hide empty subs")
-                    );
-    menuStrip.append($("<button/>", {id: "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative", html:"&#x2699;"}));
-    maindiv.append(menuStrip);
-    maindiv.append($("<ul/>", {id: "ytbsp-subs"}));
-    maindiv.append($("<div/>", {id: "ytbsp-modal"})
-                   .append($("<div/>", {id: "ytbsp-modal-content"}))
-                  );
-
-    // Save a reference for the subList.
-    var subList = $("#ytbsp-subs", maindiv);
 
     // Set functions affecting all subs:
     // Set click event for refresh button, updating all videos for all subs.
@@ -1665,7 +1665,7 @@ var GoogleAuth;
             '.ytbsp-subscription { border-bottom: 1px solid ' + stdBorderColor + '; padding: 0 4px; border-top: 1px solid ' + stdBorderColor + '; margin-top: -1px;}' +
             '.ytbsp-subVids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
             '.ytbsp-video-item { display: inline-block; width: 160px; height: 165px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
-            '.ytbsp-video-item .ytbsp-title { display: block; margin-top: 5px; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
+            '.ytbsp-video-item .ytbsp-title { display: block; padding-top: 5px; height: 3.2rem; overflow: hidden; color: ' + stdFontColor + '; text-decoration: none; font-size: 1.4rem; line-height: 1.6rem; font-weight: 500;}' +
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
             '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
             '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
