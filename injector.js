@@ -1,0 +1,16 @@
+var s = document.createElement('script');
+s.async = false;
+s.src = chrome.extension.getURL('lib/api.js');
+(document.head||document.documentElement).appendChild(s);
+s = document.createElement('script');
+s.async = false;
+s.src = chrome.extension.getURL('lib/jquery.slim.min.js');
+(document.head||document.documentElement).appendChild(s);
+s = document.createElement('script');
+s.async = false;
+s.src = chrome.extension.getURL('lib/moment.min.js');
+(document.head||document.documentElement).appendChild(s);
+s = document.createElement('script');
+s.async = false;
+s.src = chrome.extension.getURL('YTBSP.js');
+(document.head||document.documentElement).appendChild(s);
