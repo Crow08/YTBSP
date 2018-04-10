@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.4
+// @version      1.3.5
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -128,6 +128,8 @@ var GoogleAuth;
 
     gapi.load('client:auth2', initClient);
 
+	var retryInit = 5; // Retry limit for client init with oauth.
+	
     // OAuth init
     function initClient() {
         // Initialize the gapi.client object, which app uses to make API requests.
@@ -136,12 +138,26 @@ var GoogleAuth;
             'discoveryDocs': DISCOVERYDOCS,
             'scope': SCOPE
         }).then(function() {
+			if(retryInit <= 0){
+				return;
+			}
+			retryInit = 0;
             GoogleAuth = gapi.auth2.getAuthInstance();
             // Handle initial sign-in state. (Determine if user is already signed in.)
             setSigninStatus();
         }, function(reason) {
+			if(retryInit <= 0){
+				return;
+			}
+			retryInit = 0;
             console.error("Google API client initialization failed:\n" + reason);
         });
+		setTimeout(function(){
+			if(--retryInit <= 0){
+				return;
+			}
+			initClient(); // retry with timeout because youtube can reset gapi and the promise never returns.
+		}, 1000);
     }
 
     // OAuth signin.
@@ -1889,5 +1905,7 @@ var GoogleAuth;
         $(YT_STARTPAGE_BODY).hide();
         setHrefObserver();
         handlePageChange();
+		// Remove css class from MA.
+		$("html").removeClass("m0");
     });
 })(window.unsafeWindow || window);
