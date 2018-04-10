@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.4
+// @version      1.3.5
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -1905,5 +1905,7 @@ var GoogleAuth;
         $(YT_STARTPAGE_BODY).hide();
         setHrefObserver();
         handlePageChange();
+		// Remove css class from MA.
+		$("html").removeClass("m0");
     });
 })(window.unsafeWindow || window);

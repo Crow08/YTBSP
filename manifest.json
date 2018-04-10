@@ -2,8 +2,8 @@
   "manifest_version": 2,
 
   "name": "YTBSP",
-  "description": "This extension allows the user to change the background color of the current page.",
-  "version": "1.2.0",
+  "description": "Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.",
+  "version": "1.3.5",
 
   "browser_action": {
     "default_icon": "icon.png",
