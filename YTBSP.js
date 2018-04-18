@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.5
+// @version      1.3.6
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -44,6 +44,7 @@ var GoogleAuth;
     var enlargeFactor = 1.4;        // Default: 1.4 (x * 320p).
     var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
     var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
+    var autoPauseVideo = true;
     var hideSeenVideos = false;
     var hideEmptySubs = true;
 
@@ -129,7 +130,7 @@ var GoogleAuth;
     gapi.load('client:auth2', initClient);
 
 	var retryInit = 5; // Retry limit for client init with oauth.
-	
+
     // OAuth init
     function initClient() {
         // Initialize the gapi.client object, which app uses to make API requests.
@@ -1800,7 +1801,10 @@ var GoogleAuth;
 
     markAsSeenTimeout = null;
 
+    var autoPauseThisVideo = autoPauseVideo;
+
     function handlePageChange(){
+        autoPauseThisVideo = autoPauseVideo;
         clearTimeout(markAsSeenTimeout);
         toggleGuide = false;
         // forces some images to reload...
@@ -1908,4 +1912,15 @@ var GoogleAuth;
 		// Remove css class from MA.
 		$("html").removeClass("m0");
     });
+
+    var defaultPlayFunction = HTMLMediaElement.prototype.play;
+	HTMLMediaElement.prototype.play = function () {
+		if (autoPauseThisVideo) {
+            autoPauseThisVideo = false;
+			var player = this.parentElement.parentElement;
+			player && player.pauseVideo()
+		}else{
+            defaultPlayFunction.call(this);
+        }
+	};
 })(window.unsafeWindow || window);
