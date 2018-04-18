@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.6
+// @version      1.3.7
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -44,6 +44,7 @@ var GoogleAuth;
     var enlargeFactor = 1.4;        // Default: 1.4 (x * 320p).
     var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
     var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
+	var playerQuality = 'hd1080'
     var autoPauseVideo = true;
     var hideSeenVideos = false;
     var hideEmptySubs = true;
@@ -61,6 +62,7 @@ var GoogleAuth;
     const YT_CHANNELLINK = "#owner-name > a";
     const YT_CONTENT = "#content";
     const YT_GUIDE = "app-drawer#guide";
+	const YT_PLAYER_QUALITY = "yt-player-quality";
     // MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
@@ -1923,4 +1925,6 @@ var GoogleAuth;
             defaultPlayFunction.call(this);
         }
 	};
+
+    localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
 })(window.unsafeWindow || window);
