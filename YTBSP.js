@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.7
+// @version      1.3.8
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -41,11 +41,12 @@ var GoogleAuth;
     var maxVidsPerRow = 9;			// DEFAULT: 9.
     var maxVidsPerSub = 36;			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
     var enlargeDelay = 500;			// DEFAULT: 500 (in ms).
-    var enlargeFactor = 1.4;        // Default: 1.4 (x * 320p).
+    var enlargeFactor = 1.4;        // DEFAULT: 1.4 (x * 320p).
+    var enlargeFactorNative = 2.0;  // DEFAULT: 2.0.
     var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
     var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
 	var playerQuality = 'hd1080'
-    var autoPauseVideo = true;
+    var autoPauseVideo = false;
     var hideSeenVideos = false;
     var hideEmptySubs = true;
 
@@ -1927,4 +1928,19 @@ var GoogleAuth;
 	};
 
     localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
+
+    function addThumbnailEnlargeCss(){
+        var css = document.createElement("style");
+        css.type = "text/css";
+        css.id="ytbsp-css";
+        css.innerHTML =
+            'ytd-thumbnail:hover { transform: scale(' + enlargeFactorNative + '); border: solid 2px rgb(115,115,114); padding: 0px; z-index: 2; }' +
+            'ytd-thumbnail { padding: 2px; }' +
+            '#video-title { width: 200px; }' +
+            '#scroll-container.yt-horizontal-list-renderer { overflow: visible; }';
+        document.head.appendChild(css);
+    }
+
+    addThumbnailEnlargeCss();
+
 })(window.unsafeWindow || window);
