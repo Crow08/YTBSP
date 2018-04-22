@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.8
+// @version      1.3.9
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -45,8 +45,8 @@ var GoogleAuth;
     var enlargeFactorNative = 2.0;  // DEFAULT: 2.0.
     var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
     var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
-	var playerQuality = 'hd1080'
-    var autoPauseVideo = false;
+	var playerQuality = 'hd1080';
+    var autoPauseVideo = true;
     var hideSeenVideos = false;
     var hideEmptySubs = true;
 
@@ -1655,10 +1655,6 @@ var GoogleAuth;
     }
 
     function addYTBSPStyleSheet() {
-        var css = document.createElement("style");
-        css.type = "text/css";
-        css.id="ytbsp-css";
-
         // Check if we got a dark theme.
         var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
         var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
@@ -1674,6 +1670,9 @@ var GoogleAuth;
         var stdBgColor = dark ? "#141414" : "#F9F9F9";
         var altBgColor = dark ? "#252525" : "#f5f5f5";
 
+		var css = document.createElement("style");
+        css.type = "text/css";
+        css.id="ytbsp-css";
 
         css.innerHTML =
             // header
@@ -1689,19 +1688,19 @@ var GoogleAuth;
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
             '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
             '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
-            '#ytbsp-subs .ytbsp-title-large{ width:' + (320 * enlargeFactor - 4) + 'px; left: ' + -((320 * enlargeFactor)/2 - 80) + 'px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
-            'border-width: 0px 3px 3px 3px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px; top: -2px;}' +
+            '#ytbsp-subs .ytbsp-title-large{ width:' + (320 * enlargeFactor - 4) + 'px; left: ' + -((320 * enlargeFactor)/2 - 82) + 'px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
+            'border-width: 0px 2px 2px 2px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px;}' +
 
             // image part
             '.ytbsp-clip { position: relative; width: 160px; height: 90px; border: none; cursor: pointer; display: block;}' +
-            '.ytbsp-clip-large { z-index: 1; width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; top: -45px; left:' + -((320 * enlargeFactor)/2 - 83) + 'px; margin-bottom: -40px; border: none; }' +
-            '.ytbsp-x { position: absolute; z-index: 2; top: 2px; right: 2px; opacity: 0.6; width: 14px; height: 14px; ' +
-            'line-height: 14px; text-align: center; background-color: #000; color: #fff; font-size: 12px; font-weight: bold; ' +
+            '.ytbsp-clip-large { z-index: 1; width:' + (320 * enlargeFactor + 4) + 'px; height:' + (180 * enlargeFactor + 4) + 'px; top: -45px; left:' + -((320 * enlargeFactor)/2 - 82) + 'px; margin-bottom: -44px; border: none; }' +
+            '.ytbsp-x { position: absolute; z-index: 2; top: 2%; right: 1%; opacity: 0.6; width: 17px; height: 17px; ' +
+            'line-height: 16px; text-align: center; background-color: #000; color: #fff; font-size: 15px; font-weight: bold; ' +
             'border-radius: 3px; -moz-border-radius: 3px; display: none; cursor: pointer;}' +
             '.ytbsp-video-item:hover .ytbsp-x { display: block; }' +
             '.ytbsp-x:hover { opacity: 1; }' +
             '.ytbsp-thumb { display: block; position: absolute; height: 90px;  width: 160px;}' +
-            '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 3px solid ' + altBorderColor + '; top: -3px; left: -3px;}' +
+            '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 2px solid ' + altBorderColor + '; top: 1px;}' +
 
             // infos
             '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 5px 0px 0px 0px; font-size: 1.2rem; }' +
@@ -1807,7 +1806,11 @@ var GoogleAuth;
     var autoPauseThisVideo = autoPauseVideo;
 
     function handlePageChange(){
-        autoPauseThisVideo = autoPauseVideo;
+		if(/.*watch\?.+list=.+/.test(location)){
+            autoPauseThisVideo = false;
+		}else{
+			autoPauseThisVideo = autoPauseVideo;
+		}
         clearTimeout(markAsSeenTimeout);
         toggleGuide = false;
         // forces some images to reload...
@@ -1921,7 +1924,9 @@ var GoogleAuth;
 		if (autoPauseThisVideo) {
             autoPauseThisVideo = false;
 			var player = this.parentElement.parentElement;
-			player && player.pauseVideo()
+			if(player){
+                player.pauseVideo();
+            }
 		}else{
             defaultPlayFunction.call(this);
         }
@@ -1930,12 +1935,21 @@ var GoogleAuth;
     localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
 
     function addThumbnailEnlargeCss(){
+		// Check if we got a dark theme.
+        var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var dark = document.documentElement.getAttribute("dark");
+        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384) ||
+            (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
+
+        var altBorderColor = dark ? "#737373" : "#737373";
+
         var css = document.createElement("style");
         css.type = "text/css";
         css.id="ytbsp-css";
         css.innerHTML =
-            'ytd-thumbnail:hover { transform: scale(' + enlargeFactorNative + '); border: solid 2px rgb(115,115,114); padding: 0px; z-index: 2; }' +
-            'ytd-thumbnail { padding: 2px; }' +
+            'ytd-thumbnail:hover { transform: scale(' + enlargeFactorNative + '); border: solid ' + enlargeFactorNative / 2.0 + 'px ' + altBorderColor + '; padding: 0px; z-index: 2; }' +
+            'ytd-thumbnail { padding: ' + enlargeFactorNative / 2.0 + 'px }' +
             '#video-title { width: 200px; }' +
             '#scroll-container.yt-horizontal-list-renderer { overflow: visible; }';
         document.head.appendChild(css);
