@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.9
+// @version      1.3.10
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -1680,7 +1680,7 @@ var GoogleAuth;
             '#YTBSP input { vertical-align: text-top; }' +
 
             // overall list
-            '#ytbsp-subs { overflow: visible; padding: 0px; width: fit-content; margin: auto; list-style-type: none; min-width:' + maxVidsPerRow * 168 + 'px;}' +
+            '#ytbsp-subs { overflow: visible; padding: 0px; width: fit-content; margin: auto; list-style-type: none; min-width:' + maxVidsPerRow * 168 + 'px; margin-bottom: 100px;}' +
             '.ytbsp-subscription { border-bottom: 1px solid ' + stdBorderColor + '; padding: 0 4px; border-top: 1px solid ' + stdBorderColor + '; margin-top: -1px;}' +
             '.ytbsp-subVids { padding: 0px; margin: 10px 0; -webkit-transition: height 5s; -moz-transition: height 5s; -o-transition: height 5s; }' +
             '.ytbsp-video-item { display: inline-block; width: 160px; height: 165px; padding: 0 4px; overflow: visible; vertical-align: top; }' +
