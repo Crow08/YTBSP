@@ -35,18 +35,29 @@ var moment = this.moment;
 var GoogleAuth;
 
 (function(unsafeWindow) {
+    var resolutions = {'Ultra' : 'highres',
+                       '2880p' : 'hd2880',
+                       '2160p' : 'hd2160',
+                       '1440p' : 'hd1440',
+                       '1080p' : 'hd1080',
+                       '720p' : 'hd720',
+                       '480p' : 'large',
+                       '360p' : 'medium',
+                       '240p' : 'small',
+                       '144p' : 'tiny'};
+
     // Config:
-    var useRemoteData = true;		// DEFAULT: true (using Google Drive as remote storage).
-    var maxSimSubLoad = 10;			// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
-    var maxVidsPerRow = 9;			// DEFAULT: 9.
-    var maxVidsPerSub = 36;			// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
-    var enlargeDelay = 500;			// DEFAULT: 500 (in ms).
-    var enlargeFactor = 1.4;        // DEFAULT: 1.4 (x * 320p).
-    var enlargeFactorNative = 2.0;  // DEFAULT: 2.0.
-    var timeToMarkAsSeen = 10;		// DEFAILT: 10 (in s).
-    var screenThreshold = 500;		// DEFAULT: 500 (preload images beyond current screen region in px).
-	var playerQuality = 'hd1080';
-    var autoPauseVideo = true;
+    var useRemoteData = true;					// DEFAULT: true (using Google Drive as remote storage).
+    var maxSimSubLoad = 10;						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
+    var maxVidsPerRow = 9;						// DEFAULT: 9.
+    var maxVidsPerSub = 36;						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
+    var enlargeDelay = 500;						// DEFAULT: 500 (in ms).
+    var enlargeFactor = 1.4;					// DEFAULT: 1.4 (x * 320p).
+    var enlargeFactorNative = 2.0;				// DEFAULT: 2.0.
+    var timeToMarkAsSeen = 10;					// DEFAILT: 10 (in s).
+    var screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
+    var playerQuality = resolutions['1080p'];	// DEFAULT: hd1080 (resolutions['1080p'])
+    var autoPauseVideo = false;
     var hideSeenVideos = false;
     var hideEmptySubs = true;
 
@@ -63,7 +74,7 @@ var GoogleAuth;
     const YT_CHANNELLINK = "#owner-name > a";
     const YT_CONTENT = "#content";
     const YT_GUIDE = "app-drawer#guide";
-	const YT_PLAYER_QUALITY = "yt-player-quality";
+    const YT_PLAYER_QUALITY = "yt-player-quality";
     // MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
@@ -132,7 +143,7 @@ var GoogleAuth;
 
     gapi.load('client:auth2', initClient);
 
-	var retryInit = 5; // Retry limit for client init with oauth.
+    var retryInit = 5; // Retry limit for client init with oauth.
 
     // OAuth init
     function initClient() {
@@ -142,26 +153,26 @@ var GoogleAuth;
             'discoveryDocs': DISCOVERYDOCS,
             'scope': SCOPE
         }).then(function() {
-			if(retryInit <= 0){
-				return;
-			}
-			retryInit = 0;
+            if(retryInit <= 0){
+                return;
+            }
+            retryInit = 0;
             GoogleAuth = gapi.auth2.getAuthInstance();
             // Handle initial sign-in state. (Determine if user is already signed in.)
             setSigninStatus();
         }, function(reason) {
-			if(retryInit <= 0){
-				return;
-			}
-			retryInit = 0;
+            if(retryInit <= 0){
+                return;
+            }
+            retryInit = 0;
             console.error("Google API client initialization failed:\n" + reason);
         });
-		setTimeout(function(){
-			if(--retryInit <= 0){
-				return;
-			}
-			initClient(); // retry with timeout because youtube can reset gapi and the promise never returns.
-		}, 1000);
+        setTimeout(function(){
+            if(--retryInit <= 0){
+                return;
+            }
+            initClient(); // retry with timeout because youtube can reset gapi and the promise never returns.
+        }, 1000);
     }
 
     // OAuth signin.
@@ -360,7 +371,7 @@ var GoogleAuth;
         return new Promise(function(resolve, reject){
             useRemoteData = localStorage.getItem("YTBSP_useRemoteData") !== "0";
             hideSeenVideos = localStorage.getItem("YTBSP_hideSeenVideos") !== "0";
-            hideEmptySubs = localStorage.getItem("YTBSP_hideEmptySubs")  !== "0";
+            hideEmptySubs = localStorage.getItem("YTBSP_hideEmptySubs") !== "0";
             maxSimSubLoad = localStorage.getItem("YTBSP_maxSimSubLoad");
             maxVidsPerRow = localStorage.getItem("YTBSP_maxVidsPerRow");
             maxVidsPerSub = localStorage.getItem("YTBSP_maxVidsPerSub");
@@ -576,8 +587,8 @@ var GoogleAuth;
 
                 var contentType = 'text/plain' || 'application/octet-stream';
                 // Updating the metadata is optional and you can instead use the value from drive.files.get.
-                var base64Data =  btoa(encodeURIComponent(contentString).replace(/%([0-9A-F]{2})/g,
-                                                                                 function toSolidBytes(match, p1) {
+                var base64Data = btoa(encodeURIComponent(contentString).replace(/%([0-9A-F]{2})/g,
+                                                                                function toSolidBytes(match, p1) {
                     return String.fromCharCode('0x' + p1);
                 }));
                 var multipartRequestBody =
@@ -1670,7 +1681,7 @@ var GoogleAuth;
         var stdBgColor = dark ? "#141414" : "#F9F9F9";
         var altBgColor = dark ? "#252525" : "#f5f5f5";
 
-		var css = document.createElement("style");
+        var css = document.createElement("style");
         css.type = "text/css";
         css.id="ytbsp-css";
 
@@ -1801,16 +1812,16 @@ var GoogleAuth;
     }
     setYTStyleSheet(loading_body_style);
 
-    markAsSeenTimeout = null;
+    var markAsSeenTimeout = null;
 
     var autoPauseThisVideo = autoPauseVideo;
 
     function handlePageChange(){
-		if(/.*watch\?.+list=.+/.test(location)){
+        if(/.*watch\?.+list=.+/.test(location)){
             autoPauseThisVideo = false;
-		}else{
-			autoPauseThisVideo = autoPauseVideo;
-		}
+        }else{
+            autoPauseThisVideo = autoPauseVideo;
+        }
         clearTimeout(markAsSeenTimeout);
         toggleGuide = false;
         // forces some images to reload...
@@ -1915,27 +1926,27 @@ var GoogleAuth;
         $(YT_STARTPAGE_BODY).hide();
         setHrefObserver();
         handlePageChange();
-		// Remove css class from MA.
-		$("html").removeClass("m0");
+        // Remove css class from MA.
+        $("html").removeClass("m0");
     });
 
     var defaultPlayFunction = HTMLMediaElement.prototype.play;
-	HTMLMediaElement.prototype.play = function () {
-		if (autoPauseThisVideo) {
+    HTMLMediaElement.prototype.play = function () {
+        if (autoPauseThisVideo) {
             autoPauseThisVideo = false;
-			var player = this.parentElement.parentElement;
-			if(player){
+            var player = this.parentElement.parentElement;
+            if(player){
                 player.pauseVideo();
             }
-		}else{
+        }else{
             defaultPlayFunction.call(this);
         }
-	};
+    };
 
     localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
 
     function addThumbnailEnlargeCss(){
-		// Check if we got a dark theme.
+        // Check if we got a dark theme.
         var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
         var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
         var dark = document.documentElement.getAttribute("dark");
