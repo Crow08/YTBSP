@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.10
+// @version      1.3.11
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,6 +30,8 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+var version = "1.3.11";
+
 var moment = this.moment;
 
 var GoogleAuth;
@@ -52,7 +54,7 @@ var GoogleAuth;
     var maxVidsPerRow = 9;						// DEFAULT: 9.
     var maxVidsPerSub = 36;						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
     var enlargeDelay = 500;						// DEFAULT: 500 (in ms).
-    var enlargeFactor = 1.4;					// DEFAULT: 1.4 (x * 320p).
+    var enlargeFactor = 2.8;					// DEFAULT: 2.8 (x * 160px).
     var enlargeFactorNative = 2.0;				// DEFAULT: 2.0.
     var timeToMarkAsSeen = 10;					// DEFAILT: 10 (in s).
     var screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
@@ -137,6 +139,13 @@ var GoogleAuth;
 
     // Save a reference for the subList.
     var subList = $("#ytbsp-subs", maindiv);
+
+    var markAsSeenTimeout = null;
+
+    var autoPauseThisVideo = null;
+
+    // Call functions on startup.
+    onScriptStart();
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////
     // Start OAuth Stuff
@@ -276,6 +285,7 @@ var GoogleAuth;
         // Get app configuration.
         loadConfig().then(function(){
             // -> Get save data.
+            afterConfigLoaded();
             loadVideoInformation().then(function(){
                 // -> start requesting subs.
                 requestSubs();
@@ -340,8 +350,8 @@ var GoogleAuth;
                 // Check if save file exists or has to be created.
                 if (files && files.length > 0) {
                     // Save file exists.
-                    remoteSaveFileID = files[0].id;
                     // Parse the config.
+                    remoteSaveFileID = files[0].id;
                     useRemoteData = files[0].appProperties.useRemoteData !== "0";
                     hideSeenVideos = files[0].appProperties.hideSeenVideos !== "0";
                     hideEmptySubs = files[0].appProperties.hideEmptySubs !== "0";
@@ -349,8 +359,12 @@ var GoogleAuth;
                     maxVidsPerRow = files[0].appProperties.maxVidsPerRow;
                     maxVidsPerSub = files[0].appProperties.maxVidsPerSub;
                     enlargeDelay = files[0].appProperties.enlargeDelay;
+                    enlargeFactor = files[0].appProperties.enlargeFactor;
+                    enlargeFactorNative = files[0].appProperties.enlargeFactorNative;
+                    playerQuality = files[0].appProperties.playerQuality;
                     timeToMarkAsSeen = files[0].appProperties.timeToMarkAsSeen;
                     screenThreshold = files[0].appProperties.screenThreshold;
+                    autoPauseVideo = files[0].appProperties.autoPauseVideo !== "0";
                     $("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
                     $("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
                 }else{
@@ -376,8 +390,12 @@ var GoogleAuth;
             maxVidsPerRow = localStorage.getItem("YTBSP_maxVidsPerRow");
             maxVidsPerSub = localStorage.getItem("YTBSP_maxVidsPerSub");
             enlargeDelay = localStorage.getItem("YTBSP_enlargeDelay");
+            enlargeFactor = localStorage.getItem("YTBSP_enlargeFactor");
+            enlargeFactorNative = localStorage.getItem("YTBSP_enlargeFactorNative");
+            playerQuality = localStorage.getItem("YTBSP_playerQuality");
             timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
             screenThreshold = localStorage.getItem("YTBSP_screenThreshold");
+            autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
             $("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
             $("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
             resolve();
@@ -403,8 +421,12 @@ var GoogleAuth;
                         maxVidsPerRow: maxVidsPerRow,
                         maxVidsPerSub: maxVidsPerSub,
                         enlargeDelay: enlargeDelay,
+                        enlargeFactor: enlargeFactor,
+                        enlargeFactorNative: enlargeFactorNative,
+                        playerQuality: playerQuality,
                         timeToMarkAsSeen: timeToMarkAsSeen,
-                        screenThreshold: screenThreshold
+                        screenThreshold: screenThreshold,
+                        autoPauseVideo: autoPauseVideo
                     }
                 }
             ).then(function(response){
@@ -423,7 +445,11 @@ var GoogleAuth;
         return new Promise(function(resolve, reject){
             if(remoteSaveFileID === null){
                 loadRemoteFileId().then(function(){
+                  if(remoteSaveFileID !== null){
                     deleteRemoteSaveData().then(function(){resolve();});
+                  }else{
+                    resolve();
+                  }
                 });
             }else{
                 buildApiRequest(
@@ -432,7 +458,7 @@ var GoogleAuth;
                     {}
                 ).then(function(response){
                     remoteSaveFileID = null;
-                    resolve();
+                    deleteRemoteSaveData().then(function(){resolve();});
                 });
             }
         });
@@ -537,8 +563,12 @@ var GoogleAuth;
                         maxVidsPerRow: maxVidsPerRow,
                         maxVidsPerSub: maxVidsPerSub,
                         enlargeDelay: enlargeDelay,
+                        enlargeFactor: enlargeFactor,
+                        enlargeFactorNative: enlargeFactorNative,
+                        playerQuality: playerQuality,
                         timeToMarkAsSeen: timeToMarkAsSeen,
-                        screenThreshold: screenThreshold
+                        screenThreshold: screenThreshold,
+                        autoPauseVideo: autoPauseVideo ? "1" : "0"
                     }}
                 ).then(function(response){
                     localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
@@ -558,8 +588,12 @@ var GoogleAuth;
             localStorage.setItem("YTBSP_maxVidsPerRow", maxVidsPerRow);
             localStorage.setItem("YTBSP_maxVidsPerSub", maxVidsPerSub);
             localStorage.setItem("YTBSP_enlargeDelay", enlargeDelay);
+            localStorage.setItem("YTBSP_enlargeFactor", enlargeFactor);
+            localStorage.setItem("YTBSP_enlargeFactorNative", enlargeFactorNative);
+            localStorage.setItem("YTBSP_playerQuality", playerQuality);
             localStorage.setItem("YTBSP_timeToMarkAsSeen", timeToMarkAsSeen);
             localStorage.setItem("YTBSP_screenThreshold", screenThreshold);
+            localStorage.setItem("YTBSP_autoPauseVideo", autoPauseVideo ? "1" : "0");
             resolve();
         });
     }
@@ -922,6 +956,25 @@ var GoogleAuth;
                              .append($("<td>"), {html: "Allows synchronization between browsers. May result in slower loading times."})
                             );
         settingsTable.append($("<tr>")
+                             .append($("<td>", {html: "Autopause videos"}))
+                             .append($("<td>").append(getSlider("ytbsp-settings-autoPauseVideo", autoPauseVideo)))
+                             .append($("<td>"), {html: "Open Videos in a paused state. (Does not effect playlists.)"})
+                            );
+
+        var playerQualitySelect = $("<Select>", {id: "ytbsp-settings-playerQuality"});
+        for (var resolution in resolutions) {
+            if (resolutions.hasOwnProperty(resolution)) {
+              playerQualitySelect.append($("<option>", {value: resolutions[resolution], html: resolution}));
+            }
+        }
+        playerQualitySelect.val(playerQuality);
+
+        settingsTable.append($("<tr>")
+                             .append($("<td>", {html: "Player Quality"}))
+                             .append($("<td>").append(playerQualitySelect))
+                             .append($("<td>"), {html: "Open Videos in a paused state. (Does not effect playlists.)"})
+                            );
+        settingsTable.append($("<tr>")
                              .append($("<td>", {html: "Max number of subscriptions loading simultaneously"}))
                              .append($("<td>").append($("<input>", {type: "number", min:"1", max:"50", id: "ytbsp-settings-maxSimSubLoad", value: maxSimSubLoad})))
                              .append($("<td>", {html: "Default: 10 | Range: 1-50 | Higher numbers result in slower loading of single items but overall faster laoding."}))
@@ -947,15 +1000,21 @@ var GoogleAuth;
                              .append($("<td>", {html: "Default: 500"}))
                             );
         settingsTable.append($("<tr>")
+                             .append($("<td>", {html: "Factor to enlarge thumbnail by"}))
+                             .append($("<td>").append($("<input>", {type: "number", min:"1", step:"0.01", id: "ytbsp-settings-enlargeFactor", value: enlargeFactor})))
+                             .append($("<td>", {html: "Default: 2.8 | 1 : disable thumbnail enlarge"}))
+                            );
+        settingsTable.append($("<tr>")
+                             .append($("<td>", {html: "Factor to enlarge native thumbnail by"}))
+                             .append($("<td>").append($("<input>", {type: "number", min:"1", step:"0.01", id: "ytbsp-settings-enlargeFactorNative", value: enlargeFactorNative})))
+                             .append($("<td>", {html: "Default: 2.0 | 1 : disable thumbnail enlarge"}))
+                            );
+        settingsTable.append($("<tr>")
                              .append($("<td>", {html: "threshold to preload thumbnails"}))
                              .append($("<td>").append($("<input>", {type: "number", min:"0", id: "ytbsp-settings-screenThreshold", value: screenThreshold})).append(" px"))
                              .append($("<td>", {html: "Default: 500 | Higer threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."}))
                             );
         settingsDialog.append(settingsTable);
-
-        var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"});
-        endDiv.append($("<a/>",{html:"https://github.com/Crow08/YTBSP", href:"https://github.com/Crow08/YTBSP", target:"_blank", "class": "ytbsp-func", style:"font-size: 1rem;"}));
-        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}));
 
         var saveSettings = function() {
             loadingProgress(1);
@@ -968,7 +1027,12 @@ var GoogleAuth;
             maxVidsPerSub = $("#ytbsp-settings-maxVidsPerSub").val();
             timeToMarkAsSeen = $("#ytbsp-settings-timeToMarkAsSeen").val();
             enlargeDelay = $("#ytbsp-settings-enlargeDelay").val();
+            enlargeFactor = $("#ytbsp-settings-enlargeFactor").val();
+            enlargeFactorNative = $("#ytbsp-settings-enlargeFactorNative").val();
+            playerQuality = $("#ytbsp-settings-playerQuality").val();
             screenThreshold = $("#ytbsp-settings-screenThreshold").val();
+            autoPauseVideo = $("#ytbsp-settings-autoPauseVideo").prop("checked");
+
 
             saveConfig().then(function(){
                 setTimeout(function() {
@@ -978,7 +1042,12 @@ var GoogleAuth;
                 }, 200);
             });
         };
-        endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
+
+        var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"})
+        .append($("<a/>",{html:"https://github.com/Crow08/YTBSP", href:"https://github.com/Crow08/YTBSP", target:"_blank", "class": "ytbsp-func", style:"font-size: 1rem;"}))
+        .append($("<p/>",{html:"script version:" + version, "class": "ytbsp-func", style:"font-size: 1rem;"}))
+        .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}))
+        .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
         settingsDialog.append(endDiv);
         openModal(settingsDialog);
     }
@@ -1507,6 +1576,9 @@ var GoogleAuth;
 
             // Enlarge thumbnail and load higher resolution image.
             function enlarge(){
+                if(enlargeFactor <= 1){
+                    return;
+                }
                 if ($(".ytbsp-x:hover", this).length !== 0) {
                     return;
                 }
@@ -1532,6 +1604,9 @@ var GoogleAuth;
 
             // reset tumbnail to original size
             function enlargecancel(){
+                if(enlargeFactor <= 1){
+                    return;
+                }
                 if(self.vid.replace('-', '$') in timeouts && timeouts[self.vid.replace('-', '$')] > 0){
                     clearTimeout(timeouts[self.vid.replace('-', '$')]);
                 }
@@ -1667,11 +1742,9 @@ var GoogleAuth;
 
     function addYTBSPStyleSheet() {
         // Check if we got a dark theme.
-        var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
         var dark = document.documentElement.getAttribute("dark");
-        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384) ||
-            (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
+        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384);
 
         var stdFontColor = dark ? "#e1e1e1" : "#111111";
         var subtextColor = dark ? "#ffffffff" : "#141414";
@@ -1699,19 +1772,19 @@ var GoogleAuth;
             '.ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }' +
             '.ytbsp-subTitle a { color: ' + stdFontColor + '; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}' +
             '#YTBSP {margin-left: 240px; margin-top: 57px;}' +
-            '#ytbsp-subs .ytbsp-title-large{ width:' + (320 * enlargeFactor - 4) + 'px; left: ' + -((320 * enlargeFactor)/2 - 82) + 'px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
+            '#ytbsp-subs .ytbsp-title-large{ width:' + (160 * enlargeFactor - 4) + 'px; left: ' + -((160 * enlargeFactor)/2 - 82) + 'px; position: relative; z-index: 1; background: ' + altBgColor + '; text-align: center;' +
             'border-width: 0px 2px 2px 2px; border-style: solid; border-color: ' + altBorderColor + '; padding: 2px;}' +
 
             // image part
             '.ytbsp-clip { position: relative; width: 160px; height: 90px; border: none; cursor: pointer; display: block;}' +
-            '.ytbsp-clip-large { z-index: 1; width:' + (320 * enlargeFactor + 4) + 'px; height:' + (180 * enlargeFactor + 4) + 'px; top: -45px; left:' + -((320 * enlargeFactor)/2 - 82) + 'px; margin-bottom: -44px; border: none; }' +
+            '.ytbsp-clip-large { z-index: 1; width:' + (160 * enlargeFactor + 4) + 'px; height:' + (90 * enlargeFactor + 4) + 'px; top: -45px; left:' + -((160 * enlargeFactor)/2 - 82) + 'px; margin-bottom: -44px; border: none; }' +
             '.ytbsp-x { position: absolute; z-index: 2; top: 2%; right: 1%; opacity: 0.6; width: 17px; height: 17px; ' +
             'line-height: 16px; text-align: center; background-color: #000; color: #fff; font-size: 15px; font-weight: bold; ' +
             'border-radius: 3px; -moz-border-radius: 3px; display: none; cursor: pointer;}' +
             '.ytbsp-video-item:hover .ytbsp-x { display: block; }' +
             '.ytbsp-x:hover { opacity: 1; }' +
             '.ytbsp-thumb { display: block; position: absolute; height: 90px;  width: 160px;}' +
-            '.ytbsp-thumb-large { width:' + (320 * enlargeFactor) + 'px; height:' + (180 * enlargeFactor) + 'px; border: 2px solid ' + altBorderColor + '; top: 1px;}' +
+            '.ytbsp-thumb-large { width:' + (160 * enlargeFactor) + 'px; height:' + (90 * enlargeFactor) + 'px; border: 2px solid ' + altBorderColor + '; top: 1px;}' +
 
             // infos
             '.ytbsp-views, .ytbsp-uploaded { color: ' + viewsAndUploadedInfoColor + '; display: inline-block;  margin: 5px 0px 0px 0px; font-size: 1.2rem; }' +
@@ -1810,11 +1883,6 @@ var GoogleAuth;
         });
         scrollTimeout = null;
     }
-    setYTStyleSheet(loading_body_style);
-
-    var markAsSeenTimeout = null;
-
-    var autoPauseThisVideo = autoPauseVideo;
 
     function handlePageChange(){
         if(/.*watch\?.+list=.+/.test(location)){
@@ -1873,7 +1941,6 @@ var GoogleAuth;
 
     function injectYTBSP(){
         $(YT_CONTENT).prepend(maindiv);
-        addYTBSPStyleSheet();
         $(window).scrollTop(0);
     }
 
@@ -1917,7 +1984,16 @@ var GoogleAuth;
             }
         });
     }
-    // Old page is loaded.
+
+    // Executed on startup before main script.
+    function onScriptStart(){
+      setYTStyleSheet(loading_body_style);
+      // Preconfiguration for settings that cannot wait until configuration is loaded.
+      timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+      autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
+    }
+
+    // Native page is loaded.
     $( document ).ready(function() {
         // Insert new page.
         if($(YT_CONTENT).length!==0){
@@ -1930,22 +2006,34 @@ var GoogleAuth;
         $("html").removeClass("m0");
     });
 
+    // Executed aufter config is Loaded
+    function afterConfigLoaded(){
+      addYTBSPStyleSheet();
+      addThumbnailEnlargeCss();
+      setPlayerQuality();
+    }
+
     var defaultPlayFunction = HTMLMediaElement.prototype.play;
+
     HTMLMediaElement.prototype.play = function () {
+        if(!jQuery.isReady){
+            return;
+        }
         if (autoPauseThisVideo) {
-            autoPauseThisVideo = false;
+            autoPauseThisVideo=false;
             var player = this.parentElement.parentElement;
             if(player){
-                player.pauseVideo();
+                player.stopVideo();
             }
-        }else{
-            defaultPlayFunction.call(this);
+            return;
         }
+        defaultPlayFunction.call(this);
     };
 
-    localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
-
     function addThumbnailEnlargeCss(){
+        if(enlargeFactorNative <= 1){
+            return;
+        }
         // Check if we got a dark theme.
         var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
         var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
@@ -1966,6 +2054,8 @@ var GoogleAuth;
         document.head.appendChild(css);
     }
 
-    addThumbnailEnlargeCss();
+    function setPlayerQuality(){
+      localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
+    }
 
 })(window.unsafeWindow || window);
