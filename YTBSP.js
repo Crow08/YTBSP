@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.11
+// @version      1.3.12
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.3.11";
+var version = "1.3.12";
 
 var moment = this.moment;
 
@@ -537,7 +537,11 @@ var GoogleAuth;
     // Save configuration.
     function saveConfig(){
         if(useRemoteData){
-            return saveRemoteConfig();
+            return new Promise(function(resolve, reject){
+                saveLocalConfig().then(function(){
+                    saveRemoteConfig().then(function(){resolve();});
+                });
+            });
         }else{
             return saveLocalConfig();
         }
@@ -600,7 +604,11 @@ var GoogleAuth;
 
     function saveVideoInformation(){
         if(useRemoteData){
-            return saveRemoteVideoInformation();
+            return new Promise(function(resolve, reject){
+                saveLocalVideoInformation().then(function(){
+                    saveRemoteVideoInformation().then(function(){resolve();});
+                });
+            });
         }else{
             return saveLocalVideoInformation();
         }
