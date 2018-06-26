@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.13
+// @version      1.3.14
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.3.13";
+var version = "1.3.14";
 
 var moment = this.moment;
 
@@ -447,11 +447,11 @@ var GoogleAuth;
         return new Promise(function(resolve, reject){
             if(remoteSaveFileID === null){
                 loadRemoteFileId().then(function(){
-                  if(remoteSaveFileID !== null){
-                    deleteRemoteSaveData().then(function(){resolve();});
-                  }else{
-                    resolve();
-                  }
+                    if(remoteSaveFileID !== null){
+                        deleteRemoteSaveData().then(function(){resolve();});
+                    }else{
+                        resolve();
+                    }
                 });
             }else{
                 buildApiRequest(
@@ -799,11 +799,60 @@ var GoogleAuth;
     function toggleytbsp() {
         if(isNative){
             hidenative();
+            if(/^\/?watch$/.test(location.pathname)){
+                showPeekPlayer();
+            }
         }else{
             shownative();
+            if(/^\/?watch$/.test(location.pathname)){
+                showNativePlayer();
+            }
         }
     }
     $(".ytbsp-func#ytbsp-togglePage", maindiv).click(toggleytbsp);
+
+    var playerParent;
+
+    var nativePlayerCss;
+
+    function showPeekPlayer(){
+        playerParent = $('#movie_player').parent();
+
+        nativePlayerCss = {
+            position : $('#movie_player').css('position'),
+            right : $('#movie_player').css('right'),
+            bottom : $('#movie_player').css('bottom'),
+            width : $('#movie_player').css('width'),
+            height : $('#movie_player').css('height'),
+            zIndex : $('#movie_player').css('zIndex')
+        };
+
+        $("#YTBSP").append($('#movie_player'));
+
+        $('#movie_player').get(0).playVideo();
+
+
+        $('#movie_player').css({
+            position: "fixed",
+            right: "20px",
+            bottom: "20px",
+            width: "320px",
+            height: "180px",
+            zIndex: "10"
+        });
+
+        window.dispatchEvent(new Event('resize'));
+    }
+
+    function showNativePlayer(){
+        playerParent.append($('#movie_player'));
+
+        $('#movie_player').get(0).playVideo();
+
+        $('#movie_player').css(nativePlayerCss);
+
+        window.dispatchEvent(new Event('resize'));
+    }
 
     // Remove all videos button.
     function removeAllVideos() {
@@ -974,7 +1023,7 @@ var GoogleAuth;
         var playerQualitySelect = $("<Select>", {id: "ytbsp-settings-playerQuality"});
         for (var resolution in resolutions) {
             if (resolutions.hasOwnProperty(resolution)) {
-              playerQualitySelect.append($("<option>", {value: resolutions[resolution], html: resolution}));
+                playerQualitySelect.append($("<option>", {value: resolutions[resolution], html: resolution}));
             }
         }
         playerQualitySelect.val(playerQuality);
@@ -1997,10 +2046,10 @@ var GoogleAuth;
 
     // Executed on startup before main script.
     function onScriptStart(){
-      setYTStyleSheet(loading_body_style);
-      // Preconfiguration for settings that cannot wait until configuration is loaded.
-      timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
-      autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
+        setYTStyleSheet(loading_body_style);
+        // Preconfiguration for settings that cannot wait until configuration is loaded.
+        timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+        autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
     }
 
     $(window).bind('storage', function (e) {
@@ -2027,9 +2076,9 @@ var GoogleAuth;
 
     // Executed aufter config is Loaded
     function afterConfigLoaded(){
-      addYTBSPStyleSheet();
-      addThumbnailEnlargeCss();
-      setPlayerQuality();
+        addYTBSPStyleSheet();
+        addThumbnailEnlargeCss();
+        setPlayerQuality();
     }
 
     var defaultPlayFunction = HTMLMediaElement.prototype.play;
@@ -2074,7 +2123,7 @@ var GoogleAuth;
     }
 
     function setPlayerQuality(){
-      localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
+        localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
     }
 
 })(window.unsafeWindow || window);
