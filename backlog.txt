@@ -1,2 +1,2 @@
-- handle multi tab usage with the script
 - design overhaul
+- Peek player when YTBSP is toggled and video is playing.

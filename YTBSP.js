@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.12
+// @version      1.3.13
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.3.12";
+var version = "1.3.13";
 
 var moment = this.moment;
 
@@ -2000,6 +2000,15 @@ var GoogleAuth;
       timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
       autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
     }
+
+    $(window).bind('storage', function (e) {
+        if(e.key == "YTBSP"){
+            getLocalVideoInformation().then(function(data){
+                cachedVideoinformation = data;
+                updateAllSubs();
+            });
+        }
+    });
 
     // Native page is loaded.
     $( document ).ready(function() {
