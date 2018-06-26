@@ -140,6 +140,8 @@ var GoogleAuth;
     // Save a reference for the subList.
     var subList = $("#ytbsp-subs", maindiv);
 
+    $('.ytbsp-hideWhenNative', maindiv).css('visibility','hidden');
+
     var markAsSeenTimeout = null;
 
     var autoPauseThisVideo = null;
