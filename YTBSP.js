@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.13
+// @version      1.3.14
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.3.13";
+var version = "1.3.14";
 
 var moment = this.moment;
 
@@ -139,6 +139,8 @@ var GoogleAuth;
 
     // Save a reference for the subList.
     var subList = $("#ytbsp-subs", maindiv);
+
+    $('.ytbsp-hideWhenNative', maindiv).css('visibility','hidden');
 
     var markAsSeenTimeout = null;
 
