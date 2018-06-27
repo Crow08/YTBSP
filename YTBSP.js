@@ -800,62 +800,16 @@ var GoogleAuth;
         if(isNative){
             hidenative();
             if(/^\/?watch$/.test(location.pathname)){
-                showPeekPlayer();
+                player.showPeekPlayer();
             }
         }else{
             shownative();
             if(/^\/?watch$/.test(location.pathname)){
-                showNativePlayer();
+                player.showNativePlayer();
             }
         }
     }
     $(".ytbsp-func#ytbsp-togglePage", maindiv).click(toggleytbsp);
-
-    var playerParent;
-
-    var nativePlayerCss;
-
-    function showPeekPlayer(){
-        playerParent = $('#movie_player').parent();
-
-        nativePlayerCss = {
-            position : $('#movie_player').css('position'),
-            right : $('#movie_player').css('right'),
-            bottom : $('#movie_player').css('bottom'),
-            width : $('#movie_player').css('width'),
-            height : $('#movie_player').css('height'),
-            zIndex : $('#movie_player').css('zIndex')
-        };
-
-        $("#YTBSP").append($('#movie_player'));
-
-        if($('#movie_player').get(0).getPlayerState() == 1){
-            $('#movie_player').get(0).playVideo();
-        }
-
-        $('#movie_player').css({
-            position: "fixed",
-            right: "20px",
-            bottom: "20px",
-            width: "320px",
-            height: "180px",
-            zIndex: "10"
-        });
-
-        window.dispatchEvent(new Event('resize'));
-    }
-
-    function showNativePlayer(){
-        playerParent.append($('#movie_player'));
-
-        if($('#movie_player').get(0).getPlayerState() == 1){
-            $('#movie_player').get(0).playVideo();
-        }
-
-        $('#movie_player').css(nativePlayerCss);
-
-        window.dispatchEvent(new Event('resize'));
-    }
 
     // Remove all videos button.
     function removeAllVideos() {
@@ -1133,6 +1087,78 @@ var GoogleAuth;
         if($("#ytbsp-modal").length != 0) {
             $("#ytbsp-modal").css("display", "none");
             $("#ytbsp-modal").css("opacity", "0");
+        }
+    }
+
+    var player = new Player();
+
+    function Player(){
+        this.playerRef = null;
+        this.nativePlayerParent = null;
+        this.nativePlayerCss = null;
+        this.peekPlayerActive = false;
+
+        this.showPeekPlayer = function(){
+            this.playerRef = $('#movie_player');
+            if(!this.playerRef.length){
+                return;
+            }
+            this.nativePlayerParent = this.playerRef.parent();
+            if(null == this.nativePlayerCss){
+                this.nativePlayerCss = {
+                    position : this.playerRef.css('position'),
+                    right : this.playerRef.css('right'),
+                    bottom : this.playerRef.css('bottom'),
+                    width : this.playerRef.css('width'),
+                    height : this.playerRef.css('height'),
+                    zIndex : this.playerRef.css('zIndex')
+                };
+            }
+
+            $("#YTBSP").append(this.playerRef);
+
+            if(this.playerRef.get(0).getPlayerState() == 1){
+                this.playerRef.get(0).playVideo();
+            }
+
+            this.playerRef.css({
+                position: "fixed",
+                right: "20px",
+                bottom: "20px",
+                width: "320px",
+                height: "180px",
+                zIndex: "10"
+            });
+
+            window.dispatchEvent(new Event('resize'));
+
+            this.peekPlayerActive = true;
+        }
+
+        this.showNativePlayer = function(){
+            if(null == this.nativePlayerParent && !this.nativePlayerParent.length){
+                return;
+            }
+            this.playerRef = $('#movie_player');
+            if(!this.playerRef.length){
+                return;
+            }
+
+            this.nativePlayerParent.append($('#movie_player'));
+
+            if(this.playerRef.get(0).getPlayerState() == 1){
+                this.playerRef.get(0).playVideo();
+            }
+
+            this.playerRef.css(this.nativePlayerCss);
+
+            window.dispatchEvent(new Event('resize'));
+
+            this.peekPlayerActive = false;
+        }
+
+        this.isPeekPlayerActive = function(){
+            return this.peekPlayerActive;
         }
     }
 
@@ -1969,6 +1995,10 @@ var GoogleAuth;
         }else{
             setYTStyleSheet(default_body_style);
         }
+        if(player.isPeekPlayerActive()){
+            player.showNativePlayer();
+        }
+
         if(location.pathname.length > 1) {
             shownative();
             if(/^\/?watch$/.test(location.pathname)) {
