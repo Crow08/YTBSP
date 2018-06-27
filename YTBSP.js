@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.3.14
+// @version      1.4.0
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.3.14";
+var version = "1.4.0";
 
 var moment = this.moment;
 
@@ -797,8 +797,14 @@ var GoogleAuth;
     function toggleytbsp() {
         if(isNative){
             hidenative();
+            if(/^\/?watch$/.test(location.pathname)){
+                player.showPeekPlayer();
+            }
         }else{
             shownative();
+            if(/^\/?watch$/.test(location.pathname)){
+                player.showNativePlayer();
+            }
         }
     }
     $(".ytbsp-func#ytbsp-togglePage", maindiv).click(toggleytbsp);
@@ -1079,6 +1085,78 @@ var GoogleAuth;
         if($("#ytbsp-modal").length != 0) {
             $("#ytbsp-modal").css("display", "none");
             $("#ytbsp-modal").css("opacity", "0");
+        }
+    }
+
+    var player = new Player();
+
+    function Player(){
+        this.playerRef = null;
+        this.nativePlayerParent = null;
+        this.nativePlayerCss = null;
+        this.peekPlayerActive = false;
+
+        this.showPeekPlayer = function(){
+            this.playerRef = $('#movie_player');
+            if(!this.playerRef.length){
+                return;
+            }
+            this.nativePlayerParent = this.playerRef.parent();
+            if(null == this.nativePlayerCss){
+                this.nativePlayerCss = {
+                    position : this.playerRef.css('position'),
+                    right : this.playerRef.css('right'),
+                    bottom : this.playerRef.css('bottom'),
+                    width : this.playerRef.css('width'),
+                    height : this.playerRef.css('height'),
+                    zIndex : this.playerRef.css('zIndex')
+                };
+            }
+
+            $("#YTBSP").append(this.playerRef);
+
+            if(this.playerRef.get(0).getPlayerState() == 1){
+                this.playerRef.get(0).playVideo();
+            }
+
+            this.playerRef.css({
+                position: "fixed",
+                right: "20px",
+                bottom: "20px",
+                width: "320px",
+                height: "180px",
+                zIndex: "10"
+            });
+
+            window.dispatchEvent(new Event('resize'));
+
+            this.peekPlayerActive = true;
+        }
+
+        this.showNativePlayer = function(){
+            if(null == this.nativePlayerParent && !this.nativePlayerParent.length){
+                return;
+            }
+            this.playerRef = $('#movie_player');
+            if(!this.playerRef.length){
+                return;
+            }
+
+            this.nativePlayerParent.append($('#movie_player'));
+
+            if(this.playerRef.get(0).getPlayerState() == 1){
+                this.playerRef.get(0).playVideo();
+            }
+
+            this.playerRef.css(this.nativePlayerCss);
+
+            window.dispatchEvent(new Event('resize'));
+
+            this.peekPlayerActive = false;
+        }
+
+        this.isPeekPlayerActive = function(){
+            return this.peekPlayerActive;
         }
     }
 
@@ -1915,6 +1993,10 @@ var GoogleAuth;
         }else{
             setYTStyleSheet(default_body_style);
         }
+        if(player.isPeekPlayerActive()){
+            player.showNativePlayer();
+        }
+
         if(location.pathname.length > 1) {
             shownative();
             if(/^\/?watch$/.test(location.pathname)) {
