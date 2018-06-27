@@ -829,8 +829,9 @@ var GoogleAuth;
 
         $("#YTBSP").append($('#movie_player'));
 
-        $('#movie_player').get(0).playVideo();
-
+        if($('#movie_player').get(0).getPlayerState() == 1){
+            $('#movie_player').get(0).playVideo();
+        }
 
         $('#movie_player').css({
             position: "fixed",
@@ -847,7 +848,9 @@ var GoogleAuth;
     function showNativePlayer(){
         playerParent.append($('#movie_player'));
 
-        $('#movie_player').get(0).playVideo();
+        if($('#movie_player').get(0).getPlayerState() == 1){
+            $('#movie_player').get(0).playVideo();
+        }
 
         $('#movie_player').css(nativePlayerCss);
 
