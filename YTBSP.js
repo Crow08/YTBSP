@@ -36,7 +36,7 @@ var moment = this.moment;
 
 var GoogleAuth;
 
-(function(unsafeWindow) {
+(function() {
     var resolutions = {'Ultra' : 'highres',
                        '2880p' : 'hd2880',
                        '2160p' : 'hd2160',
@@ -93,10 +93,8 @@ var GoogleAuth;
     var isNative = false;
 
     // Universal loader as resource.
-    // TODO: Create loaders with function.
-    const LOADER = '<div class="ytbsp-loader"></div>';
     function getLoader(id){
-        var loader = $("<div/>", {"class": "ytbsp-loader"});
+        var loader = $("<div/>", {"class": "ytbsp-loader", "id": id});
         return loader;
     }
 
@@ -447,18 +445,18 @@ var GoogleAuth;
         return new Promise(function(resolve, reject){
             if(remoteSaveFileID === null){
                 loadRemoteFileId().then(function(){
-                  if(remoteSaveFileID !== null){
-                    deleteRemoteSaveData().then(function(){resolve();});
-                  }else{
-                    resolve();
-                  }
+                    if(remoteSaveFileID !== null){
+                        deleteRemoteSaveData().then(function(){resolve();});
+                    }else{
+                        resolve();
+                    }
                 });
             }else{
                 buildApiRequest(
                     'DELETE',
                     '/drive/v3/files/'+remoteSaveFileID,
                     {}
-                ).then(function(response){
+                ).then(function(){
                     remoteSaveFileID = null;
                     deleteRemoteSaveData().then(function(){resolve();});
                 });
@@ -576,7 +574,7 @@ var GoogleAuth;
                         screenThreshold: screenThreshold,
                         autoPauseVideo: autoPauseVideo ? "1" : "0"
                     }}
-                ).then(function(response){
+                ).then(function(){
                     localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
                     resolve();
                 });
@@ -654,7 +652,7 @@ var GoogleAuth;
                         'Content-Type': 'multipart/mixed; boundary="' + boundary + '"'
                     },
                     'body': multipartRequestBody});
-                request.execute(function(response){
+                request.execute(function(){
                     resolve();
                 });
             }
@@ -974,7 +972,7 @@ var GoogleAuth;
         var playerQualitySelect = $("<Select>", {id: "ytbsp-settings-playerQuality"});
         for (var resolution in resolutions) {
             if (resolutions.hasOwnProperty(resolution)) {
-              playerQualitySelect.append($("<option>", {value: resolutions[resolution], html: resolution}));
+                playerQualitySelect.append($("<option>", {value: resolutions[resolution], html: resolution}));
             }
         }
         playerQualitySelect.val(playerQuality);
@@ -1956,17 +1954,15 @@ var GoogleAuth;
 
     function setHrefObserver(){
         var oldHref = document.location.href;
-        var observer = new MutationObserver(function(mutations) {
-            mutations.forEach(function(mutation) {
-                if (oldHref != document.location.href) {
-                    oldHref = document.location.href;
-                    handlePageChange();
-                }
+        var observer = new MutationObserver(function() {
+            if (oldHref != document.location.href) {
+                oldHref = document.location.href;
+                handlePageChange();
+            }
 
-                if ($('#YTBSP').length === 0 && $(YT_CONTENT).length!==0){
-                    injectYTBSP();
-                }
-            });
+            if ($('#YTBSP').length === 0 && $(YT_CONTENT).length!==0){
+                injectYTBSP();
+            }
         });
         observer.observe(document.querySelector("body"), {childList: true, subtree: true});
     }
@@ -1997,10 +1993,10 @@ var GoogleAuth;
 
     // Executed on startup before main script.
     function onScriptStart(){
-      setYTStyleSheet(loading_body_style);
-      // Preconfiguration for settings that cannot wait until configuration is loaded.
-      timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
-      autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
+        setYTStyleSheet(loading_body_style);
+        // Preconfiguration for settings that cannot wait until configuration is loaded.
+        timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+        autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
     }
 
     $(window).bind('storage', function (e) {
@@ -2027,9 +2023,9 @@ var GoogleAuth;
 
     // Executed aufter config is Loaded
     function afterConfigLoaded(){
-      addYTBSPStyleSheet();
-      addThumbnailEnlargeCss();
-      setPlayerQuality();
+        addYTBSPStyleSheet();
+        addThumbnailEnlargeCss();
+        setPlayerQuality();
     }
 
     var defaultPlayFunction = HTMLMediaElement.prototype.play;
@@ -2039,7 +2035,7 @@ var GoogleAuth;
             return;
         }
         if (autoPauseThisVideo) {
-            autoPauseThisVideo=false;
+            autoPauseThisVideo = false;
             var player = this.parentElement.parentElement;
             if(player){
                 player.stopVideo();
@@ -2074,7 +2070,7 @@ var GoogleAuth;
     }
 
     function setPlayerQuality(){
-      localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
+        localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
     }
 
 })(window.unsafeWindow || window);
