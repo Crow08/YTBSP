@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.1
+// @version      1.4.2
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.4.1";
+var version = "1.4.2";
 
 var moment = this.moment;
 
@@ -54,14 +54,15 @@ var GoogleAuth;
     var maxVidsPerRow = 9;						// DEFAULT: 9.
     var maxVidsPerSub = 36;						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
     var enlargeDelay = 500;						// DEFAULT: 500 (in ms).
-    var enlargeFactor = 2.8;					// DEFAULT: 2.8 (x * 160px).
-    var enlargeFactorNative = 2.0;				// DEFAULT: 2.0.
+    var enlargeFactor = 2.8;					// DEFAULT: 2.8 (x * 90px).
+    var enlargeFactorNative = 2.0;				// DEFAULT: 2.0 (x * 94px).
     var timeToMarkAsSeen = 10;					// DEFAILT: 10 (in s).
     var screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
     var playerQuality = resolutions['1080p'];	// DEFAULT: hd1080 (resolutions['1080p'])
-    var autoPauseVideo = false;
-    var hideSeenVideos = false;
-    var hideEmptySubs = true;
+    var peekPlayerSizeFactor = 1.0;				// DEFAULT: 1.0 (x * 180px).
+    var autoPauseVideo = false;					// DEFAULT: false.
+    var hideSeenVideos = false;					// DEFAULT: false.
+    var hideEmptySubs = true;					// DEFAULT: true.
 
     // OAuth2 variables:
     const CLIENTID = '281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com';
@@ -1098,7 +1099,7 @@ var GoogleAuth;
 
         this.showPeekPlayer = function(){
             this.playerRef = $('#movie_player');
-            if(!this.playerRef.length){
+            if(!this.playerRef.length || peekPlayerSizeFactor <= 0.0){
                 return;
             }
             this.nativePlayerParent = this.playerRef.parent();
@@ -1125,8 +1126,8 @@ var GoogleAuth;
                 position: "fixed",
                 right: "20px",
                 bottom: "20px",
-                width: "320px",
-                height: "180px",
+                width: (320 * peekPlayerSizeFactor) + "px",
+                height: (180 * peekPlayerSizeFactor) + "px",
                 zIndex: "10"
             });
 
