@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.0
+// @version      1.4.1
 // @namespace    ytbsp
 // @include      http://*youtube.com*
 // @include      https://*youtube.com*
@@ -30,7 +30,7 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.4.0";
+var version = "1.4.1";
 
 var moment = this.moment;
 
@@ -1119,6 +1119,8 @@ var GoogleAuth;
                 this.playerRef.get(0).playVideo();
             }
 
+            this.playerRef.get(0).hideControls();
+
             this.playerRef.css({
                 position: "fixed",
                 right: "20px",
@@ -1147,6 +1149,8 @@ var GoogleAuth;
             if(this.playerRef.get(0).getPlayerState() == 1){
                 this.playerRef.get(0).playVideo();
             }
+
+            this.playerRef.get(0).showControls();
 
             this.playerRef.css(this.nativePlayerCss);
 
