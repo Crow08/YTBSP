@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.2
+// @version      1.4.3
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -1058,7 +1058,7 @@ var GoogleAuth;
 
         var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"})
         .append($("<a/>",{html:"https://github.com/Crow08/YTBSP", href:"https://github.com/Crow08/YTBSP", target:"_blank", "class": "ytbsp-func", style:"font-size: 1rem;"}))
-        .append($("<p/>",{html:"script version:" + GM_info.script.version, "class": "ytbsp-func", style:"font-size: 1rem;"}))
+        .append($("<p/>",{html:(GM_info ? "script version:" + GM_info.script.version : ""), "class": "ytbsp-func", style:"font-size: 1rem;"}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
         settingsDialog.append(endDiv);
