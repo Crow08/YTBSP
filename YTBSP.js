@@ -30,8 +30,6 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
-var version = "1.4.2";
-
 var moment = this.moment;
 
 var GoogleAuth;
@@ -1060,7 +1058,7 @@ var GoogleAuth;
 
         var endDiv = $("<div/>",{id:"ytbsp-modal-end-div"})
         .append($("<a/>",{html:"https://github.com/Crow08/YTBSP", href:"https://github.com/Crow08/YTBSP", target:"_blank", "class": "ytbsp-func", style:"font-size: 1rem;"}))
-        .append($("<p/>",{html:"script version:" + version, "class": "ytbsp-func", style:"font-size: 1rem;"}))
+        .append($("<p/>",{html:"script version:" + GM_info.script.version, "class": "ytbsp-func", style:"font-size: 1rem;"}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
         settingsDialog.append(endDiv);
