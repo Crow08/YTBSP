@@ -3,8 +3,8 @@
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
 // @version      1.4.2
 // @namespace    ytbsp
-// @include      http://*youtube.com*
-// @include      https://*youtube.com*
+// @include      https://youtube.com/*
+// @include      https://www.youtube.com/*
 // @require      https://apis.google.com/js/api.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
 // @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js
