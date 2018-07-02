@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.3
+// @version      1.4.4
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -1097,6 +1097,7 @@ var GoogleAuth;
         this.playerRef = null;
         this.nativePlayerParent = null;
         this.nativePlayerCss = null;
+        this.nativePlayerIsTheater = false;
         this.peekPlayerActive = false;
 
         this.showPeekPlayer = function(){
@@ -1115,6 +1116,8 @@ var GoogleAuth;
                     zIndex : this.playerRef.css('zIndex')
                 };
             }
+            nativePlayerIsTheater = $('#page-manager > ytd-watch-flexy').get(0).theater;
+            $('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(true);
 
             $("#YTBSP").append(this.playerRef);
 
@@ -1156,6 +1159,10 @@ var GoogleAuth;
             this.playerRef.get(0).showControls();
 
             this.playerRef.css(this.nativePlayerCss);
+
+            if(!nativePlayerIsTheater){
+                $('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(false);
+            }
 
             window.dispatchEvent(new Event('resize'));
 
