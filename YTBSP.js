@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.4
+// @version      1.4.5
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -57,7 +57,7 @@ var GoogleAuth;
     var timeToMarkAsSeen = 10;					// DEFAILT: 10 (in s).
     var screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
     var playerQuality = resolutions['1080p'];	// DEFAULT: hd1080 (resolutions['1080p'])
-    var peekPlayerSizeFactor = 1.0;				// DEFAULT: 1.0 (x * 180px).
+    var peekPlayerSizeFactor = 1.5;				// DEFAULT: 1.0 (x * 180px).
     var autoPauseVideo = false;					// DEFAULT: false.
     var hideSeenVideos = false;					// DEFAULT: false.
     var hideEmptySubs = true;					// DEFAULT: true.
@@ -1116,8 +1116,9 @@ var GoogleAuth;
                     zIndex : this.playerRef.css('zIndex')
                 };
             }
-            nativePlayerIsTheater = $('#page-manager > ytd-watch-flexy').get(0).theater;
-            $('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(true);
+            // TODO: Repair TheaterMode.
+            //this.nativePlayerIsTheater = $('#page-manager > ytd-watch-flexy').get(0).theater;
+            //$('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(true);
 
             $("#YTBSP").append(this.playerRef);
 
@@ -1160,8 +1161,9 @@ var GoogleAuth;
 
             this.playerRef.css(this.nativePlayerCss);
 
-            if(!nativePlayerIsTheater){
-                $('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(false);
+            if(!this.nativePlayerIsTheater){
+                // TODO: Repair TheaterMode.
+                //$('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(false);
             }
 
             window.dispatchEvent(new Event('resize'));
