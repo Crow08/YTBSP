@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.5
+// @version      1.4.6
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -1823,7 +1823,7 @@ var GoogleAuth;
     var loading_body_style = YT_STARTPAGE_BODY + ' { background: transparent; display:none; }';
     var startpage_body_style = YT_STARTPAGE_BODY + ' { margin-top: -30px; margin-left: 120px; background: transparent; }' +
         YT_GUIDE + '{ z-index: 0 !important;}';
-    var video_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -10px; }' +
+    var video_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: 0px; }' +
         YT_GUIDE + '{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }';
     var search_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -50px; }' +
         YT_GUIDE + '{ z-index: 0; !important;}';
@@ -2061,6 +2061,12 @@ var GoogleAuth;
             if ($('#YTBSP').length === 0 && $(YT_CONTENT).length!==0){
                 injectYTBSP();
             }
+            if ($('#page-manager > ytd-watch-flexy').get(0).fullscreen === true){
+                $('#YTBSP').hide();
+            }
+            else{
+                $('#YTBSP').show();
+            }
         });
         observer.observe(document.querySelector("body"), {childList: true, subtree: true});
     }
@@ -2119,7 +2125,7 @@ var GoogleAuth;
         $("html").removeClass("m0");
     });
 
-    // Executed aufter config is Loaded
+    // Executed after config is Loaded
     function afterConfigLoaded(){
         addYTBSPStyleSheet();
         addThumbnailEnlargeCss();
