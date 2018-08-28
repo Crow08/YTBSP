@@ -30,6 +30,9 @@
  * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
  * IN THE SOFTWARE.
  */
+
+/* global jQuery, $, gapi */
+
 var moment = this.moment;
 
 var GoogleAuth;
@@ -1056,7 +1059,7 @@ var GoogleAuth;
             });
         };
 
-        var  versionInformation = "";
+        var versionInformation = "";
         try{
             versionInformation = GM_info && GM_info.script ? "script version:" + GM_info.script.version : "";
         }catch(e){}
@@ -1789,11 +1792,7 @@ var GoogleAuth;
         for (var i = 0; i < cachedVideoinformation.length; i++) {
             // If cached subscription was not alredy checked and is not in current sub list.
             if(!manuallyCheckedSubs.includes(cachedVideoinformation[i].id) &&
-               (
-                $.grep(subs, function(sub) {
-                    return sub.id == cachedVideoinformation[i].id;
-                })
-            ).length == 0){
+               !isInSubs(cachedVideoinformation[i].id)){
                 // If subscription was not loaded check if still subscribed.
                 checkAndAppendSub(cachedVideoinformation[i].id);
                 manuallyCheckedSubs.push(cachedVideoinformation[i].id);
@@ -1813,6 +1812,12 @@ var GoogleAuth;
         // Save new video information cache.
         cachedVideoinformation = saveObj;
         saveVideoInformation();
+    }
+
+    function isInSubs(vId){
+        return $.grep(subs, function(sub) {
+            return sub.id == vId;
+        }).length != 0;
     }
 
     // Now we just need to generate a stylesheet
