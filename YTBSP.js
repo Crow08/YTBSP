@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
 // @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
-// @version      1.4.6
+// @version      1.4.7
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -1140,6 +1140,29 @@ var GoogleAuth;
                 zIndex: "10"
             });
 
+
+            // add overlay to the peek player that will control click behaviour
+            this.playerRef.append('<div id="ytbsp-peekplayer-overlay"><div id="ytbsp-peekplayer-overlay-player-control"><label class="ytbsp-play-pause-icon" title="play / pause"></div></div>');
+            // initialize play/pause icon depending on player state
+            if(!$('.video-stream').get(0).paused){
+                $('.ytbsp-play-pause-icon').addClass('ytbsp-pause');
+            }
+            var that = this;
+            $("#ytbsp-peekplayer-overlay").click(
+                function(event){
+                    if($('#ytbsp-peekplayer-overlay-player-control:hover').length != 0){ // if over play/pause button
+                        that.playerRef.trigger( "click" ); // send click to youtube player to play/pause the video
+                        $('.ytbsp-play-pause-icon').toggleClass('ytbsp-pause');
+                    }
+                    else{ // click somewhere else on the peek player
+                        // prevent the event from bubbling to the youtube player and toggle ytbsp to native player view
+                        event.preventDefault();
+                        event.stopPropagation();
+                        toggleytbsp();
+                    }
+                }
+            );
+
             window.dispatchEvent(new Event('resize'));
 
             this.peekPlayerActive = true;
@@ -1168,6 +1191,7 @@ var GoogleAuth;
                 // TODO: Repair TheaterMode.
                 //$('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(false);
             }
+            $("#ytbsp-peekplayer-overlay").remove();
 
             window.dispatchEvent(new Event('resize'));
 
@@ -1945,7 +1969,19 @@ var GoogleAuth;
             '#ytbsp-settings-table tr { border-bottom: 1px solid ' + stdBorderColor + '; min-height:45px;}' +
             '#ytbsp-settings-table td { font-size: 1.4rem; padding:5px; min-width: 80px;}' +
             '#ytbsp-settings-table td:nth-child(3) { font-size: 1.0rem;}' +
-            '#ytbsp-settings-table input[type="number"] { width: 50px; }';
+            '#ytbsp-settings-table input[type="number"] { width: 50px; }' +
+
+            // peek player
+            '#ytbsp-peekplayer-overlay{ position: fixed; right: 20px; bottom: 20px; width:' + (320 * peekPlayerSizeFactor) + 'px; height:' + (180 * peekPlayerSizeFactor) + 'px; z-index: 11 }' +
+            '#ytbsp-peekplayer-overlay-player-control{ position: absolute; left: 0px; bottom: 0px; z-index: 12; cursor: pointer;' +
+                'width:' + ((320 * peekPlayerSizeFactor) / 10) + 'px;' +
+                'height:' + ((320 * peekPlayerSizeFactor) / 10) + 'px; }' +
+            '.ytbsp-play-pause-icon {cursor: pointer; position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto; width: 16px; height: 24px;}' +
+            '.ytbsp-play-pause-icon::before, .ytbsp-play-pause-icon::after { position: absolute; top: 50%; transform: translateY(-50%); }' +
+            '.ytbsp-play-pause-icon::before { content: ""; left: 0; transition: all 0.2s linear; width: 0; height: 12px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc; }' +
+            '.ytbsp-play-pause-icon::after { content: ""; right: 0; transition: all 0.3s; width: 0; height: 0; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc; }' +
+            '.ytbsp-play-pause-icon.ytbsp-pause::before{ border-top-width: 0; border-bottom-width: 0; border-left-width: 5.3px; height: 100%; }' +
+            '.ytbsp-play-pause-icon.ytbsp-pause::after { border-top-width: 0; border-bottom-width: 0; border-left-width: 5.3px; height: 100%; }';
 
         document.head.appendChild(css);
     }
