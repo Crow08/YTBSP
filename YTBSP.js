@@ -57,7 +57,7 @@ var GoogleAuth;
     var enlargeDelay = 500;						// DEFAULT: 500 (in ms).
     var enlargeFactor = 2.8;					// DEFAULT: 2.8 (x * 90px).
     var enlargeFactorNative = 2.0;				// DEFAULT: 2.0 (x * 94px).
-    var timeToMarkAsSeen = 10;					// DEFAILT: 10 (in s).
+    var timeToMarkAsSeen = 10;					// DEFAULT: 10 (in s).
     var screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
     var playerQuality = resolutions['1080p'];	// DEFAULT: hd1080 (resolutions['1080p'])
     var peekPlayerSizeFactor = 1.5;				// DEFAULT: 1.0 (x * 180px).
@@ -70,8 +70,9 @@ var GoogleAuth;
     const DISCOVERYDOCS = ['https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest', 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'];
     const SCOPE = 'https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/drive.appdata';
 
-    // Slectors for external HTML elements:
+    // Selectors for external HTML elements:
     // YouTube selectors:
+    const YT_APP = "ytd-app";
     const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
     const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
     const YT_VIDEOTITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
@@ -79,6 +80,8 @@ var GoogleAuth;
     const YT_CONTENT = "#content";
     const YT_GUIDE = "app-drawer#guide";
     const YT_PLAYER_QUALITY = "yt-player-quality";
+    const YT_PLAYER = "#movie_player";
+    const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
     // MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
@@ -186,7 +189,7 @@ var GoogleAuth;
         }, 1000);
     }
 
-    // OAuth signin.
+    // OAuth sign in.
     function setSigninStatus() {
         var user = GoogleAuth.currentUser.get();
         var isAuthorized = user.hasGrantedScopes(SCOPE);
@@ -196,7 +199,7 @@ var GoogleAuth;
         } else {
             GoogleAuth.signIn().then(
                 function() {
-                    // Signin successful then start loading save data.
+                    // Sign in successful then start loading save data.
                     startAPIRequests();
                 },
                 function(error) {
@@ -604,6 +607,7 @@ var GoogleAuth;
         });
     }
 
+    // Save video information.
     function saveVideoInformation(){
         if(useRemoteData){
             return new Promise(function(resolve, reject){
@@ -887,11 +891,12 @@ var GoogleAuth;
     function openBackupDialog() {
         loadingProgress(1);
         getVideoInformation().then(function(saveData){
-            createBackupDialog(JSON.stringify(saveData));
+            openModal(createBackupDialog(JSON.stringify(saveData)));
             loadingProgress(-1);
         });
     }
 
+    // Creates and returns a new backup dialog.
     function createBackupDialog(saveData){
         var backupDialog = $("<div/>");
         backupDialog.append($("<h1/>",{html:"Backup video information"}));
@@ -946,13 +951,21 @@ var GoogleAuth;
             }
         };
         endDiv.append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "import data", on: { click: importData }}));
-        backupDialog.append(endDiv);
-        openModal(backupDialog);
+        return backupDialog.append(endDiv);
     }
     $(".ytbsp-func#ytbsp-backup", maindiv).click(openBackupDialog);
 
-
+    // Open settings dialog.
     function openSettingsDialog() {
+        loadingProgress(1);
+        setTimeout(function(){
+            openModal(createSettingsDialog());
+            loadingProgress(-1);
+        }, 1);
+    }
+
+    // create settings dialog.
+    function createSettingsDialog() {
         var settingsDialog = $("<div/>");
         settingsDialog.append($("<h1/>",{html:"Settings"}));
         var settingsTable = $("<table/>",{id:"ytbsp-settings-table"});
@@ -1032,6 +1045,7 @@ var GoogleAuth;
                             );
         settingsDialog.append(settingsTable);
 
+        // Function for save button.
         var saveSettings = function() {
             loadingProgress(1);
 
@@ -1048,7 +1062,6 @@ var GoogleAuth;
             playerQuality = $("#ytbsp-settings-playerQuality").val();
             screenThreshold = $("#ytbsp-settings-screenThreshold").val();
             autoPauseVideo = $("#ytbsp-settings-autoPauseVideo").prop("checked");
-
 
             saveConfig().then(function(){
                 setTimeout(function() {
@@ -1068,8 +1081,7 @@ var GoogleAuth;
         .append($("<p/>",{html:versionInformation, "class": "ytbsp-func", style:"font-size: 1rem;"}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Cancel", on: { click: closeModal }}))
         .append($("<input/>",{type:"submit", "class": "ytbsp-func", value: "Save", on: { click: saveSettings }}));
-        settingsDialog.append(endDiv);
-        openModal(settingsDialog);
+        return settingsDialog.append(endDiv);
     }
     $(".ytbsp-func#ytbsp-settings", maindiv).click(openSettingsDialog);
 
@@ -1094,7 +1106,11 @@ var GoogleAuth;
         }
     }
 
-    var player = new Player();
+    var player = new Player(); // Unique Player Object.
+
+    /////////////////////////////////////
+    // PLAYER Object constructor //
+    /////////////////////////////////////
 
     function Player(){
         this.playerRef = null;
@@ -1103,13 +1119,17 @@ var GoogleAuth;
         this.nativePlayerIsTheater = false;
         this.peekPlayerActive = false;
 
+        // Show Peek Player:
+        // Small video preview in the bottom right coner as an overlay over another page.
         this.showPeekPlayer = function(){
-            this.playerRef = $('#movie_player');
+            this.playerRef = $(YT_PLAYER);
+            // If player cannot be found or peekPlayerSize is 0 (disabled) dont show peek player.
             if(!this.playerRef.length || peekPlayerSizeFactor <= 0.0){
                 return;
             }
             this.nativePlayerParent = this.playerRef.parent();
             if(null == this.nativePlayerCss){
+                // Save native player css before switching to peek player.
                 this.nativePlayerCss = {
                     position : this.playerRef.css('position'),
                     right : this.playerRef.css('right'),
@@ -1119,18 +1139,25 @@ var GoogleAuth;
                     zIndex : this.playerRef.css('zIndex')
                 };
             }
-            // TODO: Repair TheaterMode.
-            //this.nativePlayerIsTheater = $('#page-manager > ytd-watch-flexy').get(0).theater;
-            //$('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(true);
 
+            // Try to switch to theater mode, because the video size only is scaleable in theater mode.
+            try{
+                this.nativePlayerIsTheater = $(YT_PLAYER_CONTROL).get(0).theater;
+                $(YT_PLAYER_CONTROL).get(0).theaterModeChanged_(true);
+            }catch(e){}
+
+            // Place peek player in YTBSP main div.
             $("#YTBSP").append(this.playerRef);
 
+            // Start player immediately if video was playing before (1: playing).
             if(this.playerRef.get(0).getPlayerState() == 1){
                 this.playerRef.get(0).playVideo();
             }
 
+            // hide player controls in peek player mode because it takes too much space.
             this.playerRef.get(0).hideControls();
 
+            // Put peek player css into place.
             this.playerRef.css({
                 position: "fixed",
                 right: "20px",
@@ -1139,7 +1166,6 @@ var GoogleAuth;
                 height: (180 * peekPlayerSizeFactor) + "px",
                 zIndex: "10"
             });
-
 
             // add overlay to the peek player that will control click behaviour
             this.playerRef.append('<div id="ytbsp-peekplayer-overlay"><div id="ytbsp-peekplayer-overlay-player-control"><label class="ytbsp-play-pause-icon" title="play / pause"></div></div>');
@@ -1163,41 +1189,52 @@ var GoogleAuth;
                 }
             );
 
+            // Force video to update size.
             window.dispatchEvent(new Event('resize'));
 
             this.peekPlayerActive = true;
         }
 
+        // Returns from peek player to native player.
         this.showNativePlayer = function(){
-            if(null == this.nativePlayerParent && !this.nativePlayerParent.length){
+            // If player and player Container cannot be found abort.
+            if(null == this.nativePlayerParent || !this.nativePlayerParent.length){
                 return;
             }
-            this.playerRef = $('#movie_player');
+            this.playerRef = $(YT_PLAYER);
             if(!this.playerRef.length){
                 return;
             }
+            // Return player to its original position.
+            this.nativePlayerParent.append($(YT_PLAYER));
 
-            this.nativePlayerParent.append($('#movie_player'));
-
+            // Start player immediately if video was playing before (1: playing).
             if(this.playerRef.get(0).getPlayerState() == 1){
                 this.playerRef.get(0).playVideo();
             }
 
+            // Unhide player controls.
             this.playerRef.get(0).showControls();
 
+            // Revert css changes.
             this.playerRef.css(this.nativePlayerCss);
 
-            if(!this.nativePlayerIsTheater){
-                // TODO: Repair TheaterMode.
-                //$('#page-manager > ytd-watch-flexy').get(0).theaterModeChanged_(false);
-            }
-            $("#ytbsp-peekplayer-overlay").remove();
-
+            // Force video to update size.
             window.dispatchEvent(new Event('resize'));
+
+            // If player was originally not in theadter mode, try to disable it.
+            if(!this.nativePlayerIsTheater){
+                try{
+                    $(YT_PLAYER_CONTROL).get(0).theaterModeChanged_(false);
+                }catch(e){}
+            }
+
+            $("#ytbsp-peekplayer-overlay").remove();
 
             this.peekPlayerActive = false;
         }
 
+        // Retuns whether player is in peek mode.
         this.isPeekPlayerActive = function(){
             return this.peekPlayerActive;
         }
@@ -1445,12 +1482,12 @@ var GoogleAuth;
                 }
             }, this);
 
-            // Remove overstanding items.
+            // Remove excess items.
             for(var i = visableItems, ilen = alreadyIn.length; i < ilen; ++i) {
                 alreadyIn[i].remove();
             }
 
-            // Handly visability.
+            // Handle visibility.
             this.isEmpty = visableItems <= 0;
             this.handleVisablility();
         },
@@ -1491,7 +1528,7 @@ var GoogleAuth;
             }
         },
 
-        // Cecks if the subscription is within the threadshold of the view.
+        // Checks if the subscription is within the threshold of the view.
         inView: function() {
 
             if(this.lastViewCheck === lastScroll) {
@@ -1555,7 +1592,7 @@ var GoogleAuth;
 
 
         addInfos: function(infos) {
-            // Set given informations.
+            // Set given information.
             if(infos.hasOwnProperty('title')) {
                 this.title = infos.title !== "" ? infos.title : this.title;
             }
@@ -1731,7 +1768,7 @@ var GoogleAuth;
             }
             $(".ytbsp-clip", this.thumbLi).mouseover(enlarge);
 
-            // reset tumbnail to original size
+            // reset thumbnail to original size
             function enlargecancel(){
                 if(enlargeFactor <= 1){
                     return;
@@ -1811,7 +1848,20 @@ var GoogleAuth;
     // List for manually checked and potentially unsubscribed or deleted channels.
     var manuallyCheckedSubs = [];
 
+    // save all video information and compares it to locally cached information,
+    // to prevent subscription information to get lost when youtube api misses subscriptions
+    // (this happens quite frequently).
     function saveList() {
+
+        // Helper function to check if a sub is already the sublist.
+        var isInSubs = function (id){
+            return $.grep(subs, function(sub) {
+                return sub.id == id;
+            }).length != 0;
+        }
+
+        // TODO: Too complicated and potentially wrong at first invocation...
+
         // Check if all subs in cache are loaded properly.
         for (var i = 0; i < cachedVideoinformation.length; i++) {
             // If cached subscription was not alredy checked and is not in current sub list.
@@ -1838,17 +1888,12 @@ var GoogleAuth;
         saveVideoInformation();
     }
 
-    function isInSubs(vId){
-        return $.grep(subs, function(sub) {
-            return sub.id == vId;
-        }).length != 0;
-    }
 
     // Now we just need to generate a stylesheet
 
-    // Stylerules depening on the loaded page.
-    // Startpage_body display: none is defined via stylesheet to not fash up when loaded.
-    // (When loaded this rule has to be removed, to prevent feedpages from loadig with display: none)
+    // Stylerules depending on the loaded page.
+    // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
+    // (When page has finished loading initially this rule has to be removed, to prevent feedpages from loadig with display: none)
     var loading_body_style = YT_STARTPAGE_BODY + ' { background: transparent; display:none; }';
     var startpage_body_style = YT_STARTPAGE_BODY + ' { margin-top: -30px; margin-left: 120px; background: transparent; }' +
         YT_GUIDE + '{ z-index: 0 !important;}';
@@ -1861,6 +1906,8 @@ var GoogleAuth;
     var playlist_body_style = YT_STARTPAGE_BODY + ' { background: transparent; margin-top: -60px; }' +
         YT_GUIDE + '{ z-index: 0; !important;}' +
         YT_STARTPAGE_BODY + " " + YT_PLAYLIST_SIDEBAR + ' {padding-top: 54px;}';
+
+    // Function to set css-styles to alter native youtube elements depending on the page loaded.
     function setYTStyleSheet(body_style){
         $("#ytbsp-yt-css").remove();
         var css = document.createElement("style");
@@ -1871,6 +1918,7 @@ var GoogleAuth;
         document.head.appendChild(css);
     }
 
+    // YTBSP css for all custom elements.
     function addYTBSPStyleSheet() {
         // Check if we got a dark theme.
         var color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
@@ -1926,7 +1974,7 @@ var GoogleAuth;
             '.ytbsp-seemarker.seen { opacity: 1;  font-weight: 500; background-color: #474747; }' +
             '.ytbsp-seemarker.seen:hover { opacity: 0.6; }' +
 
-            // functionbuttons
+            // function-buttons
             '#YTBSP .ytbsp-func { color: ' + subtextColor + '; cursor: pointer; display: inline-block; border: none; z-index: 1; opacity: 0.88;' +
             'background-color: transparent; padding: 1px 10px; margin: 0px 2px; font-size: 1.4rem; font-weight: 400; font-family: Roboto, Noto, sans-serif;}' +
             '#YTBSP label.ytbsp-func {padding-top: 3px;}' +
@@ -1986,7 +2034,29 @@ var GoogleAuth;
         document.head.appendChild(css);
     }
 
-    // Because of the extreme ammount of thumbs they shouldn't be downloaded all at once (data-src instead of src)
+    // Add css for enlarged thumbnails.
+    function addThumbnailEnlargeCss(){
+        // Check if we got a dark theme.
+        var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var dark = document.documentElement.getAttribute("dark");
+        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384) ||
+            (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
+
+        var altBorderColor = dark ? "#737373" : "#737373";
+
+        var css = document.createElement("style");
+        css.type = "text/css";
+        css.id="ytbsp-css";
+        css.innerHTML =
+            'ytd-thumbnail:hover { transform: scale(' + enlargeFactorNative + '); border: solid ' + enlargeFactorNative / 2.0 + 'px ' + altBorderColor + '; padding: 0px; z-index: 2; }' +
+            'ytd-thumbnail { padding: ' + enlargeFactorNative / 2.0 + 'px }' +
+            '#video-title { width: 200px; }' +
+            '#scroll-container.yt-horizontal-list-renderer { overflow: visible; }';
+        document.head.appendChild(css);
+    }
+
+    // Because of the extreme amount of thumbs they shouldn't be downloaded all at once (data-src instead of src)
     // since 2012.6-1 also the entire update only starts as soon as you scroll to it
     // The solution is: only download those on the screen
 
@@ -2010,6 +2080,7 @@ var GoogleAuth;
     window.addEventListener("scroll", checkEvent, false);
     window.addEventListener("resize", checkEvent, false);
 
+    // load thumbnails for subscriptions currently in view plus the screenThreshold property.
     function updateSubsInView() {
         lastScroll = Date.now();
         screenTop = document.body.scrollTop || document.documentElement.scrollTop;
@@ -2027,6 +2098,7 @@ var GoogleAuth;
         scrollTimeout = null;
     }
 
+    // Handler to manage a fresh page load or a page navigation
     function handlePageChange(){
         if(/.*watch\?.+list=.+/.test(location)){
             autoPauseThisVideo = false;
@@ -2064,9 +2136,10 @@ var GoogleAuth;
         }
     }
 
+    // Handler for navigating to a watch-page (URL: */watch*)
     function watchpage(){
         hideMAToolbar();
-        // Mark as seen after at least X secounds.
+        // Mark as seen after at least X seconds.
         markAsSeenTimeout = setTimeout(function() {
             var vid = location.href.match(/v=([^&]{11})/)[1];
             if(vid) {
@@ -2086,29 +2159,31 @@ var GoogleAuth;
         }, timeToMarkAsSeen * 1000);
     }
 
-    function injectYTBSP(){
-        $(YT_CONTENT).prepend(maindiv);
-        $(window).scrollTop(0);
-    }
 
-    function setHrefObserver(){
-        var oldHref = document.location.href;
-        var observer = new MutationObserver(function() {
-            if (oldHref != document.location.href) {
-                oldHref = document.location.href;
-                handlePageChange();
-            }
+    var oldHref = document.location.href; // saves previous location until pagechange is processed.
 
-            if ($('#YTBSP').length === 0 && $(YT_CONTENT).length!==0){
-                injectYTBSP();
-            }
-            if ($('#page-manager > ytd-watch-flexy').get(0).fullscreen === true){
-                $('#YTBSP').hide();
-            }
-            else{
-                $('#YTBSP').show();
-            }
-        });
+    // Unique Mutation Observer to react to certain events.
+    var observer = new MutationObserver(function() {
+        // Detect pagechanges.
+        if (oldHref != document.location.href) {
+            oldHref = document.location.href;
+            handlePageChange();
+        }
+        // Inject YTBSP main div if not injected already.
+        if ($('#YTBSP').length === 0 && $(YT_CONTENT).length !== 0){
+            $(YT_CONTENT).prepend(maindiv);
+            $(window).scrollTop(0);
+        }
+        // Detect going fullscreen.
+        if ($(YT_PLAYER_CONTROL).get(0).fullscreen === true){
+            $('#YTBSP').hide();
+        } else {
+            $('#YTBSP').show();
+        }
+    });
+
+    // Setup mutation observer to detect page changes and act accordingly.
+    function initPageChangeObserver(){
         observer.observe(document.querySelector("body"), {childList: true, subtree: true});
     }
 
@@ -2121,8 +2196,10 @@ var GoogleAuth;
         document.head.appendChild(css);
     }
 
+    // Opens Video by Id using SPF without reloading the entire site.
     function openVideoWithSPF(vid){
-        var ytdApp = document.querySelector('ytd-app');
+        // Using a native YT event to mimic a native navigation.
+        var ytdApp = document.querySelector(YT_APP);
         ytdApp.fire("yt-navigate", {
             endpoint: {
                 watchEndpoint: {
@@ -2136,14 +2213,6 @@ var GoogleAuth;
         });
     }
 
-    // Executed on startup before main script.
-    function onScriptStart(){
-        setYTStyleSheet(loading_body_style);
-        // Preconfiguration for settings that cannot wait until configuration is loaded.
-        timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
-        autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
-    }
-
     $(window).bind('storage', function (e) {
         if(e.key == "YTBSP"){
             getLocalVideoInformation().then(function(data){
@@ -2153,32 +2222,44 @@ var GoogleAuth;
         }
     });
 
-    // Native page is loaded.
+    // LifecycleHook: Startup:
+    // Executed once as soon as possible, before bulk of the main script.
+    function onScriptStart(){
+        setYTStyleSheet(loading_body_style);
+        // Early configuration for settings that cannot wait until configuration is loaded.
+        timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+        autoPauseVideo = localStorage.getItem("YTBSP_autoPauseVideo") !== "0";
+    }
+
+    // LifecycleHook: DocumentRead:
+    // Executed once as soon as the native page has finished loading.
     $( document ).ready(function() {
-        // Insert new page.
-        if($(YT_CONTENT).length!==0){
-            injectYTBSP();
-        }
         $(YT_STARTPAGE_BODY).hide();
-        setHrefObserver();
+        initPageChangeObserver();
         handlePageChange();
         // Remove css class from MA.
         $("html").removeClass("m0");
     });
 
-    // Executed after config is Loaded
+    // LifecycleHook: ConfigLoaded:
+    // Executed after config is Loaded.
     function afterConfigLoaded(){
         addYTBSPStyleSheet();
-        addThumbnailEnlargeCss();
+        if(enlargeFactorNative <= 1){
+            addThumbnailEnlargeCss();
+        }
         setPlayerQuality();
     }
 
-    var defaultPlayFunction = HTMLMediaElement.prototype.play;
+    var defaultPlayFunction = HTMLMediaElement.prototype.play; // Save default play function before replaceing it.
 
+    // Override play Function to prevent player from automatically starting the video after loading video page.
     HTMLMediaElement.prototype.play = function () {
+        // Need JQuery to be loaded.
         if(!jQuery.isReady){
             return;
         }
+        // Prevent the first call to play this video and act normally afterwards.
         if (autoPauseThisVideo) {
             autoPauseThisVideo = false;
             var player = this.parentElement.parentElement;
@@ -2187,33 +2268,11 @@ var GoogleAuth;
             }
             return;
         }
+        // Resume default behaviour.
         defaultPlayFunction.call(this);
     };
 
-    function addThumbnailEnlargeCss(){
-        if(enlargeFactorNative <= 1){
-            return;
-        }
-        // Check if we got a dark theme.
-        var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var dark = document.documentElement.getAttribute("dark");
-        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384) ||
-            (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
-
-        var altBorderColor = dark ? "#737373" : "#737373";
-
-        var css = document.createElement("style");
-        css.type = "text/css";
-        css.id="ytbsp-css";
-        css.innerHTML =
-            'ytd-thumbnail:hover { transform: scale(' + enlargeFactorNative + '); border: solid ' + enlargeFactorNative / 2.0 + 'px ' + altBorderColor + '; padding: 0px; z-index: 2; }' +
-            'ytd-thumbnail { padding: ' + enlargeFactorNative / 2.0 + 'px }' +
-            '#video-title { width: 200px; }' +
-            '#scroll-container.yt-horizontal-list-renderer { overflow: visible; }';
-        document.head.appendChild(css);
-    }
-
+    // Set preferred player quality.
     function setPlayerQuality(){
         localStorage.setItem(YT_PLAYER_QUALITY, '{"data":"' + playerQuality + '","expiration":' + moment().add(1, 'months').valueOf() + ',"creation":' + moment().valueOf() + '}');
     }
