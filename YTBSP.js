@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         YouTube Better Startpage
-// @description  Spotilghts all subscriptions in an oranized fashion on the Startpage of YouTube.
+// @description  Spotlights all subscriptions in an organized fashion on the startpage of YouTube.
 // @version      1.4.7
 // @namespace    ytbsp
 // @include      https://youtube.com/*
