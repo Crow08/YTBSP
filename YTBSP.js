@@ -31,7 +31,7 @@
  * IN THE SOFTWARE.
  */
 
-/* global jQuery, $, gapi */
+/* global jQuery, $, gapi, GM_info */
 
 var moment = this.moment;
 
@@ -204,7 +204,7 @@ var GoogleAuth;
                 },
                 function(error) {
                     // Display popup-blocked message.
-                    if(error.error == "popup_blocked_by_browser") {
+                    if(error.error === "popup_blocked_by_browser") {
                         alert('please allow popups for this page and reload!');
                     }else{
                         console.error("Google user sign-in failed:\n" + error);
@@ -217,7 +217,7 @@ var GoogleAuth;
     // Prevent unnecessary request parameters.
     function removeEmptyParams(params) {
         for(var p in params) {
-            if(!params[p] || params[p] == 'undefined') {
+            if(!params[p] || params[p] === 'undefined') {
                 delete params[p];
             }
         }
@@ -749,7 +749,7 @@ var GoogleAuth;
     // Parses api results into subs if still subscribed.
     function processCheckedSubs(response){
         // No longer subscribed
-        if(response.pageInfo.totalResults == 0){
+        if(response.pageInfo.totalResults === 0){
             loadingProgress(-1, true);
             return;
         }
@@ -1087,7 +1087,7 @@ var GoogleAuth;
 
     // Show backup dialog modal
     function openModal(content) {
-        if($("#ytbsp-modal-content").length == 0 || $("#ytbsp-modal").length == 0){
+        if($("#ytbsp-modal-content").length === 0 || $("#ytbsp-modal").length === 0){
             console.error("could not open modal!");
         }
         $("#ytbsp-modal-content").empty();
@@ -1100,7 +1100,7 @@ var GoogleAuth;
 
     // Hide backup dialog modal
     function closeModal() {
-        if($("#ytbsp-modal").length != 0) {
+        if($("#ytbsp-modal").length !== 0) {
             $("#ytbsp-modal").css("display", "none");
             $("#ytbsp-modal").css("opacity", "0");
         }
@@ -1128,7 +1128,7 @@ var GoogleAuth;
                 return;
             }
             this.nativePlayerParent = this.playerRef.parent();
-            if(null == this.nativePlayerCss){
+            if(null === this.nativePlayerCss){
                 // Save native player css before switching to peek player.
                 this.nativePlayerCss = {
                     position : this.playerRef.css('position'),
@@ -1150,7 +1150,7 @@ var GoogleAuth;
             $("#YTBSP").append(this.playerRef);
 
             // Start player immediately if video was playing before (1: playing).
-            if(this.playerRef.get(0).getPlayerState() == 1){
+            if(this.playerRef.get(0).getPlayerState() === 1){
                 this.playerRef.get(0).playVideo();
             }
 
@@ -1176,7 +1176,7 @@ var GoogleAuth;
             var that = this;
             $("#ytbsp-peekplayer-overlay").click(
                 function(event){
-                    if($('#ytbsp-peekplayer-overlay-player-control:hover').length != 0){ // if over play/pause button
+                    if($('#ytbsp-peekplayer-overlay-player-control:hover').length !== 0){ // if over play/pause button
                         that.playerRef.trigger( "click" ); // send click to youtube player to play/pause the video
                         $('.ytbsp-play-pause-icon').toggleClass('ytbsp-pause');
                     }
@@ -1193,12 +1193,12 @@ var GoogleAuth;
             window.dispatchEvent(new Event('resize'));
 
             this.peekPlayerActive = true;
-        }
+        };
 
         // Returns from peek player to native player.
         this.showNativePlayer = function(){
             // If player and player Container cannot be found abort.
-            if(null == this.nativePlayerParent || !this.nativePlayerParent.length){
+            if(null === this.nativePlayerParent || !this.nativePlayerParent.length){
                 return;
             }
             this.playerRef = $(YT_PLAYER);
@@ -1209,7 +1209,7 @@ var GoogleAuth;
             this.nativePlayerParent.append($(YT_PLAYER));
 
             // Start player immediately if video was playing before (1: playing).
-            if(this.playerRef.get(0).getPlayerState() == 1){
+            if(this.playerRef.get(0).getPlayerState() === 1){
                 this.playerRef.get(0).playVideo();
             }
 
@@ -1232,12 +1232,12 @@ var GoogleAuth;
             $("#ytbsp-peekplayer-overlay").remove();
 
             this.peekPlayerActive = false;
-        }
+        };
 
         // Retuns whether player is in peek mode.
         this.isPeekPlayerActive = function(){
             return this.peekPlayerActive;
-        }
+        };
     }
 
     /////////////////////////////////////
@@ -1351,10 +1351,10 @@ var GoogleAuth;
                 self.videos = [];
                 // If videos for sub are in cache find them.
                 var cacheSub = $.grep(cachedVideoinformation, function(subs) {
-                    return subs.id == self.id;
+                    return subs.id === self.id;
                 });
                 var cacheVideos = [];
-                if(cacheSub.length == 1) {
+                if(cacheSub.length === 1) {
                     cacheVideos = cacheSub[0].videos;
                 }
 
@@ -1389,9 +1389,9 @@ var GoogleAuth;
 
                     // Merge cache info if available.
                     var cacheVideo = $.grep(cacheVideos, function(cVideo) {
-                        return cVideo.vid == vid;
+                        return cVideo.vid === vid;
                     });
-                    if(cacheVideo.length == 1) {
+                    if(cacheVideo.length === 1) {
                         try {
                             seen = cacheVideo[0].seen;
                         } catch(e) {}
@@ -1472,7 +1472,7 @@ var GoogleAuth;
                         }
                     }
                     ++visableItems;
-                    if(visableItems < limit && visableItems % maxVidsPerRow == 0){
+                    if(visableItems < limit && visableItems % maxVidsPerRow === 0){
                         if(visableItems < alreadyIn.length) {
                             $("</br>").insertBefore(alreadyIn[visableItems]);
                         } else {
@@ -1675,7 +1675,7 @@ var GoogleAuth;
 
         createThumb: function(inView) {
             var self = this;
-            if(this.duration == "0:00") {
+            if(this.duration === "0:00") {
                 loadingProgress(1);
                 buildApiRequest(
                     'GET',
@@ -1753,7 +1753,7 @@ var GoogleAuth;
                 }
                 var thumb = $(this).parent();
                 var clip = $(this);
-                if(timeouts[self.vid.replace('-', '$')] == -1){
+                if(timeouts[self.vid.replace('-', '$')] === -1){
                     timeouts[self.vid.replace('-', '$')] = setTimeout(function(){
                         var img = $('.ytbsp-thumb',clip);
                         var title = $('.ytbsp-title', thumb);
@@ -1856,9 +1856,9 @@ var GoogleAuth;
         // Helper function to check if a sub is already the sublist.
         var isInSubs = function (id){
             return $.grep(subs, function(sub) {
-                return sub.id == id;
-            }).length != 0;
-        }
+                return sub.id === id;
+            }).length !== 0;
+        };
 
         // TODO: Too complicated and potentially wrong at first invocation...
 
@@ -2145,9 +2145,9 @@ var GoogleAuth;
             if(vid) {
                 var sid = $(YT_CHANNELLINK).attr('href').match(/\/channel\/([^&]*)/)[1];
                 subs.forEach(function(sub, i) {
-                    if(sub.id == sid) {
+                    if(sub.id === sid) {
                         sub.videos.forEach(function(video, j) {
-                            if(video.vid == vid) {
+                            if(video.vid === vid) {
                                 subs[i].videos[j].see();
                                 subs[i].buildList();
                                 saveList();
@@ -2165,7 +2165,7 @@ var GoogleAuth;
     // Unique Mutation Observer to react to certain events.
     var observer = new MutationObserver(function() {
         // Detect pagechanges.
-        if (oldHref != document.location.href) {
+        if (oldHref !== document.location.href) {
             oldHref = document.location.href;
             handlePageChange();
         }
@@ -2214,7 +2214,7 @@ var GoogleAuth;
     }
 
     $(window).bind('storage', function (e) {
-        if(e.key == "YTBSP"){
+        if(e.key === "YTBSP"){
             getLocalVideoInformation().then(function(data){
                 cachedVideoinformation = data;
                 updateAllSubs();
