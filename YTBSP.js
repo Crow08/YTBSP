@@ -1920,10 +1920,7 @@ var GoogleAuth;
 
     // YTBSP css for all custom elements.
     function addYTBSPStyleSheet() {
-        // Check if we got a dark theme.
-        var color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var dark = document.documentElement.getAttribute("dark");
-        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384);
+        var dark = isDarkModeEnabled();
 
         var stdFontColor = dark ? "#e1e1e1" : "#111111";
         var subtextColor = dark ? "#ffffffff" : "#141414";
@@ -2036,13 +2033,7 @@ var GoogleAuth;
 
     // Add css for enlarged thumbnails.
     function addThumbnailEnlargeCss(){
-        // Check if we got a dark theme.
-        var color = getComputedStyle(document.body).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var color2 = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
-        var dark = document.documentElement.getAttribute("dark");
-        dark = dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384) ||
-            (color2 && (parseInt(color2[1]) + parseInt(color2[2]) + parseInt(color2[3])) < 384);
-
+        var dark = isDarkModeEnabled();
         var altBorderColor = dark ? "#737373" : "#737373";
 
         var css = document.createElement("style");
@@ -2054,6 +2045,13 @@ var GoogleAuth;
             '#video-title { width: 200px; }' +
             '#scroll-container.yt-horizontal-list-renderer { overflow: visible; }';
         document.head.appendChild(css);
+    }
+
+    // Check if dark theme is active.
+    function isDarkModeEnabled(){
+        var color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+        var dark = document.documentElement.getAttribute("dark");
+        return dark || (color && (parseInt(color[1]) + parseInt(color[2]) + parseInt(color[3])) < 384);
     }
 
     // Because of the extreme amount of thumbs they shouldn't be downloaded all at once (data-src instead of src)
@@ -2175,7 +2173,7 @@ var GoogleAuth;
             $(window).scrollTop(0);
         }
         // Detect going fullscreen.
-        if ($(YT_PLAYER_CONTROL).get(0).fullscreen === true){
+        if ($(YT_PLAYER_CONTROL).length !== 0 && $(YT_PLAYER_CONTROL).get(0).fullscreen === true){
             $('#YTBSP').hide();
         } else {
             $('#YTBSP').show();
@@ -2245,7 +2243,7 @@ var GoogleAuth;
     // Executed after config is Loaded.
     function afterConfigLoaded(){
         addYTBSPStyleSheet();
-        if(enlargeFactorNative <= 1){
+        if(enlargeFactorNative >= 1){
             addThumbnailEnlargeCss();
         }
         setPlayerQuality();
