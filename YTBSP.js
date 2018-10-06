@@ -82,6 +82,7 @@ var GoogleAuth;
     const YT_PLAYER_QUALITY = "yt-player-quality";
     const YT_PLAYER = "#movie_player";
     const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
+	const YT_VIDEOSTREAM = ".video-stream"
     // MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
@@ -1168,9 +1169,13 @@ var GoogleAuth;
             });
 
             // add overlay to the peek player that will control click behaviour
-            this.playerRef.append('<div id="ytbsp-peekplayer-overlay"><div id="ytbsp-peekplayer-overlay-player-control"><label class="ytbsp-play-pause-icon" title="play / pause"></div></div>');
+            this.playerRef.append($("<div/>", {id:"ytbsp-peekplayer-overlay"})
+                                  .append($("<div/>", {id:"ytbsp-peekplayer-overlay-player-control"})
+                                          .append($("<label/>", {"class":"ytbsp-play-pause-icon", title:"play / pause"}))
+                                         )
+                                 );
             // initialize play/pause icon depending on player state
-            if(!$('.video-stream').get(0).paused){
+            if(!$(YT_VIDEOSTREAM).get(0).paused){
                 $('.ytbsp-play-pause-icon').addClass('ytbsp-pause');
             }
             var that = this;
@@ -2019,8 +2024,8 @@ var GoogleAuth;
             // peek player
             '#ytbsp-peekplayer-overlay{ position: fixed; right: 20px; bottom: 20px; width:' + (320 * peekPlayerSizeFactor) + 'px; height:' + (180 * peekPlayerSizeFactor) + 'px; z-index: 11 }' +
             '#ytbsp-peekplayer-overlay-player-control{ position: absolute; left: 0px; bottom: 0px; z-index: 12; cursor: pointer;' +
-                'width:' + ((320 * peekPlayerSizeFactor) / 10) + 'px;' +
-                'height:' + ((320 * peekPlayerSizeFactor) / 10) + 'px; }' +
+            'width:' + ((320 * peekPlayerSizeFactor) / 10) + 'px;' +
+            'height:' + ((320 * peekPlayerSizeFactor) / 10) + 'px; }' +
             '.ytbsp-play-pause-icon {cursor: pointer; position: absolute; top: 0; left: 0; right: 0; bottom: 0; margin: auto; width: 16px; height: 24px;}' +
             '.ytbsp-play-pause-icon::before, .ytbsp-play-pause-icon::after { position: absolute; top: 50%; transform: translateY(-50%); }' +
             '.ytbsp-play-pause-icon::before { content: ""; left: 0; transition: all 0.2s linear; width: 0; height: 12px; border-top: 6px solid transparent; border-bottom: 6px solid transparent; border-left: 8px solid #ccc; }' +
