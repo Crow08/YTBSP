@@ -1091,7 +1091,7 @@ window.GoogleAuth = this.GoogleAuth;
         }
     }
 
-    let player = new Player(); // Unique Player Object.
+    const player = new Player(); // Unique Player Object.
 
     // ///////////////////////////////////
     // PLAYER Object constructor //
@@ -1383,7 +1383,7 @@ window.GoogleAuth = this.GoogleAuth;
                         "vid": vid,
                         "title": title,
                         "thumb": thumb ? thumb : "",
-                        "thumb_large": thumbLarge ? thumbLarge : "",
+                        "thumbLarge": thumbLarge ? thumbLarge : "",
                         "uploaded": upload ? upload : "missing upload time",
                         "pubDate": pubDate ? pubDate : "missing upload time",
                         "seen": seen ? seen : false,
@@ -1553,7 +1553,7 @@ window.GoogleAuth = this.GoogleAuth;
         "vid": undefined,
         "title": "",
         "thumb": "",
-        "thumb_large": "",
+        "thumbLarge": "",
         "duration": "0:00",
         "uploaded": "",
         "pubDate": "",
@@ -1578,8 +1578,8 @@ window.GoogleAuth = this.GoogleAuth;
             if (infos.hasOwnProperty("thumb")) {
                 this.thumb = "" !== infos.thumb ? infos.thumb : this.thumb;
             }
-            if (infos.hasOwnProperty("thumb_large")) {
-                this.thumb_large = "" !== infos.thumb_large ? infos.thumb_large : this.thumb_large;
+            if (infos.hasOwnProperty("thumbLarge")) {
+                this.thumbLarge = "" !== infos.thumbLarge ? infos.thumbLarge : this.thumbLarge;
             }
             if (infos.hasOwnProperty("duration")) {
                 this.duration = "0:00" !== infos.duration ? infos.duration : this.duration;
@@ -1796,7 +1796,7 @@ window.GoogleAuth = this.GoogleAuth;
             } else {
                 this.thumbItem.attr("data-src", this.thumb);
             }
-            this.thumblargeItem.val(this.thumb_large ? this.thumb_large : this.thumb);
+            this.thumblargeItem.val(this.thumbLarge ? this.thumbLarge : this.thumb);
             this.durationItem.html(this.duration);
             this.clicksItem.html(this.clicks);
             this.uploadItem.html(this.uploaded);
@@ -1870,26 +1870,26 @@ window.GoogleAuth = this.GoogleAuth;
     // Style rules depending on the loaded page.
     // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
     // (When page has finished loading initially this rule has to be removed, to prevent feedpages from loadig with display: none)
-    const loading_body_style = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
-    const startpage_body_style = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }${
+    const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
+    const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }${
         YT_GUIDE}{ z-index: 0 !important;}`;
-    const video_body_style = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }${
+    const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }${
         YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
-    const search_body_style = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }${
+    const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }${
         YT_GUIDE}{ z-index: 0; !important;}`;
-    const default_body_style = `${YT_STARTPAGE_BODY} { background: transparent; }${
+    const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; }${
         YT_GUIDE}{ z-index: 0; !important;}`;
-    const playlist_body_style = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }${
+    const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }${
         YT_GUIDE}{ z-index: 0; !important;}${
         YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
     // Function to set css-styles to alter native youtube elements depending on the page loaded.
-    function setYTStyleSheet(body_style) {
+    function setYTStyleSheet(bodyStyle) {
         $("#ytbsp-yt-css").remove();
         const css = document.createElement("style");
         css.type = "text/css";
         css.id = "ytbsp-yt-css";
-        css.innerHTML = body_style;
+        css.innerHTML = bodyStyle;
 
         document.head.appendChild(css);
     }
@@ -1911,7 +1911,6 @@ window.GoogleAuth = this.GoogleAuth;
         css.id = "ytbsp-css";
 
         css.innerHTML =
-
             `#ytbsp-menuStrip { white-space: nowrap; padding: 10px 0px 20px 80px; display: flex;}
             #YTBSP input { vertical-align: text-top; }
             #ytbsp-subs { overflow: visible; padding: 0px; width: fit-content; margin: auto; list-style-type: none; min-width:${maxVidsPerRow * 168}px; margin-bottom: 100px;}
@@ -2069,16 +2068,16 @@ window.GoogleAuth = this.GoogleAuth;
         window.dispatchEvent(new Event("resize"));
         // If we are on the startpage (or feed pages).
         if ((/^(\/?|((\/feed\/)(trending|subscriptions|history)\/?))?$/iu).test(location.pathname)) {
-            setYTStyleSheet(startpage_body_style);
+            setYTStyleSheet(bodyStyleStartpage);
         } else if ((/^\/?watch$/u).test(location.pathname)) {
-            setYTStyleSheet(video_body_style);
+            setYTStyleSheet(bodyStyleVideo);
             watchpage();
         } else if ((/^\/?results$/u).test(location.pathname)) {
-            setYTStyleSheet(search_body_style);
+            setYTStyleSheet(bodyStyleSearch);
         } else if ((/^\/?playlist$/u).test(location.pathname)) {
-            setYTStyleSheet(playlist_body_style);
+            setYTStyleSheet(bodyStylePlaylist);
         } else {
-            setYTStyleSheet(default_body_style);
+            setYTStyleSheet(bodyStyleDefault);
         }
         if (player.isPeekPlayerActive()) {
             player.showNativePlayer();
@@ -2183,7 +2182,7 @@ window.GoogleAuth = this.GoogleAuth;
     // LifecycleHook: Startup:
     // Executed once as soon as possible, before bulk of the main script.
     function onScriptStart() {
-        setYTStyleSheet(loading_body_style);
+        setYTStyleSheet(bodyStyleLoading);
         // Early configuration for settings that cannot wait until configuration is loaded.
         timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
         autoPauseVideo = "0" !== localStorage.getItem("YTBSP_autoPauseVideo");
