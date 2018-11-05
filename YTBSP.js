@@ -223,20 +223,20 @@ window.GoogleAuth = this.GoogleAuth;
     // Build proper OAuth request.
     function buildApiRequest(requestMethod, path, params, properties) {
         return new Promise(((resolve, reject) => {
-            params = removeEmptyParams(params);
+            const cleanParams = removeEmptyParams(params);
             let request;
             if (properties) {
                 request = gapi.client.request({
                     "body": properties,
                     "method": requestMethod,
                     "path": path,
-                    "params": params
+                    "params": cleanParams
                 });
             } else {
                 request = gapi.client.request({
                     "method": requestMethod,
                     "path": path,
-                    "params": params
+                    "params": cleanParams
                 });
             }
             request.execute((response) => {
@@ -500,9 +500,10 @@ window.GoogleAuth = this.GoogleAuth;
                 ).then((data) => {
                     if ("undefined" === typeof data || null === data || "" === data) {
                         console.error("Error parsing video information!");
-                        data = [];
+                        resolve([]);
+                    } else {
+                        resolve(data);
                     }
-                    resolve(data);
                 });
             }
         }));
@@ -672,7 +673,7 @@ window.GoogleAuth = this.GoogleAuth;
                 localStorage.setItem("YTBSPbackup", newCache);
             } else {
                 console.error("cache save error!");
-                reject();
+                reject(new Error("cache save error!"));
             }
             newCache = null;
             savedCache = null;
@@ -700,7 +701,7 @@ window.GoogleAuth = this.GoogleAuth;
     // Parses api results into subs and requests recursively more subpages if needed.
     function processRequestSubs(response) {
         // If Request was denied retry login.
-        if (response.hasOwnProperty("error")) {
+        if (Object.prototype.hasOwnProperty.call(response, "error")) {
             console.error("OAuth failed! retrying...");
             window.GoogleAuth.disconnect();
             setSignInStatus();
@@ -708,7 +709,7 @@ window.GoogleAuth = this.GoogleAuth;
             return;
         }
         // If there is another page of subs request it.
-        if (response.nextPageToken !== undefined && null !== response.nextPageToken) {
+        if (("undefined" !== typeof response.nextPageToken) && (null !== response.nextPageToken)) {
             loadingProgress(1);
             buildApiRequest(
                 "GET",
@@ -986,7 +987,7 @@ window.GoogleAuth = this.GoogleAuth;
 
         const playerQualitySelect = $("<Select>", {"id": "ytbsp-settings-playerQuality"});
         for (const resolution in resolutions) {
-            if (resolutions.hasOwnProperty(resolution)) {
+            if (Object.prototype.hasOwnProperty.call(resolutions, resolution)) {
                 playerQualitySelect.append($("<option>", {"value": resolutions[resolution], "html": resolution}));
             }
         }
@@ -1550,7 +1551,7 @@ window.GoogleAuth = this.GoogleAuth;
     const timeouts = {};
 
     Video.prototype = {
-        "vid": undefined,
+        "vid": null,
         "title": "",
         "thumb": "",
         "thumbLarge": "",
@@ -1572,31 +1573,31 @@ window.GoogleAuth = this.GoogleAuth;
 
         "addInfos": function(infos) {
             // Set given information.
-            if (infos.hasOwnProperty("title")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "title")) {
                 this.title = "" !== infos.title ? infos.title : this.title;
             }
-            if (infos.hasOwnProperty("thumb")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "thumb")) {
                 this.thumb = "" !== infos.thumb ? infos.thumb : this.thumb;
             }
-            if (infos.hasOwnProperty("thumbLarge")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "thumbLarge")) {
                 this.thumbLarge = "" !== infos.thumbLarge ? infos.thumbLarge : this.thumbLarge;
             }
-            if (infos.hasOwnProperty("duration")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "duration")) {
                 this.duration = "0:00" !== infos.duration ? infos.duration : this.duration;
             }
-            if (infos.hasOwnProperty("uploaded")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "uploaded")) {
                 this.uploaded = "" !== infos.uploaded ? infos.uploaded : this.uploaded;
             }
-            if (infos.hasOwnProperty("pubDate")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "pubDate")) {
                 this.pubDate = "" !== infos.pubDate ? infos.pubDate : this.pubDate;
             }
-            if (infos.hasOwnProperty("clicks")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "clicks")) {
                 this.clicks = "" !== infos.clicks ? infos.clicks : this.clicks;
             }
-            if (infos.hasOwnProperty("seen")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "seen")) {
                 this.seen = false !== infos.seen ? infos.seen : this.seen;
             }
-            if (infos.hasOwnProperty("removed")) {
+            if (Object.prototype.hasOwnProperty.call(infos, "removed")) {
                 this.removed = false !== infos.removed ? infos.removed : this.removed;
             }
         },
@@ -1903,8 +1904,7 @@ window.GoogleAuth = this.GoogleAuth;
         const viewsAndUploadedInfoColor = dark ? "#888888" : "#11111199";
         const stdBorderColor = dark ? "#2c2c2c" : "#e2e2e2";
         const altBorderColor = dark ? "#737373" : "#737373";
-        const stdBgColor = dark ? "#141414" : "#F9F9F9";
-        const altBgColor = dark ? "#252525" : "#f5f5f5";
+        const bgColor = dark ? "#252525" : "#f5f5f5";
 
         const css = document.createElement("style");
         css.type = "text/css";
@@ -1922,7 +1922,7 @@ window.GoogleAuth = this.GoogleAuth;
             .ytbsp-subMenuStrip { height: 25px; margin: 4px 4px 3px; }
             .ytbsp-subTitle a { color: ${stdFontColor}; padding-top: 6px; position: absolute; text-decoration: none; font-size: 1.6rem; font-weight: 500;}
             #YTBSP {margin-left: 240px; margin-top: 57px;}
-            #ytbsp-subs .ytbsp-title-large{ width:${(160 * enlargeFactor) - 4}px; left: ${-(((160 * enlargeFactor) / 2) - 82)}px; position: relative; z-index: 1; background: ${altBgColor}; 
+            #ytbsp-subs .ytbsp-title-large{ width:${(160 * enlargeFactor) - 4}px; left: ${-(((160 * enlargeFactor) / 2) - 82)}px; position: relative; z-index: 1; background: ${bgColor}; 
                 text-align: center;border-width: 0px 2px 2px 2px; border-style: solid; border-color: ${altBorderColor}; padding: 2px;}
             .ytbsp-clip { position: relative; width: 160px; height: 90px; border: none; cursor: pointer; display: block;}
             .ytbsp-clip-large { z-index: 1; width:${(160 * enlargeFactor) + 4}px; height:${(90 * enlargeFactor) + 4}px; top: -45px; left:${-(((160 * enlargeFactor) / 2) - 82)}px; 
@@ -1963,7 +1963,7 @@ window.GoogleAuth = this.GoogleAuth;
             .ytbsp-slider-cb {display:none;}
             #ytbsp-modal { position: fixed; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,.4); z-index: 3;-webkit-transition: opacity .2s; 
                 -moz-transition: opacity .2s; -o-transition: opacity .2s; opacity: 0; overflow: auto; display: none; }
-            #ytbsp-modal-content { margin: 0 auto; width: 600px; min-height: 20px; margin-top: 30px; padding: 10px; background: ${altBgColor};  position: sticky; top: 60px; 
+            #ytbsp-modal-content { margin: 0 auto; width: 600px; min-height: 20px; margin-top: 30px; padding: 10px; background: ${bgColor};  position: sticky; top: 60px; 
                 -moz-border-radius: 3px; border-radius: 3px; box-shadow: 0 5px 20px rgba(0,0,0,.4); }#ytbsp-modal-content textarea { width: 595px; height: 400px; resize: none; margin: 20px 0; }
             #ytbsp-modal-content p, h1, h2 {color:${stdFontColor}; font-weight: 400;}
             #ytbsp-modal-content h2 {display: inline-block; }
