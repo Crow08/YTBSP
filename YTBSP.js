@@ -792,7 +792,7 @@ window.GoogleAuth = this.GoogleAuth;
     function shownative() {
         $(YT_STARTPAGE_BODY).show();
         subList.hide();
-        $(".ytbsp-hideWhenNative").css("visibility", "hidden");
+        $(".ytbsp-hideWhenNative", mainDiv).css("visibility", "hidden");
         isNative = true;
         // Toggle guide if on viewpage.
         if (toggleGuide) {
@@ -804,7 +804,7 @@ window.GoogleAuth = this.GoogleAuth;
     function hidenative() {
         $(YT_STARTPAGE_BODY).hide();
         subList.show();
-        $(".ytbsp-hideWhenNative").css("visibility", "");
+        $(".ytbsp-hideWhenNative", mainDiv).css("visibility", "");
         isNative = false;
         // Toggle guide if on viewpage.
         if (toggleGuide) {
