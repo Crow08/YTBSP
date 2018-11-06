@@ -86,6 +86,22 @@ window.GoogleAuth = this.GoogleAuth;
     // MagicAction selectors:
     const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 
+    // Style rules depending on the loaded page.
+    // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
+    // (When page has finished loading initially this rule has to be removed, to prevent feedpages from loadig with display: none)
+    const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
+    const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }${
+        YT_GUIDE}{ z-index: 0 !important;}`;
+    const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }${
+        YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
+    const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }${
+        YT_GUIDE}{ z-index: 0; !important;}`;
+    const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; }${
+        YT_GUIDE}{ z-index: 0; !important;}`;
+    const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }${
+        YT_GUIDE}{ z-index: 0; !important;}${
+        YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
+
     let corruptCache = false;
     let cachedVideoInformation = [];
     let remoteSaveFileID = null;
@@ -442,6 +458,7 @@ window.GoogleAuth = this.GoogleAuth;
     }
 
     // Delete save file on G-Drive.
+    // eslint-disable-next-line no-unused-vars
     function deleteRemoteSaveData() {
         return new Promise(((resolve, reject) => {
             if (null === remoteSaveFileID) {
@@ -1867,22 +1884,6 @@ window.GoogleAuth = this.GoogleAuth;
 
 
     // Now we just need to generate a stylesheet
-
-    // Style rules depending on the loaded page.
-    // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
-    // (When page has finished loading initially this rule has to be removed, to prevent feedpages from loadig with display: none)
-    const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
-    const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }${
-        YT_GUIDE}{ z-index: 0 !important;}`;
-    const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }${
-        YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
-    const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }${
-        YT_GUIDE}{ z-index: 0; !important;}`;
-    const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; }${
-        YT_GUIDE}{ z-index: 0; !important;}`;
-    const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }${
-        YT_GUIDE}{ z-index: 0; !important;}${
-        YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
     // Function to set css-styles to alter native youtube elements depending on the page loaded.
     function setYTStyleSheet(bodyStyle) {
