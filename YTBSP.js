@@ -51,7 +51,7 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Config:
     let useRemoteData = true;					// DEFAULT: true (using Google Drive as remote storage).
-    let maxSimSubLoad = 10;						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster laoding).
+    let maxSimSubLoad = 10;						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
     let maxVidsPerRow = 9;						// DEFAULT: 9.
     let maxVidsPerSub = 36;						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
     let enlargeDelay = 500;						// DEFAULT: 500 (in ms).
@@ -88,19 +88,19 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Style rules depending on the loaded page.
     // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
-    // (When page has finished loading initially this rule has to be removed, to prevent feedpages from loadig with display: none)
+    // (When page has finished loading initially this rule has to be removed, to prevent feed pages from loading with display: none)
     const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
-    const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }${
-        YT_GUIDE}{ z-index: 0 !important;}`;
-    const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }${
-        YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
-    const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }${
-        YT_GUIDE}{ z-index: 0; !important;}`;
-    const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; }${
-        YT_GUIDE}{ z-index: 0; !important;}`;
-    const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }${
-        YT_GUIDE}{ z-index: 0; !important;}${
-        YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
+    const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }
+        ${YT_GUIDE}{ z-index: 0 !important;}`;
+    const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }
+        ${YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
+    const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -50px; }
+        ${YT_GUIDE}{ z-index: 0; !important;}`;
+    const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; }
+        ${YT_GUIDE}{ z-index: 0; !important;}`;
+    const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }
+        ${YT_GUIDE}{ z-index: 0; !important;}
+        ${YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
     let corruptCache = false;
     let cachedVideoInformation = [];
@@ -264,7 +264,7 @@ window.GoogleAuth = this.GoogleAuth;
     // End OAuth Stuff.
     // /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-    let loading = 0; // 0: all subs / vids loaded.
+    let loading = 0; // 0: all subs / videos loaded.
     let saveQueued = false;
 
     // Function to handle loading, showing, hiding loaders when needed and
@@ -715,7 +715,7 @@ window.GoogleAuth = this.GoogleAuth;
         ).then(processRequestSubs);
     }
 
-    // Parses api results into subs and requests recursively more subpages if needed.
+    // Parses api results into subs and requests recursively more sub pages if needed.
     function processRequestSubs(response) {
         // If Request was denied retry login.
         if (Object.prototype.hasOwnProperty.call(response, "error")) {
@@ -794,7 +794,7 @@ window.GoogleAuth = this.GoogleAuth;
         subList.hide();
         $(".ytbsp-hideWhenNative", mainDiv).css("visibility", "hidden");
         isNative = true;
-        // Toggle guide if on viewpage.
+        // Toggle guide if on view page.
         if (toggleGuide) {
             const ytdApp = document.querySelector("ytd-app");
             ytdApp.fire("yt-guide-toggle", {});
@@ -806,7 +806,7 @@ window.GoogleAuth = this.GoogleAuth;
         subList.show();
         $(".ytbsp-hideWhenNative", mainDiv).css("visibility", "");
         isNative = false;
-        // Toggle guide if on viewpage.
+        // Toggle guide if on view page.
         if (toggleGuide) {
             const ytdApp = document.querySelector("ytd-app");
             ytdApp.fire("yt-guide-toggle", {});
@@ -816,7 +816,7 @@ window.GoogleAuth = this.GoogleAuth;
     }
 
     // Now set click event for the toggle native button.
-    function toggleytbsp() {
+    function toggleYTBSP() {
         if (isNative) {
             hidenative();
             if ((/^\/?watch$/u).test(location.pathname)) {
@@ -829,7 +829,7 @@ window.GoogleAuth = this.GoogleAuth;
             }
         }
     }
-    $(".ytbsp-func#ytbsp-togglePage", mainDiv).click(toggleytbsp);
+    $(".ytbsp-func#ytbsp-togglePage", mainDiv).click(toggleYTBSP);
 
     // Remove all videos button.
     function removeAllVideos() {
@@ -917,10 +917,10 @@ window.GoogleAuth = this.GoogleAuth;
         const backupDialog = $("<div/>");
         backupDialog.append($("<h1/>", {"html": "Backup video information"}));
         backupDialog.append($("<p/>", {"html": "This Feature allows you to save which videos you have seen and removed and import them again on another " +
-                                      "browser/computer or just to make save you don't loose these informations over night."}));
+                                      "browser/computer or just to make save you don't loose this information over night."}));
         backupDialog.append($("<h1/>", {"html": "How do I do this?"}));
-        backupDialog.append($("<p/>", {"html": "Just copy the content of the following textbox and save it somewhere.<br />" +
-                                      "To import it again copy it into the textbox and press import data."}));
+        backupDialog.append($("<p/>", {"html": "Just copy the content of the following text box and save it somewhere.<br />" +
+                                      "To import it again copy it into the text box and press import data."}));
         backupDialog.append($("<p/>", {"html": "The save data from local storage and Google Drive are compatible and interchangeable."}));
         backupDialog.append($("<textarea/>", {"id": "ytbsp-export-import-textarea", "html": saveData}));
 
@@ -998,7 +998,7 @@ window.GoogleAuth = this.GoogleAuth;
             .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", useRemoteData)))
             .append($("<td>"), {"html": "Allows synchronization between browsers. May result in slower loading times."}));
         settingsTable.append($("<tr>")
-            .append($("<td>", {"html": "Autopause videos"}))
+            .append($("<td>", {"html": "Auto pause videos"}))
             .append($("<td>").append(getSlider("ytbsp-settings-autoPauseVideo", autoPauseVideo)))
             .append($("<td>"), {"html": "Open Videos in a paused state. (Does not effect playlists.)"}));
 
@@ -1045,7 +1045,7 @@ window.GoogleAuth = this.GoogleAuth;
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "threshold to preload thumbnails"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-screenThreshold", "value": screenThreshold})).append(" px"))
-            .append($("<td>", {"html": "Default: 500 | Higer threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
+            .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
         settingsDialog.append(settingsTable);
 
         // Function for save button.
@@ -1090,22 +1090,26 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Show backup dialog modal
     function openModal(content) {
-        if (0 === $("#ytbsp-modal-content").length || 0 === $("#ytbsp-modal").length) {
+        const contentDiv = $("#ytbsp-modal-content");
+        const modal = $("#ytbsp-modal");
+        if (0 === contentDiv.length || 0 === modal.length) {
             console.error("could not open modal!");
+            return;
         }
-        $("#ytbsp-modal-content").empty();
-        $("#ytbsp-modal-content").append(content);
-        $("#ytbsp-modal").css("display", "block");
+        contentDiv.empty();
+        contentDiv.append(content);
+        modal.css("display", "block");
         setTimeout(() => {
-            $("#ytbsp-modal").css("opacity", "1");
+            modal.css("opacity", "1");
         }, 0);
     }
 
     // Hide backup dialog modal
     function closeModal() {
-        if (0 !== $("#ytbsp-modal").length) {
-            $("#ytbsp-modal").css("display", "none");
-            $("#ytbsp-modal").css("opacity", "0");
+        const modal = $("#ytbsp-modal");
+        if (0 !== modal.length) {
+            modal.css("display", "none");
+            modal.css("opacity", "0");
         }
     }
 
@@ -1188,7 +1192,7 @@ window.GoogleAuth = this.GoogleAuth;
                     // Prevent the event from bubbling to the youtube player and toggle ytbsp to native player view
                     event.preventDefault();
                     event.stopPropagation();
-                    toggleytbsp();
+                    toggleYTBSP();
                 }
             });
 
@@ -1264,7 +1268,7 @@ window.GoogleAuth = this.GoogleAuth;
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos", "html": "Reset all"}))
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subSeenAllVideos", "html": "Mark all as seen"}))
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"})));
-        subMenuStrip.append($("<div/>", {"class": "ytbsp-loaderph"})
+        subMenuStrip.append($("<div/>", {"class": "ytbsp-loaderDiv"})
             .append(getLoader(`loader_${this.id}`)));
         subMenuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"})
             .append($("<a/>", {"href": `/channel/${this.id}`})));
@@ -1480,7 +1484,7 @@ window.GoogleAuth = this.GoogleAuth;
             }, this);
 
             // Remove excess items.
-            for (let i = visibleItems, ilen = alreadyIn.length; i < ilen; ++i) {
+            for (let i = visibleItems, iLen = alreadyIn.length; i < iLen; ++i) {
                 alreadyIn[i].remove();
             }
 
@@ -1501,10 +1505,10 @@ window.GoogleAuth = this.GoogleAuth;
 
         // Displays the Loader.
         "showLoader": function() {
-            const loadph = $(".ytbsp-loaderph", this.row);
+            const loaderDiv = $(".ytbsp-loaderDiv", this.row);
             const loader = $(".ytbsp-loader", this.row);
-            if (loadph && loader) {
-                loadph.css("width", "16px");
+            if (loaderDiv && loader) {
+                loaderDiv.css("width", "16px");
                 setTimeout(() => {
                     loader.css("opacity", "1");
                 }, 200);
@@ -1513,13 +1517,13 @@ window.GoogleAuth = this.GoogleAuth;
 
         // Removes the Loader.
         "removeLoader": function() {
-            const loadph = $(".ytbsp-loaderph", this.row);
+            const loadDiv = $(".ytbsp-loaderDiv", this.row);
             const loader = $(".ytbsp-loader", this.row);
-            if (loadph && loader) {
+            if (loadDiv && loader) {
                 setTimeout(() => {
                     loader.css("opacity", "0");
                     setTimeout(() => {
-                        loadph.css("width", "0px");
+                        loadDiv.css("width", "0px");
                     }, 200);
                 }, 200);
             }
@@ -1559,9 +1563,9 @@ window.GoogleAuth = this.GoogleAuth;
     // VIDEO Object Constructor //
     // ////////////////////////////
 
-    function Video(infos) {
-        this.vid = infos.vid;
-        this.addInfos(infos);
+    function Video(info) {
+        this.vid = info.vid;
+        this.addInfos(info);
         this.thumbLi = $("<li/>", {"id": `YTBSPthumb_${this.vid}`, "class": "ytbsp-video-item"});
     }
 
@@ -1581,7 +1585,7 @@ window.GoogleAuth = this.GoogleAuth;
         "removed": false,
 
         "thumbItem": null,
-        "thumblargeItem": null,
+        "thumbLargeItem": null,
         "durationItem": null,
         "clicksItem": null,
         "uploadItem": null,
@@ -1797,7 +1801,7 @@ window.GoogleAuth = this.GoogleAuth;
 
             // Save information elements.
             this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
-            this.thumblargeItem = $(".ytbsp-thumb-large-url", this.thumbLi);
+            this.thumbLargeItem = $(".ytbsp-thumb-large-url", this.thumbLi);
             this.durationItem = $(".ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi);
             this.clicksItem = $(".ytbsp-views", this.thumbLi);
             this.uploadItem = $(".ytbsp-uploaded", this.thumbLi);
@@ -1814,7 +1818,7 @@ window.GoogleAuth = this.GoogleAuth;
             } else {
                 this.thumbItem.attr("data-src", this.thumb);
             }
-            this.thumblargeItem.val(this.thumbLarge ? this.thumbLarge : this.thumb);
+            this.thumbLargeItem.val(this.thumbLarge ? this.thumbLarge : this.thumb);
             this.durationItem.html(this.duration);
             this.clicksItem.html(this.clicks);
             this.uploadItem.html(this.uploaded);
@@ -1949,7 +1953,7 @@ window.GoogleAuth = this.GoogleAuth;
             #YTBSP .ytbsp-func:active { opacity: 0.6; }
             #YTBSP .ytbsp-func:focus { outline-style: none; }
             #YTBSP .ytbsp-func input{ vertical-align: middle; margin: -2px 5px -1px 0px;}
-            .ytbsp-loaderph { float: left; width: 16px; height: 16px; margin-right: 5px; -webkit-transition: width 0.2s; -moz-transition: width 0.2s; -o-transition: width 0.2s; }
+            .ytbsp-loaderDiv { float: left; width: 16px; height: 16px; margin-right: 5px; -webkit-transition: width 0.2s; -moz-transition: width 0.2s; -o-transition: width 0.2s; }
             #ytbsp-loaderSpan { width: 21px; margin-right: 1px; display: inline-block;}
             #YTBSP #ytbsp-refresh {display: none; padding: 1px 3px;}
             .ytbsp-loader { border: 3px solid #bbb; border-top: 3px solid #555; border-left: 3px solid #bbb; border-bottom: 3px solid #555; border-radius: 50%; width: 10px; 
@@ -2118,7 +2122,7 @@ window.GoogleAuth = this.GoogleAuth;
     }
 
 
-    let oldHref = document.location.href; // Saves previous location until pagechange is processed.
+    let oldHref = document.location.href; // Saves previous location until page change is processed.
 
     // Unique Mutation Observer to react to certain events.
     const observer = new MutationObserver((() => {
