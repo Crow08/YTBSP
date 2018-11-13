@@ -1546,15 +1546,15 @@ window.GoogleAuth = this.GoogleAuth;
         },
 
         // Returns an object that can be saved as json.
-        "getSaveable": function() {
-            const saveable = {
+        "getDTO": function() {
+            const saveData = {
                 "videos": [],
                 "id": this.id
             };
             this.videos.forEach((video) => {
-                saveable.videos.push(video.getSaveable());
+                saveData.videos.push(video.getDTO());
             });
-            return saveable;
+            return saveData;
         }
     };
 
@@ -1836,7 +1836,7 @@ window.GoogleAuth = this.GoogleAuth;
 
         },
 
-        "getSaveable": function() {
+        "getDTO": function() {
             return {
                 "vid": this.vid,
                 "seen": this.seen,
@@ -1878,7 +1878,7 @@ window.GoogleAuth = this.GoogleAuth;
         // Construct new cache from current subs.
         const saveObj = [];
         subs.forEach((sub) => {
-            saveObj.push(sub.getSaveable());
+            saveObj.push(sub.getDTO());
         });
 
         // Save new video information cache.
@@ -2132,15 +2132,15 @@ window.GoogleAuth = this.GoogleAuth;
             handlePageChange();
         }
         // Inject YTBSP main div if not injected already.
-        if (0 === $("#YTBSP").length && 0 !== $(YT_CONTENT).length) {
+        if (0 === mainDiv.parent().length && 0 !== $(YT_CONTENT).length) {
             $(YT_CONTENT).prepend(mainDiv);
             $(window).scrollTop(0);
         }
         // Detect going fullscreen.
         if (0 !== $(YT_PLAYER_CONTROL).length && true === $(YT_PLAYER_CONTROL).get(0).fullscreen) {
-            $("#YTBSP").hide();
+            mainDiv.hide();
         } else {
-            $("#YTBSP").show();
+            mainDiv.show();
         }
     }));
 
