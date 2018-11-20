@@ -1077,8 +1077,11 @@ window.GoogleAuth = this.GoogleAuth;
 
         let versionInformation = "";
         try {
+            // eslint-disable-next-line camelcase
             versionInformation = GM_info && GM_info.script ? `script version:${GM_info.script.version}` : "";
-        } catch (e) {}
+        } catch (e) {
+            console.info("Tampermonkey variables not arivable.");
+        }
         const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"})
             .append($("<a/>", {"html": "https://github.com/Crow08/YTBSP", "href": "https://github.com/Crow08/YTBSP", "target": "_blank", "class": "ytbsp-func", "style": "font-size: 1rem;"}))
             .append($("<p/>", {"html": versionInformation, "class": "ytbsp-func", "style": "font-size: 1rem;"}))
@@ -1151,7 +1154,9 @@ window.GoogleAuth = this.GoogleAuth;
             try {
                 this.nativePlayerIsTheater = $(YT_PLAYER_CONTROL).get(0).theater;
                 $(YT_PLAYER_CONTROL).get(0).theaterModeChanged_(true);
-            } catch (e) {}
+            } catch (e) {
+                console.warn("Unable to put player into theater mode.");
+            }
 
             // Place peek player in YTBSP main div.
             $("#YTBSP").append(this.playerRef);
@@ -1233,7 +1238,9 @@ window.GoogleAuth = this.GoogleAuth;
             if (!this.nativePlayerIsTheater) {
                 try {
                     $(YT_PLAYER_CONTROL).get(0).theaterModeChanged_(false);
-                } catch (e) {}
+                } catch (e) {
+                    console.warn("Unable to put player out of theater mode.");
+                }
             }
 
             $("#ytbsp-peekplayer-overlay").remove();
@@ -1362,43 +1369,45 @@ window.GoogleAuth = this.GoogleAuth;
                 }
 
                 response.items.forEach((video) => {
-                    let thumb;
-                    let thumbLarge;
-                    let title;
-                    let upload;
-                    let pubDate;
-                    let vid;
-                    let seen;
-                    let removed;
+                    let thumb = null;
+                    let thumbLarge = null;
+                    let title = null;
+                    let upload = null;
+                    let pubDate = null;
+                    let vid = null;
+                    let seen = null;
+                    let removed = null;
 
-                    try {
-                        thumb = video.snippet.thumbnails.medium.url;
-                    } catch (e) {}
-                    try {
-                        thumbLarge = video.snippet.thumbnails.maxres.url;
-                    } catch (e) {}
-                    try {
-                        title = video.snippet.title;
-                    } catch (e) {}
-                    try {
-                        upload = window.moment(video.snippet.publishedAt).fromNow();
-                    } catch (e) {}
-                    try {
-                        pubDate = window.moment(video.snippet.publishedAt).format("YYYY-MM-DD HH:mm:ss");
-                    } catch (e) {}
-                    try {
-                        vid = video.snippet.resourceId.videoId;
-                    } catch (e) {}
+                    if (Object.prototype.hasOwnProperty.call(video, "snippet")) {
+                        if (Object.prototype.hasOwnProperty.call(video.snippet, "title")) {
+                            title = video.snippet.title;
+                        }
+                        if (Object.prototype.hasOwnProperty.call(video.snippet, "publishedAt")) {
+                            upload = window.moment(video.snippet.publishedAt).fromNow();
+                            pubDate = window.moment(video.snippet.publishedAt).format("YYYY-MM-DD HH:mm:ss");
+                        }
+                        if (Object.prototype.hasOwnProperty.call(video.snippet, "resourceId") && Object.prototype.hasOwnProperty.call(video.snippet.resourceId, "videoId")) {
+                            vid = video.snippet.resourceId.videoId;
+                        }
+                        if (Object.prototype.hasOwnProperty.call(video.snippet, "thumbnails")) {
+                            if (Object.prototype.hasOwnProperty.call(video.snippet.thumbnails, "medium") && Object.prototype.hasOwnProperty.call(video.snippet.thumbnails.medium, "url")) {
+                                thumb = video.snippet.thumbnails.medium.url;
+                            }
+                            if (Object.prototype.hasOwnProperty.call(video.snippet.thumbnails, "maxres") && Object.prototype.hasOwnProperty.call(video.snippet.thumbnails.maxres, "url")) {
+                                thumbLarge = video.snippet.thumbnails.maxres.url;
+                            }
+                        }
+                    }
 
                     // Merge cache info if available.
                     const cacheVideo = $.grep(cacheVideos, (cVideo) => cVideo.vid === vid);
                     if (1 === cacheVideo.length) {
-                        try {
+                        if (Object.prototype.hasOwnProperty.call(cacheVideo[0], "seen")) {
                             seen = cacheVideo[0].seen;
-                        } catch (e) {}
-                        try {
+                        }
+                        if (Object.prototype.hasOwnProperty.call(cacheVideo[0], "removed")) {
                             removed = cacheVideo[0].removed;
-                        } catch (e) {}
+                        }
                     }
 
                     const infos = {
@@ -1687,36 +1696,29 @@ window.GoogleAuth = this.GoogleAuth;
                         "id": that.vid
                     }
                 ).then((response) => {
-                    let duration;
-                    let viewCount;
-                    try {
-                        duration = window.moment.duration(response.items[0].contentDetails.duration);
-                    } catch (e) {}
-                    try {
-                        const count = parseInt(response.items[0].statistics.viewCount, 10);
-                        if (1000000 < count) {
-                            viewCount = `${Math.round(count / 1000000 * 10) / 10}M views`; // Round to one decimal
+                    if (Object.prototype.hasOwnProperty.call(response, "items") && 1 === response.items.length) {
+                        if (Object.prototype.hasOwnProperty.call(response.items[0], "contentDetails") && Object.prototype.hasOwnProperty.call(response.items[0].contentDetails, "duration")) {
+                            const duration = window.moment.duration(response.items[0].contentDetails.duration);
+                            if (0 === duration.hours()) {
+                                that.duration = window.moment(`${duration.minutes()}:${duration.seconds()}`, "m:s").format("mm:ss");
+                            } else {
+                                that.duration = window.moment(`${duration.hours()}:${duration.minutes()}:${duration.seconds()}`, "h:m:s").format("HH:mm:ss");
+                            }
                         }
-                        else if (10000 < count) {
-                            viewCount = `${Math.round(count / 1000)}K views`;
-                        }
-                        else {
-                            viewCount = `${count} views`;
-                        }
-                    } catch (e) {}
-                    let time;
-                    if (0 === duration.hours()) {
-                        try {
-                            time = window.moment(`${duration.minutes()}:${duration.seconds()}`, "m:s").format("mm:ss");
-                        } catch (e) {}
-                    } else {
-                        try {
-                            time = window.moment(`${duration.hours()}:${duration.minutes()}:${duration.seconds()}`, "h:m:s").format("HH:mm:ss");
-                        } catch (e) {}
-                    }
-                    that.duration = time;
-                    that.clicks = viewCount;
+                        if (Object.prototype.hasOwnProperty.call(response.items[0], "statistics") && Object.prototype.hasOwnProperty.call(response.items[0].statistics, "viewCount")) {
+                            const count = parseInt(response.items[0].statistics.viewCount, 10);
 
+                            if (1000000 < count) {
+                                that.clicks = `${Math.round(count / 1000000 * 10) / 10}M views`; // Rounded million views.
+                            }
+                            else if (10000 < count) {
+                                that.clicks = `${Math.round(count / 1000)}K views`; // Rounded thousand views.
+                            }
+                            else {
+                                that.clicks = `${count} views`; // Exact view count under thousend.
+                            }
+                        }
+                    }
                     that.updateThumb(inView);
                     loadingProgress(-1);
                 });
