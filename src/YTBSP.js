@@ -97,8 +97,8 @@ window.GoogleAuth = this.GoogleAuth;
     // Let's build the new site:
 
     // Create an div for us.
-    const dark_or_light_class = isDarkModeEnabled() ? "dark" : "light";
-    const mainDiv = $("<div/>", {"id": "YTBSP"});
+    const dark_or_light_class = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
+    const mainDiv = $("<div/>", {"id": "YTBSP", "class": dark_or_light_class});
     const menuStrip = $("<div/>", {"id": "ytbsp-menuStrip"});
     menuStrip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
         .append(getLoader("ytbsp-main-loader"))
