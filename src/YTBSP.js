@@ -1897,15 +1897,6 @@ function setYTStyleSheet(bodyStyle) {
 
 // YTBSP css for all custom elements.
 function addYTBSPStyleSheet() {
-    const dark = isDarkModeEnabled();
-
-    const stdFontColor = dark ? "#e1e1e1" : "#111111";
-    const subtextColor = dark ? "#ffffffff" : "#141414";
-    const viewsAndUploadedInfoColor = dark ? "#888888" : "#11111199";
-    const stdBorderColor = dark ? "#2c2c2c" : "#e2e2e2";
-    const altBorderColor = dark ? "#737373" : "#737373";
-    const bgColor = dark ? "#252525" : "#f5f5f5";
-
     const css = document.createElement("style");
     css.type = "text/css";
     css.id = "ytbsp-css";
