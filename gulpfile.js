@@ -8,7 +8,7 @@ var sourcemaps = require('gulp-sourcemaps');
 var fs = require('fs');
 const del = require('del');
 
-function lessTask(cb) {
+function less_task(cb) {
     return gulp.src('src/**/*.less')
     .pipe(
         less({
@@ -18,7 +18,7 @@ function lessTask(cb) {
     .pipe(gulp.dest('build/css'));
 }
 
-function uglifyTask(cb) {
+function uglify_task(cb) {
     return gulp.src('./build/babel/**/*.js')
     .pipe(
         uglify()
@@ -26,7 +26,7 @@ function uglifyTask(cb) {
     .pipe(gulp.dest('./build/js/test.js'));
 }  
 
-function babelTask(cb) {
+function babel_task(cb) {
     return gulp.src('src/**/*.js')
     .pipe(babel({
         presets: ['@babel/env'],
@@ -35,15 +35,34 @@ function babelTask(cb) {
     .pipe(gulp.dest('build/babel'))
 } 
 
-function concatTask(cb) {
-    return gulp.src(['build/babel/header.js', 'build/css/CSSString.js', 'build/babel/YTBSP.js'])
+function final_concat_task(cb) {
+    return gulp.src(['build/babel/header.js', 'build/source_final.js'])
     .pipe(
         concat('YTBSP.js')
     )
     .pipe(gulp.dest('./build'));
-} 
+}
 
-function cssFileToJSStringTask(cb){
+function concat_source_task(cb) {
+    return gulp.src(['build/css/CSSString.js', 'src/YTBSP.js'])
+    .pipe(
+        concat('source_concat.js')
+    )
+    .pipe(gulp.dest('build'));
+}
+
+function wrap_source_with_function_task(cb) {
+    const writable = fs.createWriteStream('build/source_final.js');
+    writable.write('(function() {\n');
+    const readable = fs.createReadStream('build/source_concat.js');
+    readable.pipe(writable, { end: false });
+    readable.on('end', () => {
+        writable.end('\n})(window.unsafeWindow || window);');
+        cb();
+    });
+}
+
+function css_to_js_task(cb){
     var cssString = "var cssString = `";
     var fileContent = fs.readFileSync('build/css/ytbsp-stylesheet.css');
     cssString += fileContent.toString();
@@ -52,16 +71,14 @@ function cssFileToJSStringTask(cb){
     cb();
 }
 
-function cleanTask(cb){
+function clean_task(cb){
     return del([
         'build/'
     ]);
 }
 
-exports.default = gulp.series(cleanTask, gulp.parallel(lessTask, babelTask), cssFileToJSStringTask, concatTask);
-exports.less = lessTask;
-exports.uglify = uglifyTask;
-exports.babel = babelTask;
-exports.concat = concatTask;
-exports.cssFileToJSString = cssFileToJSStringTask;
-exports.clean = cleanTask;
+exports.default = gulp.series(clean_task, gulp.parallel(less_task, babel_task), css_to_js_task, concat_source_task, wrap_source_with_function_task, final_concat_task);
+exports.less = less_task;
+exports.uglify = uglify_task;
+exports.babel = babel_task;
+exports.clean = clean_task;
