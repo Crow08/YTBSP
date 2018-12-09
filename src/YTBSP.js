@@ -86,10 +86,9 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Make slider as resource.
     function getSlider(id, checked, onChange) {
-        const dark_or_light_class = isDarkModeEnabled() ? "dark" : "light";
         const slider = $("<label/>", {"class": "ytbsp-slider"});
         slider.append($("<input/>", {"class": "ytbsp-slider-cb", "type": "checkbox", "id": id, "checked": checked, "on": {"change": onChange}}));
-        slider.append($("<div/>", {"class": "ytbsp-slider-rail " + dark_or_light_class}));
+        slider.append($("<div/>", {"class": "ytbsp-slider-rail"}));
         slider.append($("<div/>", {"class": "ytbsp-slider-knob"}));
         return slider;
     }
@@ -97,27 +96,27 @@ window.GoogleAuth = this.GoogleAuth;
     // Let's build the new site:
 
     // Create an div for us.
-    const dark_or_light_class = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
-    const mainDiv = $("<div/>", {"id": "YTBSP", "class": dark_or_light_class});
+    const dark_or_light_theme = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
+    const mainDiv = $("<div/>", {"id": "YTBSP", "class": dark_or_light_theme});
     const menuStrip = $("<div/>", {"id": "ytbsp-menuStrip"});
     menuStrip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
         .append(getLoader("ytbsp-main-loader"))
-        .append($("<button/>", {"id": "ytbsp-refresh", "class": "ytbsp-func " + dark_or_light_class, "html": "&#x27F3;"})));
-    menuStrip.append($("<button/>", {"id": "ytbsp-togglePage", "class": "ytbsp-func " + dark_or_light_class, "html": "Toggle YTBSP"}));
-    menuStrip.append($("<button/>", {"id": "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class, "html": "Remove all videos"}));
-    menuStrip.append($("<button/>", {"id": "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class, "html": "Reset all videos"}));
-    menuStrip.append($("<button/>", {"id": "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class, "html": "Backup video info"}));
-    menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class})
+        .append($("<button/>", {"id": "ytbsp-refresh", "class": "ytbsp-func", "html": "&#x27F3;"})));
+    menuStrip.append($("<button/>", {"id": "ytbsp-togglePage", "class": "ytbsp-func", "html": "Toggle YTBSP"}));
+    menuStrip.append($("<button/>", {"id": "ytbsp-removeAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "Remove all videos"}));
+    menuStrip.append($("<button/>", {"id": "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "Reset all videos"}));
+    menuStrip.append($("<button/>", {"id": "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "Backup video info"}));
+    menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
         .append($("<input/>", {"id": "ytbsp-hideSeenVideosCb", "type": "checkbox", "checked": hideSeenVideos}))
         .append("Hide seen videos"));
-    menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class})
+    menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
         .append($("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox", "checked": hideEmptySubs}))
         .append("Hide empty subs"));
-    menuStrip.append($("<button/>", {"id": "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative " + dark_or_light_class, "html": "&#x2699;"}));
+    menuStrip.append($("<button/>", {"id": "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "&#x2699;"}));
     mainDiv.append(menuStrip);
     mainDiv.append($("<ul/>", {"id": "ytbsp-subs", "css": {"min-width" : (maxVidsPerRow * 168) + "px"}}));
     mainDiv.append($("<div/>", {"id": "ytbsp-modal"})
-        .append($("<div/>", {"id": "ytbsp-modal-content", "class": dark_or_light_class})));
+        .append($("<div/>", {"id": "ytbsp-modal-content"})));
 
     // Save a reference for the subList.
     const subList = $("#ytbsp-subs", mainDiv);
@@ -881,7 +880,6 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Creates and returns a new backup dialog.
     function createBackupDialog(saveData) {
-        const dark_or_light_class = isDarkModeEnabled() ? "dark" : "light";
         const backupDialog = $("<div/>");
         backupDialog.append($("<h1/>", {"html": "Backup video information"}));
         backupDialog.append($("<p/>", {"html": "This Feature allows you to save which videos you have seen and removed and import them again on another " +
@@ -913,7 +911,7 @@ window.GoogleAuth = this.GoogleAuth;
         endDiv.append(getSlider("ytbsp-backup-switch", useRemoteData, backupSwitch));
 
         endDiv.append($("<h2/>", {"html": "Google Drive"}));
-        endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func " + dark_or_light_class, "value": "close", "on": {"click": closeModal}}));
+        endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "close", "on": {"click": closeModal}}));
 
         const importData = function() {
             loadingProgress(1);
@@ -934,7 +932,7 @@ window.GoogleAuth = this.GoogleAuth;
                 });
             }
         };
-        endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func " + dark_or_light_class, "value": "import data", "on": {"click": importData}}));
+        endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "import data", "on": {"click": importData}}));
         return backupDialog.append(endDiv);
     }
     $(".ytbsp-func#ytbsp-backup", mainDiv).click(openBackupDialog);
@@ -950,23 +948,22 @@ window.GoogleAuth = this.GoogleAuth;
 
     // Create settings dialog.
     function createSettingsDialog() {
-        const dark_or_light_class = isDarkModeEnabled() ? "dark" : "light";
         const settingsDialog = $("<div/>");
-        settingsDialog.append($("<h1/>", {"html": "Settings", "class": dark_or_light_class}));
-        const settingsTable = $("<table/>", {"id": "ytbsp-settings-table", "class": dark_or_light_class});
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsDialog.append($("<h1/>", {"html": "Settings"}));
+        const settingsTable = $("<table/>", {"id": "ytbsp-settings-table"});
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide empty subs"}))
             .append($("<td>").append(getSlider("ytbsp-settings-hideEmptySubs", hideEmptySubs)))
             .append($("<td>")));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide seen videos"}))
             .append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", hideSeenVideos)))
             .append($("<td>")));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Use Google Drive"}))
             .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", useRemoteData)))
             .append($("<td>"), {"html": "Allows synchronization between browsers. May result in slower loading times."}));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Auto pause videos"}))
             .append($("<td>").append(getSlider("ytbsp-settings-autoPauseVideo", autoPauseVideo)))
             .append($("<td>"), {"html": "Open Videos in a paused state. (Does not effect playlists.)"}));
@@ -979,39 +976,39 @@ window.GoogleAuth = this.GoogleAuth;
         }
         playerQualitySelect.val(playerQuality);
 
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Player Quality"}))
             .append($("<td>").append(playerQualitySelect))
             .append($("<td>"), {"html": "Open Videos in a paused state. (Does not effect playlists.)"}));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Max number of subscriptions loading simultaneously"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxSimSubLoad", "value": maxSimSubLoad})))
             .append($("<td>", {"html": "Default: 10 | Range: 1-50 | Higher numbers result in slower loading of single items but overall faster loading."})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Max number of videos per row"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerRow", "value": maxVidsPerRow})))
             .append($("<td>", {"html": "Default: 9 | Range: 1-50"})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Max number of videos per subscription"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerSub", "value": maxVidsPerSub})))
             .append($("<td>", {"html": "Default: 27 | Range: 1-50 | Should be dividable by videos per row."})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Watch time to mark video as seen"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-timeToMarkAsSeen", "value": timeToMarkAsSeen})).append(" s"))
             .append($("<td>", {"html": "Default: 10"})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Delay for thumbnail enlarge"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-enlargeDelay", "value": enlargeDelay})).append(" ms"))
             .append($("<td>", {"html": "Default: 500"})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Factor to enlarge thumbnail by"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactor", "value": enlargeFactor})))
             .append($("<td>", {"html": "Default: 2.8 | 1 : disable thumbnail enlarge"})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Factor to enlarge native thumbnail by"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactorNative", "value": enlargeFactorNative})))
             .append($("<td>", {"html": "Default: 2.0 | 1 : disable thumbnail enlarge"})));
-        settingsTable.append($("<tr>", {"class": dark_or_light_class})
+        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "threshold to preload thumbnails"}))
             .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-screenThreshold", "value": screenThreshold})).append(" px"))
             .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
@@ -1020,6 +1017,7 @@ window.GoogleAuth = this.GoogleAuth;
         // Function for save button.
         const saveSettings = function() {
             loadingProgress(1);
+
             useRemoteData = $("#ytbsp-settings-useRemoteData").prop("checked");
             hideEmptySubs = $("#ytbsp-settings-hideEmptySubs").prop("checked");
             hideSeenVideos = $("#ytbsp-settings-hideSeenVideos").prop("checked");
@@ -1051,10 +1049,10 @@ window.GoogleAuth = this.GoogleAuth;
             console.info("Tampermonkey variables not arivable.");
         }
         const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"})
-            .append($("<a/>", {"html": "https://github.com/Crow08/YTBSP", "href": "https://github.com/Crow08/YTBSP", "target": "_blank", "class": "ytbsp-func " + dark_or_light_class, "style": "font-size: 1rem;"}))
-            .append($("<p/>", {"html": versionInformation, "class": "ytbsp-func " + dark_or_light_class, "style": "font-size: 1rem;"}))
-            .append($("<input/>", {"type": "submit", "class": "ytbsp-func " + dark_or_light_class, "value": "Cancel", "on": {"click": closeModal}}))
-            .append($("<input/>", {"type": "submit", "class": "ytbsp-func " + dark_or_light_class, "value": "Save", "on": {"click": saveSettings}}));
+            .append($("<a/>", {"html": "https://github.com/Crow08/YTBSP", "href": "https://github.com/Crow08/YTBSP", "target": "_blank", "class": "ytbsp-func", "style": "font-size: 1rem;"}))
+            .append($("<p/>", {"html": versionInformation, "class": "ytbsp-func", "style": "font-size: 1rem;"}))
+            .append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "Cancel", "on": {"click": closeModal}}))
+            .append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "Save", "on": {"click": saveSettings}}));
         return settingsDialog.append(endDiv);
     }
     $(".ytbsp-func#ytbsp-settings", mainDiv).click(openSettingsDialog);
@@ -1232,23 +1230,17 @@ window.GoogleAuth = this.GoogleAuth;
         this.name = snippet.title;
         this.id = snippet.resourceId.channelId;
 
-        const dark = isDarkModeEnabled();  
-        const dark_or_light_class = dark ? "dark" : "light";
         // Now build the overview.
-        this.row = 
-        $("<li/>", {
-            "class": "ytbsp-subscription " + (dark ? "dark" : "light"), 
-            "css": {"display": hideEmptySubs ? "none" : ""}
-        });
+        this.row = $("<li/>", {"class": "ytbsp-subscription", "css": {"display": hideEmptySubs ? "none" : ""}});
 
         // Create content.
         const subMenuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
 
         subMenuStrip.append($("<div/>", {"css": {"float": "right"}})
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos " + dark_or_light_class, "html": "Remove all"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos " + dark_or_light_class, "html": "Reset all"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subSeenAllVideos " + dark_or_light_class, "html": "Mark all as seen"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subShowMore " + dark_or_light_class, "html": "Show more"})));
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos", "html": "Remove all"}))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos", "html": "Reset all"}))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subSeenAllVideos", "html": "Mark all as seen"}))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"})));
         subMenuStrip.append($("<div/>", {"class": "ytbsp-loaderDiv"})
             .append(getLoader(`loader_${this.id}`)));
         subMenuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"})
@@ -1259,9 +1251,6 @@ window.GoogleAuth = this.GoogleAuth;
         // Save some references.
         this.videoList = $(".ytbsp-subVids", this.row);
         this.titleObj = $(".ytbsp-subTitle a", this.row);
-
-        // Set font color
-        this.titleObj.addClass(dark ? "dark" : "light");
 
         // Put content in place.
         this.titleObj.html(this.name);
@@ -1700,18 +1689,16 @@ window.GoogleAuth = this.GoogleAuth;
                     loadingProgress(-1);
                 });
             }
-            const dark_or_light_class = isDarkModeEnabled() ? "dark" : "light";
             this.thumbLi.empty();
             this.thumbLi.append($("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-clip", "data-vid": this.vid})
                 .append($("<div/>", {"class": "ytbsp-x", "html": "X"}))
-                .append($("<img/>", {"class": "ytbsp-thumb " + dark_or_light_class}))
+                .append($("<img/>", {"class": "ytbsp-thumb"}))
                 .append($("<ytd-thumbnail-overlay-time-status-renderer/>"))
                 .append($("<input/>", {"class": "ytbsp-thumb-large-url", "type": "hidden"})));
-            this.thumbLi.append($("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-title " + dark_or_light_class, "data-vid": this.vid}));
+            this.thumbLi.append($("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-title", "data-vid": this.vid}));
             this.thumbLi.append($("<p/>", {"class": "ytbsp-views"}));
-            this.thumbLi.append($("<p/>", {"class": "ytbsp-uploaded " + dark_or_light_class}));
-            seen_class = this.isSeen() ? "seen" : "";
-            this.thumbLi.append($("<p/>", {"class": "ytbsp-seemarker " + (seen_class + " " + dark_or_light_class), "html": (this.isSeen() ? "already seen" : "mark as seen")}));
+            this.thumbLi.append($("<p/>", {"class": "ytbsp-uploaded"}));
+            this.thumbLi.append($("<p/>", {"class": `ytbsp-seemarker${this.isSeen() ? " seen" : ""}`, "html": (this.isSeen() ? "already seen" : "mark as seen")}));
 
             // Save information elements.
             this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
@@ -1740,8 +1727,6 @@ window.GoogleAuth = this.GoogleAuth;
 
             // Enlarge thumbnail and load higher resolution image.
             function enlarge() {
-                const dark = isDarkModeEnabled();
-                const altBorderColor = dark ? "#737373" : "#737373";
                 if (1 >= enlargeFactor) {
                     return;
                 }
@@ -1763,7 +1748,6 @@ window.GoogleAuth = this.GoogleAuth;
                         img.addClass("ytbsp-thumb-large");
                         img.css("width", (160 * enlargeFactor) + "px");
                         img.css("height", (90 * enlargeFactor) + "px");
-                        img.css("border", "2px solid " + altBorderColor);
 
                         title.addClass("ytbsp-title-large");
                         title.css("width", ((160 * enlargeFactor) - 4) + "px");
@@ -1798,7 +1782,6 @@ window.GoogleAuth = this.GoogleAuth;
                 img.removeClass("ytbsp-thumb-large");
                 img.css("width", "");
                 img.css("height", "");
-                img.css("border", "");
 
                 title.removeClass("ytbsp-title-large");
                 title.css("width", "");
