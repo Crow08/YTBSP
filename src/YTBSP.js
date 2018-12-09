@@ -2146,7 +2146,7 @@ HTMLMediaElement.prototype.play = function() {
         autoPauseThisVideo = false;
         const playerParentRef = this.parentElement.parentElement;
         if (playerParentRef) {
-            playerParentRef.stopVideo();
+            playerParentRef.pauseVideo();
         }
         return;
     }
