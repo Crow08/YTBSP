@@ -1,3 +1,4 @@
+/* global jQuery, $, gapi, GM_info, Subscription, Player, cssString */
 
 const resolutions = {"Ultra": "highres",
     "2880p": "hd2880",
@@ -1142,7 +1143,8 @@ function addYTBSPStyleSheet() {
     css.id = "ytbsp-css";
 
     css.innerHTML = cssString;
-    
+
+
     document.head.appendChild(css);
 }
 

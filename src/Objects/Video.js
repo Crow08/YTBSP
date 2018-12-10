@@ -1,3 +1,5 @@
+/* global $, loadingProgress, buildApiRequest, isDarkModeEnabled, openVideoWithSPF, enlargeFactor, enlargeDelay */
+
 // TODO: find better solution
 const timeouts = {};
 
@@ -159,6 +161,23 @@ class Video {
         this.thumbLi.append($("<p/>", {"class": "ytbsp-uploaded"}));
         this.thumbLi.append($("<p/>", {"class": `ytbsp-seemarker${this.isSeen() ? " seen" : ""}`, "html": (this.isSeen() ? "already seen" : "mark as seen")}));
 
+        // Save information elements.
+        this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
+        this.thumbLargeItem = $(".ytbsp-thumb-large-url", this.thumbLi);
+        this.durationItem = $(".ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi);
+        this.clicksItem = $(".ytbsp-views", this.thumbLi);
+        this.uploadItem = $(".ytbsp-uploaded", this.thumbLi);
+        this.titleItem = $("a.ytbsp-title", this.thumbLi);
+        this.seemarkerItem = $(".ytbsp-seemarker", this.thumbLi);
+
+        // Add dynamic style rules
+        const dark = isDarkModeEnabled();
+        const viewsAndUploadedInfoColor = dark ? "#888888" : "#11111199";
+        const subtextColor = dark ? "#ffffffff" : "#141414";
+        this.clicksItem.css("color", viewsAndUploadedInfoColor);
+        this.uploadItem.css("color", viewsAndUploadedInfoColor);
+        this.seemarkerItem.css("color", subtextColor);
+
         $(".ytbsp-clip, .ytbsp-title, .ytbsp-x", this.thumbLi).click(function(event) {
             event.preventDefault();
             if (event.target.classList.contains("ytbsp-x")) {
@@ -187,8 +206,15 @@ class Video {
                     const infos = $("p", thumb);
                     img.attr("src", $(".ytbsp-thumb-large-url", clip).val());
                     img.addClass("ytbsp-thumb-large");
+                    img.css("width", (160 * enlargeFactor) + "px");
+                    img.css("height", (90 * enlargeFactor) + "px");
                     title.addClass("ytbsp-title-large");
+                    title.css("width", ((160 * enlargeFactor) - 4) + "px");
+                    title.css("left", (-(((160 * enlargeFactor) / 2) - 82)) + "px");
                     clip.addClass("ytbsp-clip-large");
+                    clip.css("width", ((160 * enlargeFactor) + 4) + "px");
+                    clip.css("height", ((90 * enlargeFactor) + 4) + "px");
+                    clip.css("left", (-(((160 * enlargeFactor) / 2) - 82)) + "px");
                     infos.hide();
                 }, enlargeDelay);
             }
@@ -210,8 +236,15 @@ class Video {
             const title = $(".ytbsp-title", thumb);
             const infos = $("p", thumb);
             img.removeClass("ytbsp-thumb-large");
+            img.css("width", "");
+            img.css("height", "");
             title.removeClass("ytbsp-title-large");
+            title.css("width", "");
+            title.css("left", "");
             clip.removeClass("ytbsp-clip-large");
+            clip.css("width", "");
+            clip.css("height", "");
+            clip.css("left", "");
             infos.show();
         }
         $(this.thumbLi).mouseleave(enlargeCancel);
@@ -252,13 +285,12 @@ class Video {
         this.titleItem.html(this.title);
         this.titleItem.prop("title", this.title);
 
-        const marker = $(".ytbsp-seemarker", this.thumbLi);
         if (this.seen) {
-            marker.html("already seen");
-            marker.addClass("seen");
+            this.seemarkerItem.html("already seen");
+            this.seemarkerItem.addClass("seen");
         } else {
-            marker.html("mark as seen");
-            marker.removeClass("seen");
+            this.seemarkerItem.html("mark as seen");
+            this.seemarkerItem.removeClass("seen");
         }
 
     }

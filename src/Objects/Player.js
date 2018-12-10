@@ -1,3 +1,5 @@
+/* global $, YT_PLAYER_CONTROL, YT_PLAYER, YT_VIDEO_STREAM, peekPlayerSizeFactor, toggleYTBSP */
+
 class Player {
 
     constructor() {
@@ -60,8 +62,8 @@ class Player {
         });
 
         // Add overlay to the peek player that will control click behaviour
-        this.playerRef.append($("<div/>", {"id": "ytbsp-peekplayer-overlay"})
-            .append($("<div/>", {"id": "ytbsp-peekplayer-overlay-player-control"})
+        this.playerRef.append($("<div/>", {"id": "ytbsp-peekplayer-overlay", "css": {"width": (320 * peekPlayerSizeFactor),"height": (180 * peekPlayerSizeFactor)}})
+            .append($("<div/>", {"id": "ytbsp-peekplayer-overlay-player-control", "css": {"width": ((320 * peekPlayerSizeFactor) / 10),"height": ((320 * peekPlayerSizeFactor) / 10)}})
                 .append($("<label/>", {"class": "ytbsp-play-pause-icon", "title": "play / pause"}))));
         // Initialize play/pause icon depending on player state
         if (!$(YT_VIDEO_STREAM).get(0).paused) {

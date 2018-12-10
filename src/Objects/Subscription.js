@@ -1,3 +1,5 @@
+/* global $, getLoader, saveList, loadingProgress, buildApiRequest, maxVidsPerSub, hideEmptySubs, subList, cachedVideoInformation, maxVidsPerRow, hideSeenVideos, updateSubsInView, lastScroll, screenThreshold, screenBottom, Video */
+
 class Subscription {
 
     constructor(snippet) {
@@ -291,8 +293,8 @@ class Subscription {
         const offsetTop = this.videoList ? this.videoList.offset().top : 0;
 
         this.isInView = (this.videoList &&
-						 offsetTop - screenThreshold < screenBottom &&
-						 offsetTop + screenThreshold > screenTop
+                         offsetTop - screenThreshold < screenBottom &&
+                         offsetTop + screenThreshold > screenTop
         );
         return this.isInView;
     }
