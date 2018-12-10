@@ -1,0 +1,37 @@
+// ==UserScript==
+// @name         YouTube Better StartPage (YTBSP)
+// @description  Spotlights all subscriptions in an organized fashion on the startpage of YouTube.
+// @version      1.4.7
+// @namespace    ytbsp
+// @include      https://youtube.com/*
+// @include      https://www.youtube.com/*
+// @require      https://apis.google.com/js/api.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js
+// @require      https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js
+// @downloadURL  https://raw.githubusercontent.com/Crow08/YTBSP/master/YTBSP.js
+// @updateURL    https://raw.githubusercontent.com/Crow08/YTBSP/master/YTBSP.js
+// @grant        none
+// ==/UserScript==
+/**
+ * The MIT License
+ *
+ * Copyright (c) 2015-2018 (Crow08)
+ * Copyright (c) 2014 (dzre)
+ * Copyright (c) 2011-2013 Marco D. Pfeiffer (Nemo64)
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
+ * to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+ * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+ * IN THE SOFTWARE.
+ */
+
+/* global jQuery, $, gapi, GM_info */
+
+window.moment = this.moment;
+window.GoogleAuth = this.GoogleAuth;
