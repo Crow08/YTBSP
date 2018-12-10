@@ -41,7 +41,7 @@ function final_concat_task(cb) {
 }
 
 function concat_source_task(cb) {
-    return gulp.src(["build/css/CSSString.js", "src/YTBSP.js"])
+    return gulp.src(["src/Objects/Subscription.js", "src/Objects/Video.js", "src/Objects/Player.js", "build/css/CSSString.js", "src/YTBSP.js"])
         .pipe(concat("source_concat.js"))
         .pipe(gulp.dest("build"));
 }
