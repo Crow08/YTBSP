@@ -191,11 +191,11 @@ class Subscription {
                 const thumb = alreadyIn[visibleItems];
                 // If Video is already in the list, update it.
                 if (thumb && thumb.id.substr(11) === video.vid) {
-                    this.videos[i].updateThumb(this.isInView());
+                    this.videos[i].updateThumb(this.isInView);
                     // If the thumb in this position isn't the right one.
                 } else {
                     // Create new thumb for video.
-                    this.videos[i].createThumb(this.isInView());
+                    this.videos[i].createThumb(this.isInView);
                     // Register some events from this thumb.
                     $(".ytbsp-seemarker", this.videos[i].thumbLi).click(() => {
                         that.videos[i].toggleSeen();
