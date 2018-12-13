@@ -1182,21 +1182,23 @@ let occupied = 0;
 
 // TODO: too complicated
 function handleViewChange() {
-    if (0 === occupied) {
-        occupied = 1;
-        occupied = setTimeout(() => {
-            const changeEventTime = Date.now(); // The time the page was moved or resized.
-            subs.forEach((sub) => {
-                sub.inView(changeEventTime);
-            });
-            if (2 === occupied) {
-                handleViewChange();
-            } else {
-                occupied = 0;
-            }
-        }, 100);
-    } else {
+    if (0 !== occupied) {
         occupied = 2;
+    } else {
+      occupied = 1;
+      setTimeout(() => {
+          const changeEventTime = Date.now(); // The time the page was moved or resized.
+          subs.forEach((sub) => {
+              sub.updateInView(changeEventTime);
+          });
+          
+          if (2 === occupied) {
+              occupied = 0;
+              handleViewChange();
+          }else{
+              occupied = 0;
+          }
+      }, 0);
     }
 }
 window.addEventListener("scroll", handleViewChange, false);
