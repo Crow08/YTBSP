@@ -1,3 +1,4 @@
+/* eslint-disable no-implicit-globals */
 /* global require, exports, __dirname */
 
 const gulp = require("gulp");
@@ -57,12 +58,14 @@ function wrap_source_with_function_task(cb) {
 }
 
 function css_to_js_task(cb) {
-    let cssString = "var cssString = `";
-    const fileContent = fs.readFileSync("build/css/ytbsp-stylesheet.css");
-    cssString += fileContent.toString();
-    cssString += "`";
-    fs.writeFileSync("build/css/CSSString.js", cssString);
-    cb();
+    const writable = fs.createWriteStream("build/css/CSSString.js");
+    writable.write("var cssString = `");
+    const readable = fs.createReadStream("build/css/ytbsp-stylesheet.css");
+    readable.pipe(writable, {"end": false});
+    readable.on("end", () => {
+        writable.end("`");
+        cb();
+    });
 }
 
 function clean_task(cb) {
@@ -71,8 +74,14 @@ function clean_task(cb) {
     ]);
 }
 
+function watch_task(cb) {
+    gulp.watch(["src/*"], exports.default);
+}
+
 exports.default = gulp.series(clean_task, gulp.parallel(less_task, babel_task), css_to_js_task, concat_source_task, wrap_source_with_function_task, final_concat_task);
 exports.less = less_task;
 exports.uglify = uglify_task;
 exports.babel = babel_task;
 exports.clean = clean_task;
+exports.watch = watch_task;
+
