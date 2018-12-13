@@ -74,8 +74,14 @@ function clean_task(cb) {
     ]);
 }
 
+function watch_task(cb) {
+    gulp.watch(["src/*"], exports.default);
+}
+
 exports.default = gulp.series(clean_task, gulp.parallel(less_task, babel_task), css_to_js_task, concat_source_task, wrap_source_with_function_task, final_concat_task);
 exports.less = less_task;
 exports.uglify = uglify_task;
 exports.babel = babel_task;
 exports.clean = clean_task;
+exports.watch = watch_task;
+
