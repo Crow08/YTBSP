@@ -1,4 +1,4 @@
-/* global $, YT_PLAYER_CONTROL, YT_PLAYER, YT_VIDEO_STREAM, peekPlayerSizeFactor, toggleYTBSP */
+/* global $, YT_PLAYER_CONTROL, YT_PLAYER, YT_VIDEO_STREAM, config, toggleYTBSP */
 
 class Player {
 
@@ -16,7 +16,7 @@ class Player {
     showPeekPlayer() {
         this.playerRef = $(YT_PLAYER);
         // If player cannot be found or peekPlayerSize is 0 (disabled) don't show peek player.
-        if (!this.playerRef.length || 0.0 >= peekPlayerSizeFactor) {
+        if (!this.playerRef.length || 0.0 >= config.peekPlayerSizeFactor) {
             return;
         }
         this.nativePlayerParent = this.playerRef.parent();
@@ -56,14 +56,14 @@ class Player {
             "position": "fixed",
             "right": "20px",
             "bottom": "20px",
-            "width": `${320 * peekPlayerSizeFactor}px`,
-            "height": `${180 * peekPlayerSizeFactor}px`,
+            "width": `${320 * config.peekPlayerSizeFactor}px`,
+            "height": `${180 * config.peekPlayerSizeFactor}px`,
             "zIndex": "10"
         });
 
         // Add overlay to the peek player that will control click behaviour
-        this.playerRef.append($("<div/>", {"id": "ytbsp-peekplayer-overlay", "css": {"width": (320 * peekPlayerSizeFactor),"height": (180 * peekPlayerSizeFactor)}})
-            .append($("<div/>", {"id": "ytbsp-peekplayer-overlay-player-control", "css": {"width": ((320 * peekPlayerSizeFactor) / 10),"height": ((320 * peekPlayerSizeFactor) / 10)}})
+        this.playerRef.append($("<div/>", {"id": "ytbsp-peekplayer-overlay", "css": {"width": (320 * config.peekPlayerSizeFactor),"height": (180 * config.peekPlayerSizeFactor)}})
+            .append($("<div/>", {"id": "ytbsp-peekplayer-overlay-player-control", "css": {"width": ((320 * config.peekPlayerSizeFactor) / 10),"height": ((320 * config.peekPlayerSizeFactor) / 10)}})
                 .append($("<label/>", {"class": "ytbsp-play-pause-icon", "title": "play / pause"}))));
         // Initialize play/pause icon depending on player state
         if (!$(YT_VIDEO_STREAM).get(0).paused) {

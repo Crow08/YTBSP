@@ -12,20 +12,22 @@ const resolutions = {"Ultra": "highres",
     "144p": "tiny"};
 
 // Config:
-let useRemoteData = true;					// DEFAULT: true (using Google Drive as remote storage).
-let maxSimSubLoad = 10;						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
-let maxVidsPerRow = 9;						// DEFAULT: 9.
-let maxVidsPerSub = 36;						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
-let enlargeDelay = 500;						// DEFAULT: 500 (in ms).
-let enlargeFactor = 2.8;					// DEFAULT: 2.8 (x * 90px).
-let enlargeFactorNative = 2.0;				// DEFAULT: 2.0 (x * 94px).
-let timeToMarkAsSeen = 10;					// DEFAULT: 10 (in s).
-let screenThreshold = 500;					// DEFAULT: 500 (preload images beyond current screen region in px).
-let playerQuality = resolutions["1080p"];	// DEFAULT: hd1080 (resolutions['1080p'])
-let peekPlayerSizeFactor = 1.5;				// DEFAULT: 1.5 (x * 180px).
-let autoPauseVideo = false;					// DEFAULT: false.
-let hideSeenVideos = false;					// DEFAULT: false.
-let hideEmptySubs = true;					// DEFAULT: true.
+const config = {
+    "useRemoteData": true,					// DEFAULT: true (using Google Drive as remote storage).
+    "maxSimSubLoad": 10,						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
+    "maxVidsPerRow": 9,						// DEFAULT: 9.
+    "maxVidsPerSub": 36,						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
+    "enlargeDelay": 500,						// DEFAULT: 500 (in ms).
+    "enlargeFactor": 2.8,					// DEFAULT: 2.8 (x * 90px).
+    "enlargeFactorNative": 2.0,				// DEFAULT: 2.0 (x * 94px).
+    "timeToMarkAsSeen": 10,					// DEFAULT: 10 (in s).
+    "screenThreshold": 500,					// DEFAULT: 500 (preload images beyond current screen region in px).
+    "playerQuality": resolutions["1080p"],	// DEFAULT: hd1080 (resolutions['1080p'])
+    "peekPlayerSizeFactor": 1.5,				// DEFAULT: 1.5 (x * 180px).
+    "autoPauseVideo": false,					// DEFAULT: false.
+    "hideSeenVideos": false,					// DEFAULT: false.
+    "hideEmptySubs": true					// DEFAULT: true.
+};
 
 // OAuth2 variables:
 const CLIENT_ID = "281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com";
@@ -88,8 +90,8 @@ function getSlider(id, checked, onChange) {
 // Let's build the new site:
 
 // Create an div for us.
-const dark_or_light_theme = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
-const mainDiv = $("<div/>", {"id": "YTBSP", "class": dark_or_light_theme});
+const themeClass = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
+const mainDiv = $("<div/>", {"id": "YTBSP", "class": themeClass});
 const menuStrip = $("<div/>", {"id": "ytbsp-menuStrip"});
 menuStrip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
     .append(getLoader("ytbsp-main-loader"))
@@ -99,14 +101,14 @@ menuStrip.append($("<button/>", {"id": "ytbsp-removeAllVideos", "class": "ytbsp-
 menuStrip.append($("<button/>", {"id": "ytbsp-resetAllVideos", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "Reset all videos"}));
 menuStrip.append($("<button/>", {"id": "ytbsp-backup", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "Backup video info"}));
 menuStrip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
-    .append($("<input/>", {"id": "ytbsp-hideSeenVideosCb", "type": "checkbox", "checked": hideSeenVideos}))
+    .append($("<input/>", {"id": "ytbsp-hideSeenVideosCb", "type": "checkbox", "checked": config.hideSeenVideos}))
     .append("Hide seen videos"));
 menuStrip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func ytbsp-hideWhenNative"})
-    .append($("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox", "checked": hideEmptySubs}))
+    .append($("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox", "checked": config.hideEmptySubs}))
     .append("Hide empty subs"));
 menuStrip.append($("<button/>", {"id": "ytbsp-settings", "class": "ytbsp-func ytbsp-hideWhenNative", "html": "&#x2699;"}));
 mainDiv.append(menuStrip);
-mainDiv.append($("<ul/>", {"id": "ytbsp-subs", "css": {"min-width" : (maxVidsPerRow * 168) + "px"}}));
+mainDiv.append($("<ul/>", {"id": "ytbsp-subs", "css": {"min-width": `${config.maxVidsPerRow * 168}px`}}));
 mainDiv.append($("<div/>", {"id": "ytbsp-modal"})
     .append($("<div/>", {"id": "ytbsp-modal-content"})));
 
@@ -251,7 +253,7 @@ function loadingProgress(loadingDelta, saveWhenDone = false, sub = null) {
     }
 }
 
-useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
+config.useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
 
 // This function is called after successful OAuth login.
 // Loads configuration and video information from local storage or G-Drive,
@@ -301,7 +303,7 @@ function loadRemoteFileId() {
 
 // Load Script configuration.
 function loadConfig() {
-    if (useRemoteData) {
+    if (config.useRemoteData) {
         return loadRemoteConfig();
     }
     return loadLocalConfig();
@@ -327,21 +329,21 @@ function loadRemoteConfig() {
                 // Save file exists.
                 // Parse the config.
                 remoteSaveFileID = files[0].id;
-                useRemoteData = "0" !== files[0].appProperties.useRemoteData;
-                hideSeenVideos = "0" !== files[0].appProperties.hideSeenVideos;
-                hideEmptySubs = "0" !== files[0].appProperties.hideEmptySubs;
-                maxSimSubLoad = files[0].appProperties.maxSimSubLoad;
-                maxVidsPerRow = files[0].appProperties.maxVidsPerRow;
-                maxVidsPerSub = files[0].appProperties.maxVidsPerSub;
-                enlargeDelay = files[0].appProperties.enlargeDelay;
-                enlargeFactor = files[0].appProperties.enlargeFactor;
-                enlargeFactorNative = files[0].appProperties.enlargeFactorNative;
-                playerQuality = files[0].appProperties.playerQuality;
-                timeToMarkAsSeen = files[0].appProperties.timeToMarkAsSeen;
-                screenThreshold = files[0].appProperties.screenThreshold;
-                autoPauseVideo = "0" !== files[0].appProperties.autoPauseVideo;
-                $("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
-                $("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+                config.useRemoteData = "0" !== files[0].appProperties.useRemoteData;
+                config.hideSeenVideos = "0" !== files[0].appProperties.hideSeenVideos;
+                config.hideEmptySubs = "0" !== files[0].appProperties.hideEmptySubs;
+                config.maxSimSubLoad = files[0].appProperties.maxSimSubLoad;
+                config.maxVidsPerRow = files[0].appProperties.maxVidsPerRow;
+                config.maxVidsPerSub = files[0].appProperties.maxVidsPerSub;
+                config.enlargeDelay = files[0].appProperties.enlargeDelay;
+                config.enlargeFactor = files[0].appProperties.enlargeFactor;
+                config.enlargeFactorNative = files[0].appProperties.enlargeFactorNative;
+                config.playerQuality = files[0].appProperties.playerQuality;
+                config.timeToMarkAsSeen = files[0].appProperties.timeToMarkAsSeen;
+                config.screenThreshold = files[0].appProperties.screenThreshold;
+                config.autoPauseVideo = "0" !== files[0].appProperties.autoPauseVideo;
+                $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
+                $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
             } else {
                 // Save file does not exist.
                 // Create new save file.
@@ -358,21 +360,21 @@ function loadRemoteConfig() {
 // Load Script configuration from local storage
 function loadLocalConfig() {
     return new Promise(((resolve, reject) => {
-        useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
-        hideSeenVideos = "0" !== localStorage.getItem("YTBSP_hideSeenVideos");
-        hideEmptySubs = "0" !== localStorage.getItem("YTBSP_hideEmptySubs");
-        maxSimSubLoad = localStorage.getItem("YTBSP_maxSimSubLoad");
-        maxVidsPerRow = localStorage.getItem("YTBSP_maxVidsPerRow");
-        maxVidsPerSub = localStorage.getItem("YTBSP_maxVidsPerSub");
-        enlargeDelay = localStorage.getItem("YTBSP_enlargeDelay");
-        enlargeFactor = localStorage.getItem("YTBSP_enlargeFactor");
-        enlargeFactorNative = localStorage.getItem("YTBSP_enlargeFactorNative");
-        playerQuality = localStorage.getItem("YTBSP_playerQuality");
-        timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
-        screenThreshold = localStorage.getItem("YTBSP_screenThreshold");
-        autoPauseVideo = "0" !== localStorage.getItem("YTBSP_autoPauseVideo");
-        $("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
-        $("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+        config.useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
+        config.hideSeenVideos = "0" !== localStorage.getItem("YTBSP_hideSeenVideos");
+        config.hideEmptySubs = "0" !== localStorage.getItem("YTBSP_hideEmptySubs");
+        config.maxSimSubLoad = localStorage.getItem("YTBSP_maxSimSubLoad");
+        config.maxVidsPerRow = localStorage.getItem("YTBSP_maxVidsPerRow");
+        config.maxVidsPerSub = localStorage.getItem("YTBSP_maxVidsPerSub");
+        config.enlargeDelay = localStorage.getItem("YTBSP_enlargeDelay");
+        config.enlargeFactor = localStorage.getItem("YTBSP_enlargeFactor");
+        config.enlargeFactorNative = localStorage.getItem("YTBSP_enlargeFactorNative");
+        config.playerQuality = localStorage.getItem("YTBSP_playerQuality");
+        config.timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+        config.screenThreshold = localStorage.getItem("YTBSP_screenThreshold");
+        config.autoPauseVideo = "0" !== localStorage.getItem("YTBSP_autoPauseVideo");
+        $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
+        $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
         resolve();
     }));
 }
@@ -389,26 +391,26 @@ function createRemoteSaveData() {
                 "parents": ["appDataFolder"],
                 "name": "YTBSP.json",
                 "appProperties": {
-                    "useRemoteData": useRemoteData,
-                    "hideSeenVideos": hideSeenVideos,
-                    "hideEmptySubs": hideEmptySubs,
-                    "maxSimSubLoad": maxSimSubLoad,
-                    "maxVidsPerRow": maxVidsPerRow,
-                    "maxVidsPerSub": maxVidsPerSub,
-                    "enlargeDelay": enlargeDelay,
-                    "enlargeFactor": enlargeFactor,
-                    "enlargeFactorNative": enlargeFactorNative,
-                    "playerQuality": playerQuality,
-                    "timeToMarkAsSeen": timeToMarkAsSeen,
-                    "screenThreshold": screenThreshold,
-                    "autoPauseVideo": autoPauseVideo
+                    "useRemoteData": config.useRemoteData,
+                    "hideSeenVideos": config.hideSeenVideos,
+                    "hideEmptySubs": config.hideEmptySubs,
+                    "maxSimSubLoad": config.maxSimSubLoad,
+                    "maxVidsPerRow": config.maxVidsPerRow,
+                    "maxVidsPerSub": config.maxVidsPerSub,
+                    "enlargeDelay": config.enlargeDelay,
+                    "enlargeFactor": config.enlargeFactor,
+                    "enlargeFactorNative": config.enlargeFactorNative,
+                    "playerQuality": config.playerQuality,
+                    "timeToMarkAsSeen": config.timeToMarkAsSeen,
+                    "screenThreshold": config.screenThreshold,
+                    "autoPauseVideo": config.autoPauseVideo
                 }
             }
         ).then((response) => {
             remoteSaveFileID = response.id;
             // Config variables are already initialized with default values.
-            $("#ytbsp-hideSeenVideosCb").prop("checked", hideSeenVideos);
-            $("#ytbsp-hideEmptySubsCb").prop("checked", hideEmptySubs);
+            $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
+            $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
             loadingProgress(-1, true);
             resolve();
         });
@@ -452,7 +454,7 @@ function loadVideoInformation() {
 
 // Gets and returns video information in resolved promise.
 function getVideoInformation() {
-    if (useRemoteData) {
+    if (config.useRemoteData) {
         return getRemoteVideoInformation();
     }
     return getLocalVideoInformation();
@@ -513,7 +515,7 @@ function getLocalVideoInformation() {
 
 // Save configuration.
 function saveConfig() {
-    if (useRemoteData) {
+    if (config.useRemoteData) {
         return new Promise(((resolve, reject) => {
             saveLocalConfig().then(() => {
                 saveRemoteConfig().then(() => { resolve(); });
@@ -537,22 +539,22 @@ function saveRemoteConfig() {
                 `/drive/v3/files/${remoteSaveFileID}`,
                 {},
                 {"appProperties": {
-                    "useRemoteData": useRemoteData ? "1" : "0",
-                    "hideSeenVideos": hideSeenVideos ? "1" : "0",
-                    "hideEmptySubs": hideEmptySubs ? "1" : "0",
-                    "maxSimSubLoad": maxSimSubLoad,
-                    "maxVidsPerRow": maxVidsPerRow,
-                    "maxVidsPerSub": maxVidsPerSub,
-                    "enlargeDelay": enlargeDelay,
-                    "enlargeFactor": enlargeFactor,
-                    "enlargeFactorNative": enlargeFactorNative,
-                    "playerQuality": playerQuality,
-                    "timeToMarkAsSeen": timeToMarkAsSeen,
-                    "screenThreshold": screenThreshold,
-                    "autoPauseVideo": autoPauseVideo ? "1" : "0"
+                    "useRemoteData": config.useRemoteData ? "1" : "0",
+                    "hideSeenVideos": config.hideSeenVideos ? "1" : "0",
+                    "hideEmptySubs": config.hideEmptySubs ? "1" : "0",
+                    "maxSimSubLoad": config.maxSimSubLoad,
+                    "maxVidsPerRow": config.maxVidsPerRow,
+                    "maxVidsPerSub": config.maxVidsPerSub,
+                    "enlargeDelay": config.enlargeDelay,
+                    "enlargeFactor": config.enlargeFactor,
+                    "enlargeFactorNative": config.enlargeFactorNative,
+                    "playerQuality": config.playerQuality,
+                    "timeToMarkAsSeen": config.timeToMarkAsSeen,
+                    "screenThreshold": config.screenThreshold,
+                    "autoPauseVideo": config.autoPauseVideo ? "1" : "0"
                 }}
             ).then(() => {
-                localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
+                localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
                 resolve();
             });
         }
@@ -562,26 +564,26 @@ function saveRemoteConfig() {
 // Save config to local storage file.
 function saveLocalConfig() {
     return new Promise(((resolve, reject) => {
-        localStorage.setItem("YTBSP_useRemoteData", useRemoteData ? "1" : "0");
-        localStorage.setItem("YTBSP_hideSeenVideos", hideSeenVideos ? "1" : "0");
-        localStorage.setItem("YTBSP_hideEmptySubs", hideEmptySubs ? "1" : "0");
-        localStorage.setItem("YTBSP_maxSimSubLoad", maxSimSubLoad);
-        localStorage.setItem("YTBSP_maxVidsPerRow", maxVidsPerRow);
-        localStorage.setItem("YTBSP_maxVidsPerSub", maxVidsPerSub);
-        localStorage.setItem("YTBSP_enlargeDelay", enlargeDelay);
-        localStorage.setItem("YTBSP_enlargeFactor", enlargeFactor);
-        localStorage.setItem("YTBSP_enlargeFactorNative", enlargeFactorNative);
-        localStorage.setItem("YTBSP_playerQuality", playerQuality);
-        localStorage.setItem("YTBSP_timeToMarkAsSeen", timeToMarkAsSeen);
-        localStorage.setItem("YTBSP_screenThreshold", screenThreshold);
-        localStorage.setItem("YTBSP_autoPauseVideo", autoPauseVideo ? "1" : "0");
+        localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
+        localStorage.setItem("YTBSP_hideSeenVideos", config.hideSeenVideos ? "1" : "0");
+        localStorage.setItem("YTBSP_hideEmptySubs", config.hideEmptySubs ? "1" : "0");
+        localStorage.setItem("YTBSP_maxSimSubLoad", config.maxSimSubLoad);
+        localStorage.setItem("YTBSP_maxVidsPerRow", config.maxVidsPerRow);
+        localStorage.setItem("YTBSP_maxVidsPerSub", config.maxVidsPerSub);
+        localStorage.setItem("YTBSP_enlargeDelay", config.enlargeDelay);
+        localStorage.setItem("YTBSP_enlargeFactor", config.enlargeFactor);
+        localStorage.setItem("YTBSP_enlargeFactorNative", config.enlargeFactorNative);
+        localStorage.setItem("YTBSP_playerQuality", config.playerQuality);
+        localStorage.setItem("YTBSP_timeToMarkAsSeen", config.timeToMarkAsSeen);
+        localStorage.setItem("YTBSP_screenThreshold", config.screenThreshold);
+        localStorage.setItem("YTBSP_autoPauseVideo", config.autoPauseVideo ? "1" : "0");
         resolve();
     }));
 }
 
 // Save video information.
 function saveVideoInformation() {
-    if (useRemoteData) {
+    if (config.useRemoteData) {
         return new Promise(((resolve, reject) => {
             saveLocalVideoInformation().then(() => {
                 saveRemoteVideoInformation().then(() => { resolve(); });
@@ -667,7 +669,7 @@ function requestSubs() {
         {
             "mine": "true",
             "part": "snippet",
-            "maxResults": maxSimSubLoad,
+            "maxResults": config.maxSimSubLoad,
             "fields": "items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken"
         }
     ).then(processRequestSubs);
@@ -692,7 +694,7 @@ function processRequestSubs(response) {
             {
                 "mine": "true",
                 "part": "snippet",
-                "maxResults": maxSimSubLoad,
+                "maxResults": config.maxSimSubLoad,
                 "pageToken": response.nextPageToken,
                 "fields": "items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken"
             }
@@ -839,25 +841,25 @@ $(".ytbsp-func#ytbsp-resetAllVideos", mainDiv).click(resetAllVideos);
 
 // Hide seen videos buttons.
 function toggleHideSeenVideos() {
-    hideSeenVideos = !hideSeenVideos;
+    config.hideSeenVideos = !config.hideSeenVideos;
     loadingProgress(1);
     saveConfig().then(() => { loadingProgress(-1); });
     subs.forEach((sub, i) => {
         subs[i].buildSubList();
     });
-    $("#ytbsp-hideSeenVideosCb", mainDiv).prop("checked", hideSeenVideos);
+    $("#ytbsp-hideSeenVideosCb", mainDiv).prop("checked", config.hideSeenVideos);
 }
 $("#ytbsp-hideSeenVideosCb", mainDiv).change(toggleHideSeenVideos);
 
 // Hide empty subscriptions button.
 function toggleHideEmptySubs() {
-    hideEmptySubs = !hideEmptySubs;
+    config.hideEmptySubs = !config.hideEmptySubs;
     loadingProgress(1);
     saveConfig().then(() => { loadingProgress(-1); });
     subs.forEach((sub, i) => {
         subs[i].handleVisibility();
     });
-    $("#ytbsp-hideEmptySubsCb", mainDiv).prop("checked", hideEmptySubs);
+    $("#ytbsp-hideEmptySubsCb", mainDiv).prop("checked", config.hideEmptySubs);
 }
 $("#ytbsp-hideEmptySubsCb", mainDiv).change(toggleHideEmptySubs);
 
@@ -900,7 +902,7 @@ function createBackupDialog(saveData) {
             });
         }
     };
-    endDiv.append(getSlider("ytbsp-backup-switch", useRemoteData, backupSwitch));
+    endDiv.append(getSlider("ytbsp-backup-switch", config.useRemoteData, backupSwitch));
 
     endDiv.append($("<h2/>", {"html": "Google Drive"}));
     endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "close", "on": {"click": closeModal}}));
@@ -945,19 +947,19 @@ function createSettingsDialog() {
     const settingsTable = $("<table/>", {"id": "ytbsp-settings-table"});
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Hide empty subs"}))
-        .append($("<td>").append(getSlider("ytbsp-settings-hideEmptySubs", hideEmptySubs)))
+        .append($("<td>").append(getSlider("ytbsp-settings-hideEmptySubs", config.hideEmptySubs)))
         .append($("<td>")));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Hide seen videos"}))
-        .append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", hideSeenVideos)))
+        .append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", config.hideSeenVideos)))
         .append($("<td>")));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Use Google Drive"}))
-        .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", useRemoteData)))
+        .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", config.useRemoteData)))
         .append($("<td>"), {"html": "Allows synchronization between browsers. May result in slower loading times."}));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Auto pause videos"}))
-        .append($("<td>").append(getSlider("ytbsp-settings-autoPauseVideo", autoPauseVideo)))
+        .append($("<td>").append(getSlider("ytbsp-settings-autoPauseVideo", config.autoPauseVideo)))
         .append($("<td>"), {"html": "Open Videos in a paused state. (Does not effect playlists.)"}));
 
     const playerQualitySelect = $("<Select>", {"id": "ytbsp-settings-playerQuality"});
@@ -966,7 +968,7 @@ function createSettingsDialog() {
             playerQualitySelect.append($("<option>", {"value": resolutions[resolution], "html": resolution}));
         }
     }
-    playerQualitySelect.val(playerQuality);
+    playerQualitySelect.val(config.playerQuality);
 
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Player Quality"}))
@@ -974,35 +976,35 @@ function createSettingsDialog() {
         .append($("<td>"), {"html": "Open Videos in a paused state. (Does not effect playlists.)"}));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Max number of subscriptions loading simultaneously"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxSimSubLoad", "value": maxSimSubLoad})))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxSimSubLoad", "value": config.maxSimSubLoad})))
         .append($("<td>", {"html": "Default: 10 | Range: 1-50 | Higher numbers result in slower loading of single items but overall faster loading."})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Max number of videos per row"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerRow", "value": maxVidsPerRow})))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerRow", "value": config.maxVidsPerRow})))
         .append($("<td>", {"html": "Default: 9 | Range: 1-50"})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Max number of videos per subscription"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerSub", "value": maxVidsPerSub})))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "max": "50", "id": "ytbsp-settings-maxVidsPerSub", "value": config.maxVidsPerSub})))
         .append($("<td>", {"html": "Default: 27 | Range: 1-50 | Should be dividable by videos per row."})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Watch time to mark video as seen"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-timeToMarkAsSeen", "value": timeToMarkAsSeen})).append(" s"))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-timeToMarkAsSeen", "value": config.timeToMarkAsSeen})).append(" s"))
         .append($("<td>", {"html": "Default: 10"})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Delay for thumbnail enlarge"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-enlargeDelay", "value": enlargeDelay})).append(" ms"))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-enlargeDelay", "value": config.enlargeDelay})).append(" ms"))
         .append($("<td>", {"html": "Default: 500"})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Factor to enlarge thumbnail by"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactor", "value": enlargeFactor})))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactor", "value": config.enlargeFactor})))
         .append($("<td>", {"html": "Default: 2.8 | 1 : disable thumbnail enlarge"})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Factor to enlarge native thumbnail by"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactorNative", "value": enlargeFactorNative})))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactorNative", "value": config.enlargeFactorNative})))
         .append($("<td>", {"html": "Default: 2.0 | 1 : disable thumbnail enlarge"})));
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "threshold to preload thumbnails"}))
-        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-screenThreshold", "value": screenThreshold})).append(" px"))
+        .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-screenThreshold", "value": config.screenThreshold})).append(" px"))
         .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
     settingsDialog.append(settingsTable);
 
@@ -1010,19 +1012,19 @@ function createSettingsDialog() {
     const saveSettings = function() {
         loadingProgress(1);
 
-        useRemoteData = $("#ytbsp-settings-useRemoteData").prop("checked");
-        hideEmptySubs = $("#ytbsp-settings-hideEmptySubs").prop("checked");
-        hideSeenVideos = $("#ytbsp-settings-hideSeenVideos").prop("checked");
-        maxSimSubLoad = $("#ytbsp-settings-maxSimSubLoad").val();
-        maxVidsPerRow = $("#ytbsp-settings-maxVidsPerRow").val();
-        maxVidsPerSub = $("#ytbsp-settings-maxVidsPerSub").val();
-        timeToMarkAsSeen = $("#ytbsp-settings-timeToMarkAsSeen").val();
-        enlargeDelay = $("#ytbsp-settings-enlargeDelay").val();
-        enlargeFactor = $("#ytbsp-settings-enlargeFactor").val();
-        enlargeFactorNative = $("#ytbsp-settings-enlargeFactorNative").val();
-        playerQuality = $("#ytbsp-settings-playerQuality").val();
-        screenThreshold = $("#ytbsp-settings-screenThreshold").val();
-        autoPauseVideo = $("#ytbsp-settings-autoPauseVideo").prop("checked");
+        config.useRemoteData = $("#ytbsp-settings-useRemoteData").prop("checked");
+        config.hideEmptySubs = $("#ytbsp-settings-hideEmptySubs").prop("checked");
+        config.hideSeenVideos = $("#ytbsp-settings-hideSeenVideos").prop("checked");
+        config.maxSimSubLoad = $("#ytbsp-settings-maxSimSubLoad").val();
+        config.maxVidsPerRow = $("#ytbsp-settings-maxVidsPerRow").val();
+        config.maxVidsPerSub = $("#ytbsp-settings-maxVidsPerSub").val();
+        config.timeToMarkAsSeen = $("#ytbsp-settings-timeToMarkAsSeen").val();
+        config.enlargeDelay = $("#ytbsp-settings-enlargeDelay").val();
+        config.enlargeFactor = $("#ytbsp-settings-enlargeFactor").val();
+        config.enlargeFactorNative = $("#ytbsp-settings-enlargeFactorNative").val();
+        config.playerQuality = $("#ytbsp-settings-playerQuality").val();
+        config.screenThreshold = $("#ytbsp-settings-screenThreshold").val();
+        config.autoPauseVideo = $("#ytbsp-settings-autoPauseVideo").prop("checked");
 
         saveConfig().then(() => {
             setTimeout(() => {
@@ -1038,7 +1040,7 @@ function createSettingsDialog() {
         // eslint-disable-next-line camelcase
         versionInformation = GM_info && GM_info.script ? `script version:${GM_info.script.version}` : "";
     } catch (e) {
-        console.info("Tampermonkey variables not arivable.");
+        console.info("Tampermonkey variables not available.");
     }
     const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"})
         .append($("<a/>", {"html": "https://github.com/Crow08/YTBSP", "href": "https://github.com/Crow08/YTBSP", "target": "_blank", "class": "ytbsp-func", "style": "font-size: 1rem;"}))
@@ -1152,8 +1154,8 @@ function addThumbnailEnlargeCss() {
     css.type = "text/css";
     css.id = "ytbsp-css-thumb";
     css.innerHTML =
-        `ytd-thumbnail:hover { transform: scale(${enlargeFactorNative}); border: solid ${enlargeFactorNative / 2.0}px ${altBorderColor}; padding: 0px; z-index: 2; }` +
-        `ytd-thumbnail { padding: ${enlargeFactorNative / 2.0}px }` +
+        `ytd-thumbnail:hover { transform: scale(${config.enlargeFactorNative}); border: solid ${config.enlargeFactorNative / 2.0}px ${altBorderColor}; padding: 0px; z-index: 2; }` +
+        `ytd-thumbnail { padding: ${config.enlargeFactorNative / 2.0}px }` +
         "#video-title { width: 200px; }" +
         "#scroll-container.yt-horizontal-list-renderer { overflow: visible; }";
     document.head.appendChild(css);
@@ -1205,13 +1207,13 @@ function handlePageChange() {
     if ((/.*watch\?.+list=.+/u).test(location)) {
         autoPauseThisVideo = false;
     } else {
-        autoPauseThisVideo = autoPauseVideo;
+        autoPauseThisVideo = config.autoPauseVideo;
     }
     clearTimeout(markAsSeenTimeout);
     toggleGuide = false;
     // Forces some images to reload...
     window.dispatchEvent(new Event("resize"));
-    // If we are on the startpage (or feed pages).
+    // If we are on the start page (or feed pages).
     if ((/^(\/?|((\/feed\/)(trending|subscriptions|history)\/?))?$/iu).test(location.pathname)) {
         setYTStyleSheet(bodyStyleStartpage);
     } else if ((/^\/?watch$/u).test(location.pathname)) {
@@ -1258,7 +1260,7 @@ function watchpage() {
                 }
             });
         }
-    }, timeToMarkAsSeen * 1000);
+    }, config.timeToMarkAsSeen * 1000);
 }
 
 
@@ -1329,8 +1331,8 @@ $(window).bind("storage", (e) => {
 function onScriptStart() {
     setYTStyleSheet(bodyStyleLoading);
     // Early configuration for settings that cannot wait until configuration is loaded.
-    timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
-    autoPauseVideo = "0" !== localStorage.getItem("YTBSP_autoPauseVideo");
+    config.timeToMarkAsSeen = localStorage.getItem("YTBSP_timeToMarkAsSeen");
+    config.autoPauseVideo = "0" !== localStorage.getItem("YTBSP_autoPauseVideo");
 }
 
 // LifecycleHook: DocumentRead:
@@ -1347,7 +1349,7 @@ $(document).ready(() => {
 // Executed after config is Loaded.
 function afterConfigLoaded() {
     addYTBSPStyleSheet();
-    if (1 <= enlargeFactorNative) {
+    if (1 <= config.enlargeFactorNative) {
         addThumbnailEnlargeCss();
     }
     setPlayerQuality();
@@ -1376,5 +1378,5 @@ HTMLMediaElement.prototype.play = function() {
 
 // Set preferred player quality.
 function setPlayerQuality() {
-    localStorage.setItem(YT_PLAYER_QUALITY, `{"data":"${playerQuality}","expiration":${window.moment().add(1, "months").valueOf()},"creation":${window.moment().valueOf()}}`);
+    localStorage.setItem(YT_PLAYER_QUALITY, `{"data":"${config.playerQuality}","expiration":${window.moment().add(1, "months").valueOf()},"creation":${window.moment().valueOf()}}`);
 }

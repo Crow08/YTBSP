@@ -1,4 +1,4 @@
-/* global $, getLoader, saveList, loadingProgress, buildApiRequest, maxVidsPerSub, maxVidsPerRow, hideEmptySubs, hideSeenVideos, screenThreshold, subList, cachedVideoInformation, Video */
+/* global $, getLoader, saveList, loadingProgress, buildApiRequest, config, subList, cachedVideoInformation, Video */
 
 class Subscription {
 
@@ -13,7 +13,7 @@ class Subscription {
         this.lastViewCheck = 0;
 
         // Create subscription row.
-        this.row = $("<li/>", {"class": "ytbsp-subscription", "css": {"display": hideEmptySubs ? "none" : ""}});
+        this.row = $("<li/>", {"class": "ytbsp-subscription", "css": {"display": config.hideEmptySubs ? "none" : ""}});
 
         // Create subscription functions menu.
         const subMenuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
@@ -79,14 +79,14 @@ class Subscription {
         that.buildSubList();
     }
 
-    // Fetches and rebuilds subscription row based on updated viodeos.
+    // Fetches and rebuilds subscription row based on updated videos.
     updateSubVideos() {
         loadingProgress(1, false, this);
         buildApiRequest(
             "GET",
             "/youtube/v3/playlistItems",
             {
-                "maxResults": maxVidsPerSub,
+                "maxResults": config.maxVidsPerSub,
                 "part": "snippet",
                 "fields": "items(snippet(publishedAt,resourceId/videoId,thumbnails(maxres,medium),title)),nextPageToken,pageInfo,prevPageToken",
                 "playlistId": this.id.replace(/^UC/u, "UU")
@@ -146,7 +146,7 @@ class Subscription {
                     }
                 }
 
-                const infos = {
+                const info = {
                     "vid": vid,
                     "title": title,
                     "thumb": thumb ? thumb : "",
@@ -156,7 +156,7 @@ class Subscription {
                     "seen": seen ? seen : false,
                     "removed": removed ? removed : false
                 };
-                that.videos.push(new Video(infos));
+                that.videos.push(new Video(info));
             });
             // Rebuild the list.
             that.buildSubList();
@@ -172,13 +172,13 @@ class Subscription {
 
         const alreadyIn = $(".ytbsp-video-item", this.videoList);
         let visibleItems = 0;
-        const limit = this.isExpanded ? maxVidsPerSub : maxVidsPerRow;
+        const limit = this.isExpanded ? config.maxVidsPerSub : config.maxVidsPerRow;
         $("br", this.videoList).remove();
         // Now loop through the videos.
         this.videos.forEach(function(video, i) {
 
             // If that video is removed search for it and remove it when found.
-            if (video.isRemoved() || (hideSeenVideos && video.isSeen())) {
+            if (video.isRemoved() || (config.hideSeenVideos && video.isSeen())) {
                 const thumbNode = $(`#YTBSPthumb_${video.vid}`, this.videoList);
                 const index = alreadyIn.index(thumbNode);
                 if (thumbNode && -1 !== index) {
@@ -218,7 +218,7 @@ class Subscription {
                     }
                 }
                 ++visibleItems;
-                if (visibleItems < limit && 0 === visibleItems % maxVidsPerRow) {
+                if (visibleItems < limit && 0 === visibleItems % config.maxVidsPerRow) {
                     if (visibleItems < alreadyIn.length) {
                         $("</br>").insertBefore(alreadyIn[visibleItems]);
                     } else {
@@ -240,7 +240,7 @@ class Subscription {
 
     // Hides subscription if needed.
     handleVisibility() {
-        if (this.isEmpty && hideEmptySubs) {
+        if (this.isEmpty && config.hideEmptySubs) {
             this.row.hide();
         } else {
             this.row.show();
@@ -288,7 +288,7 @@ class Subscription {
         const screenTop = document.body.scrollTop || document.documentElement.scrollTop;
         const screenBottom = screenTop + window.innerHeight;
 
-        this.isInView = ((offsetTop - screenThreshold) < screenBottom) && ((offsetTop + screenThreshold) > screenTop);
+        this.isInView = ((offsetTop - config.screenThreshold) < screenBottom) && ((offsetTop + config.screenThreshold) > screenTop);
 
         if (this.isInView) {
             // Get all images that don't have source loaded jet.

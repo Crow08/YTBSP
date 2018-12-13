@@ -1,4 +1,4 @@
-/* global $, loadingProgress, buildApiRequest, isDarkModeEnabled, openVideoWithSPF, enlargeFactor, enlargeDelay */
+/* global $, loadingProgress, buildApiRequest, isDarkModeEnabled, openVideoWithSPF, config */
 
 // TODO: find better solution
 const timeouts = {};
@@ -24,38 +24,38 @@ class Video {
         this.titleItem = null;
 
         this.vid = info.vid;
-        this.addInfos(info);
+        this.addInfo(info);
         this.thumbLi = $("<li/>", {"id": `YTBSPthumb_${this.vid}`, "class": "ytbsp-video-item"});
     }
 
-    addInfos(infos) {
+    addInfo(info) {
         // Set given information.
-        if (Object.prototype.hasOwnProperty.call(infos, "title")) {
-            this.title = "" !== infos.title ? infos.title : this.title;
+        if (Object.prototype.hasOwnProperty.call(info, "title")) {
+            this.title = "" !== info.title ? info.title : this.title;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "thumb")) {
-            this.thumb = "" !== infos.thumb ? infos.thumb : this.thumb;
+        if (Object.prototype.hasOwnProperty.call(info, "thumb")) {
+            this.thumb = "" !== info.thumb ? info.thumb : this.thumb;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "thumbLarge")) {
-            this.thumbLarge = "" !== infos.thumbLarge ? infos.thumbLarge : this.thumbLarge;
+        if (Object.prototype.hasOwnProperty.call(info, "thumbLarge")) {
+            this.thumbLarge = "" !== info.thumbLarge ? info.thumbLarge : this.thumbLarge;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "duration")) {
-            this.duration = "0:00" !== infos.duration ? infos.duration : this.duration;
+        if (Object.prototype.hasOwnProperty.call(info, "duration")) {
+            this.duration = "0:00" !== info.duration ? info.duration : this.duration;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "uploaded")) {
-            this.uploaded = "" !== infos.uploaded ? infos.uploaded : this.uploaded;
+        if (Object.prototype.hasOwnProperty.call(info, "uploaded")) {
+            this.uploaded = "" !== info.uploaded ? info.uploaded : this.uploaded;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "pubDate")) {
-            this.pubDate = "" !== infos.pubDate ? infos.pubDate : this.pubDate;
+        if (Object.prototype.hasOwnProperty.call(info, "pubDate")) {
+            this.pubDate = "" !== info.pubDate ? info.pubDate : this.pubDate;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "clicks")) {
-            this.clicks = "" !== infos.clicks ? infos.clicks : this.clicks;
+        if (Object.prototype.hasOwnProperty.call(info, "clicks")) {
+            this.clicks = "" !== info.clicks ? info.clicks : this.clicks;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "seen")) {
-            this.seen = false !== infos.seen ? infos.seen : this.seen;
+        if (Object.prototype.hasOwnProperty.call(info, "seen")) {
+            this.seen = false !== info.seen ? info.seen : this.seen;
         }
-        if (Object.prototype.hasOwnProperty.call(infos, "removed")) {
-            this.removed = false !== infos.removed ? infos.removed : this.removed;
+        if (Object.prototype.hasOwnProperty.call(info, "removed")) {
+            this.removed = false !== info.removed ? info.removed : this.removed;
         }
     }
 
@@ -142,7 +142,7 @@ class Video {
                             that.clicks = `${Math.round(count / 1000)}K views`; // Rounded thousand views.
                         }
                         else {
-                            that.clicks = `${count} views`; // Exact view count under thousend.
+                            that.clicks = `${count} views`; // Exact view count under thousand.
                         }
                     }
                 }
@@ -188,7 +188,7 @@ class Video {
 
         // Enlarge thumbnail and load higher resolution image.
         function enlarge() {
-            if (1 >= enlargeFactor) {
+            if (1 >= config.enlargeFactor) {
                 return;
             }
             if (0 !== $(".ytbsp-x:hover", this).length) {
@@ -203,27 +203,27 @@ class Video {
                 timeouts[that.vid.replace("-", "$")] = setTimeout(() => {
                     const img = $(".ytbsp-thumb", clip);
                     const title = $(".ytbsp-title", thumb);
-                    const infos = $("p", thumb);
+                    const info = $("p", thumb);
                     img.attr("src", $(".ytbsp-thumb-large-url", clip).val());
                     img.addClass("ytbsp-thumb-large");
-                    img.css("width", (160 * enlargeFactor) + "px");
-                    img.css("height", (90 * enlargeFactor) + "px");
+                    img.css("width", (160 * config.enlargeFactor) + "px");
+                    img.css("height", (90 * config.enlargeFactor) + "px");
                     title.addClass("ytbsp-title-large");
-                    title.css("width", ((160 * enlargeFactor) - 4) + "px");
-                    title.css("left", (-(((160 * enlargeFactor) / 2) - 82)) + "px");
+                    title.css("width", ((160 * config.enlargeFactor) - 4) + "px");
+                    title.css("left", (-(((160 * config.enlargeFactor) / 2) - 82)) + "px");
                     clip.addClass("ytbsp-clip-large");
-                    clip.css("width", ((160 * enlargeFactor) + 4) + "px");
-                    clip.css("height", ((90 * enlargeFactor) + 4) + "px");
-                    clip.css("left", (-(((160 * enlargeFactor) / 2) - 82)) + "px");
-                    infos.hide();
-                }, enlargeDelay);
+                    clip.css("width", ((160 * config.enlargeFactor) + 4) + "px");
+                    clip.css("height", ((90 * config.enlargeFactor) + 4) + "px");
+                    clip.css("left", (-(((160 * config.enlargeFactor) / 2) - 82)) + "px");
+                    info.hide();
+                }, config.enlargeDelay);
             }
         }
         $(".ytbsp-clip", this.thumbLi).mouseover(enlarge);
 
         // Reset thumbnail to original size
         function enlargeCancel() {
-            if (1 >= enlargeFactor) {
+            if (1 >= config.enlargeFactor) {
                 return;
             }
             if (that.vid.replace("-", "$") in timeouts && 0 < timeouts[that.vid.replace("-", "$")]) {
