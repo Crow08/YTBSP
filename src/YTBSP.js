@@ -68,11 +68,6 @@ let corruptCache = false;
 let cachedVideoInformation = [];
 let remoteSaveFileID = null;
 
-// Variables for inView check.
-let lastScroll = Date.now(); // The last time the page was moved or resized.
-let screenTop = 0;
-let screenBottom = screenTop + window.innerHeight;
-
 // Start page is YTBSP.
 let isNative = false;
 
@@ -744,7 +739,7 @@ function processCheckedSubs(response) {
 function updateAllSubs() {
     setTimeout(() => {
         subs.forEach((sub, i) => {
-            subs[i].updateVideos();
+            subs[i].updateSubVideos();
         });
     }, 0);
 }
@@ -811,7 +806,7 @@ function removeAllVideos() {
             });
         });
         toRebuild.forEach((i) => {
-            subs[i].buildList();
+            subs[i].buildSubList();
         });
         loadingProgress(-1, true);
     }, 0);
@@ -835,7 +830,7 @@ function resetAllVideos() {
             });
         });
         toRebuild.forEach((i) => {
-            subs[i].buildList();
+            subs[i].buildSubList();
         });
         loadingProgress(-1, true);
     }, 0);
@@ -848,7 +843,7 @@ function toggleHideSeenVideos() {
     loadingProgress(1);
     saveConfig().then(() => { loadingProgress(-1); });
     subs.forEach((sub, i) => {
-        subs[i].buildList();
+        subs[i].buildSubList();
     });
     $("#ytbsp-hideSeenVideosCb", mainDiv).prop("checked", hideSeenVideos);
 }
@@ -860,7 +855,7 @@ function toggleHideEmptySubs() {
     loadingProgress(1);
     saveConfig().then(() => { loadingProgress(-1); });
     subs.forEach((sub, i) => {
-        subs[i].handleVisablility();
+        subs[i].handleVisibility();
     });
     $("#ytbsp-hideEmptySubsCb", mainDiv).prop("checked", hideEmptySubs);
 }
@@ -1177,41 +1172,33 @@ function isDarkModeEnabled() {
 
 // Now we need an scroll event
 // Also if the window is resized it should be triggered
-let scrollTimeout = null;
-let moved = false;
-function checkEvent() {
-    if (null === scrollTimeout) {
-        scrollTimeout = setTimeout(() => {
-            updateSubsInView();
-            if (moved) {
-                moved = false;
-                checkEvent();
+
+// 0: function ready
+// 1: function processing
+// 2: function processing and request pending
+let occupied = 0;
+
+// TODO: too complicated
+function handleViewChange() {
+    if (0 === occupied) {
+        occupied = 1;
+        occupied = setTimeout(() => {
+            const changeEventTime = Date.now(); // The time the page was moved or resized.
+            subs.forEach((sub) => {
+                sub.inView(changeEventTime);
+            });
+            if (2 === occupied) {
+                handleViewChange();
+            } else {
+                occupied = 0;
             }
         }, 100);
     } else {
-        moved = true;
+        occupied = 2;
     }
 }
-window.addEventListener("scroll", checkEvent, false);
-window.addEventListener("resize", checkEvent, false);
-
-// Load thumbnails for subscriptions currently in view plus the screenThreshold property.
-function updateSubsInView() {
-    lastScroll = Date.now();
-    screenTop = document.body.scrollTop || document.documentElement.scrollTop;
-    screenBottom = screenTop + window.innerHeight;
-    // Check subs which has to be updated
-    subs.forEach((sub) => {
-        if (sub.inView()) {
-            // Get all images that don't have a src but have an data-src
-            $("img[data-src]", sub.videoList).each(function() {
-                $(this).get(0).src = $(this).get(0).getAttribute("data-src");
-                $(this).get(0).removeAttribute("data-src");
-            });
-        }
-    });
-    scrollTimeout = null;
-}
+window.addEventListener("scroll", handleViewChange, false);
+window.addEventListener("resize", handleViewChange, false);
 
 // Handler to manage a fresh page load or a page navigation
 function handlePageChange() {
@@ -1264,7 +1251,7 @@ function watchpage() {
                     sub.videos.forEach((video, j) => {
                         if (video.vid === vid) {
                             subs[i].videos[j].see();
-                            subs[i].buildList();
+                            subs[i].buildSubList();
                             saveList();
                         }
                     });

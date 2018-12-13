@@ -1,4 +1,4 @@
-/* global $, getLoader, saveList, loadingProgress, buildApiRequest, maxVidsPerSub, hideEmptySubs, subList, cachedVideoInformation, maxVidsPerRow, hideSeenVideos, updateSubsInView, lastScroll, screenThreshold, screenBottom, Video */
+/* global $, getLoader, saveList, loadingProgress, buildApiRequest, maxVidsPerSub, maxVidsPerRow, hideEmptySubs, hideSeenVideos, screenThreshold, subList, cachedVideoInformation, Video */
 
 class Subscription {
 
@@ -7,43 +7,34 @@ class Subscription {
         this.name = snippet.title;
         this.id = snippet.resourceId.channelId;
 
-        this.showall = false;
+        this.isExpanded = false;
         this.needsUpdate = false;
         this.isInView = false;
+        this.lastViewCheck = 0;
 
-        // Now build the overview.
+        // Create subscription row.
         this.row = $("<li/>", {"class": "ytbsp-subscription", "css": {"display": hideEmptySubs ? "none" : ""}});
 
-        // Create content.
+        // Create subscription functions menu.
         const subMenuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
-
         subMenuStrip.append($("<div/>", {"css": {"float": "right"}})
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos", "html": "Remove all"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos", "html": "Reset all"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subSeenAllVideos", "html": "Mark all as seen"}))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"})));
-        subMenuStrip.append($("<div/>", {"class": "ytbsp-loaderDiv"})
-            .append(getLoader(`loader_${this.id}`)));
-        subMenuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"})
-            .append($("<a/>", {"href": `/channel/${this.id}`})));
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos", "html": "Remove all"}).click(() => { this.subRemoveAllVideos(); }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos", "html": "Reset all"}).click(() => { this.subResetAllVideos(); }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subSeenAllVideos", "html": "Mark all as seen"}).click(() => { this.subSeenAllVideos(); }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"}).click(() => { this.subShowMore(); })));
+        subMenuStrip.append($("<div/>", {"class": "ytbsp-loaderDiv"}).append(getLoader(`loader_${this.id}`)));
+        subMenuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"}).append($("<a/>", {"href": `/channel/${this.id}`}).append(this.name)));
         this.row.append(subMenuStrip);
-        this.row.append($("<ul/>", {"class": "ytbsp-subVids"}));
 
-        // Save some references.
-        this.videoList = $(".ytbsp-subVids", this.row);
-        this.titleObj = $(".ytbsp-subTitle a", this.row);
+        // Create subscription video list.
+        this.videoList = $("<ul/>", {"class": "ytbsp-subVids"});
+        this.row.append(this.videoList);
 
-        // Put content in place.
-        this.titleObj.html(this.name);
+        // Put new subscription in subscriptions list.
         subList.append(this.row);
 
-        // Get videos for sub from api.
-        this.updateVideos();
-
-        $(".ytbsp-func.ytbsp-subRemoveAllVideos", this.row).click(this.subRemoveAllVideos);
-        $(".ytbsp-func.ytbsp-subResetAllVideos", this.row).click(this.subResetAllVideos);
-        $(".ytbsp-func.ytbsp-subSeenAllVideos", this.row).click(this.subSeenAllVideos);
-        $(".ytbsp-func.ytbsp-subShowMore", this.row).click(this.subShowMore);
+        // Get videos for sub from api and fill video list.
+        this.updateSubVideos();
     }
 
     // Function to remove all videos.
@@ -52,7 +43,7 @@ class Subscription {
         that.videos.forEach((video, i) => {
             that.videos[i].remove();
         });
-        that.buildList();
+        that.buildSubList();
         saveList();
     }
 
@@ -62,7 +53,7 @@ class Subscription {
         that.videos.forEach((video, i) => {
             that.videos[i].reset();
         });
-        that.buildList();
+        that.buildSubList();
         saveList();
     }
 
@@ -72,24 +63,24 @@ class Subscription {
         that.videos.forEach((video, i) => {
             that.videos[i].see();
         });
-        that.buildList();
+        that.buildSubList();
         saveList();
-
     }
 
     // Function to show more.
     subShowMore() {
         const that = this;
-        that.showall = !that.showall;
-        if (that.showall) {
+        that.isExpanded = !that.isExpanded;
+        if (that.isExpanded) {
             $(".ytbsp-func.ytbsp-subShowMore", that.row).text("Show less");
         } else {
             $(".ytbsp-func.ytbsp-subShowMore", that.row).text("Show more");
         }
-        that.buildList();
+        that.buildSubList();
     }
 
-    updateVideos() {
+    // Fetches and rebuilds subscription row based on updated viodeos.
+    updateSubVideos() {
         loadingProgress(1, false, this);
         buildApiRequest(
             "GET",
@@ -168,20 +159,20 @@ class Subscription {
                 that.videos.push(new Video(infos));
             });
             // Rebuild the list.
-            that.buildList();
+            that.buildSubList();
 
             loadingProgress(-1, false, that);
         }
     }
 
     // (Re-)Build the list of videos.
-    buildList() {
+    buildSubList() {
 
         const that = this;
 
         const alreadyIn = $(".ytbsp-video-item", this.videoList);
         let visibleItems = 0;
-        const limit = this.showall ? maxVidsPerSub : maxVidsPerRow;
+        const limit = this.isExpanded ? maxVidsPerSub : maxVidsPerRow;
         $("br", this.videoList).remove();
         // Now loop through the videos.
         this.videos.forEach(function(video, i) {
@@ -200,20 +191,20 @@ class Subscription {
                 const thumb = alreadyIn[visibleItems];
                 // If Video is already in the list, update it.
                 if (thumb && thumb.id.substr(11) === video.vid) {
-                    this.videos[i].updateThumb(this.inView());
+                    this.videos[i].updateThumb(this.isInView());
                     // If the thumb in this position isn't the right one.
                 } else {
                     // Create new thumb for video.
-                    this.videos[i].createThumb(this.inView());
+                    this.videos[i].createThumb(this.isInView());
                     // Register some events from this thumb.
                     $(".ytbsp-seemarker", this.videos[i].thumbLi).click(() => {
                         that.videos[i].toggleSeen();
-                        that.buildList();
+                        that.buildSubList();
                         saveList();
                     });
                     $(".ytbsp-x", this.videos[i].thumbLi).click(() => {
                         that.videos[i].remove();
-                        that.buildList();
+                        that.buildSubList();
                         saveList();
                     });
                     // Insert new thumb.
@@ -254,7 +245,7 @@ class Subscription {
         } else {
             this.row.show();
         }
-        updateSubsInView();
+        this.updateInView(Date.now());
     }
 
     // Displays the Loader.
@@ -284,18 +275,29 @@ class Subscription {
     }
 
     // Checks if the subscription is within the threshold of the view.
-    inView() {
-
-        if (this.lastViewCheck === lastScroll) {
+    updateInView(timestamp) {
+        if (!this.videoList.offset()) {
+            return false;
+        } else if (timestamp && this.lastViewCheck >= timestamp) {
             return this.isInView;
+        } else if (timestamp) {
+            this.lastViewCheck = timestamp;
         }
-        this.lastViewCheck = lastScroll;
-        const offsetTop = this.videoList ? this.videoList.offset().top : 0;
 
-        this.isInView = (this.videoList &&
-                         offsetTop - screenThreshold < screenBottom &&
-                         offsetTop + screenThreshold > screenTop
-        );
+        const offsetTop = this.videoList.offset().top;
+        const screenTop = document.body.scrollTop || document.documentElement.scrollTop;
+        const screenBottom = screenTop + window.innerHeight;
+
+        this.isInView = ((offsetTop - screenThreshold) < screenBottom) && ((offsetTop + screenThreshold) > screenTop);
+
+        if (this.isInView) {
+            // Get all images that don't have source loaded jet.
+            $("img[data-src]", this.videoList).each(function() {
+                $(this).get(0).src = $(this).get(0).getAttribute("data-src");
+                $(this).get(0).removeAttribute("data-src");
+            });
+        }
+
         return this.isInView;
     }
 
