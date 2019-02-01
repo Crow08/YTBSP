@@ -16,6 +16,8 @@ class Video {
 
         this.seen = false;
         this.removed = false;
+        this.clipItem = null;
+        this.closeItem = null;
         this.thumbItem = null;
         this.thumbLargeItem = null;
         this.durationItem = null;
@@ -150,25 +152,27 @@ class Video {
                 loadingProgress(-1);
             });
         }
-        this.thumbLi.empty();
-        this.thumbLi.append($("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-clip", "data-vid": this.vid})
-            .append($("<div/>", {"class": "ytbsp-x", "html": "X"}))
-            .append($("<img/>", {"class": "ytbsp-thumb"}))
-            .append($("<ytd-thumbnail-overlay-time-status-renderer/>"))
-            .append($("<input/>", {"class": "ytbsp-thumb-large-url", "type": "hidden"})));
-        this.thumbLi.append($("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-title", "data-vid": this.vid}));
-        this.thumbLi.append($("<p/>", {"class": "ytbsp-views"}));
-        this.thumbLi.append($("<p/>", {"class": "ytbsp-uploaded"}));
-        this.thumbLi.append($("<p/>", {"class": `ytbsp-seemarker${this.isSeen() ? " seen" : ""}`, "html": (this.isSeen() ? "already seen" : "mark as seen")}));
 
-        // Save information elements.
-        this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
-        this.thumbLargeItem = $(".ytbsp-thumb-large-url", this.thumbLi);
-        this.durationItem = $(".ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi);
-        this.clicksItem = $(".ytbsp-views", this.thumbLi);
-        this.uploadItem = $(".ytbsp-uploaded", this.thumbLi);
-        this.titleItem = $("a.ytbsp-title", this.thumbLi);
-        this.seemarkerItem = $(".ytbsp-seemarker", this.thumbLi);
+        this.clipItem = $("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-clip", "data-vid": this.vid});
+        this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
+        this.thumbItem = $("<img/>", {"class": "ytbsp-thumb"});
+        this.durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
+        this.thumbLargeItem = $("<input/>", {"class": "ytbsp-thumb-large-url", "type": "hidden"});
+        this.titleItem = $("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-title", "data-vid": this.vid});
+        this.clicksItem = $("<p/>", {"class": "ytbsp-views"});
+        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded"});
+        this.seemarkerItem = $("<p/>", {"class": `ytbsp-seemarker${this.isSeen() ? " seen" : ""}`, "html": (this.isSeen() ? "already seen" : "mark as seen")});
+
+        this.thumbLi.empty();
+        this.thumbLi.append(this.clipItem
+            .append(this.closeItem)
+            .append(this.thumbItem)
+            .append(this.durationItem)
+            .append(this.thumbLargeItem));
+        this.thumbLi.append(this.titleItem);
+        this.thumbLi.append(this.clicksItem);
+        this.thumbLi.append(this.uploadItem);
+        this.thumbLi.append(this.seemarkerItem);
 
         // Add dynamic style rules
         const dark = isDarkModeEnabled();
@@ -219,7 +223,7 @@ class Video {
                 }, config.enlargeDelay);
             }
         }
-        $(".ytbsp-clip", this.thumbLi).mouseover(enlarge);
+        this.clipItem.mouseover(enlarge);
 
         // Reset thumbnail to original size
         function enlargeCancel() {
@@ -247,7 +251,7 @@ class Video {
             clip.css("left", "");
             infos.show();
         }
-        $(this.thumbLi).mouseleave(enlargeCancel);
+        this.thumbLi.mouseleave(enlargeCancel);
 
         // Abort enlargement process if not already open.
         function enlargeCancelTimeout() {
@@ -256,16 +260,8 @@ class Video {
                 timeouts[that.vid.replace("-", "$")] = -1;
             }
         }
-        $(".ytbsp-x", this.thumbLi).mouseover(enlargeCancelTimeout);
-        $(".ytbsp-clip", this.thumbLi).mouseleave(enlargeCancelTimeout);
-
-        // Save information elements.
-        this.thumbItem = $(".ytbsp-thumb", this.thumbLi);
-        this.thumbLargeItem = $(".ytbsp-thumb-large-url", this.thumbLi);
-        this.durationItem = $(".ytbsp-clip > ytd-thumbnail-overlay-time-status-renderer > span", this.thumbLi);
-        this.clicksItem = $(".ytbsp-views", this.thumbLi);
-        this.uploadItem = $(".ytbsp-uploaded", this.thumbLi);
-        this.titleItem = $("a.ytbsp-title", this.thumbLi);
+        this.closeItem.mouseover(enlargeCancelTimeout);
+        this.clipItem.mouseleave(enlargeCancelTimeout);
         this.updateThumb(inView);
     }
 
