@@ -717,7 +717,7 @@ function checkAndAppendSub(forChannelId) {
             "mine": "true",
             "part": "snippet",
             "forChannelId": forChannelId,
-            "fields": "items(snippet(resourceId/channelId,title)),pageInfo)"
+            "fields": "items(snippet(resourceId/channelId,title)),pageInfo"
         }
     ).then(processCheckedSubs);
 }
