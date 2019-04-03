@@ -7,6 +7,7 @@ const path = require("path");
 const uglify = require("gulp-uglify");
 const babel = require("gulp-babel");
 const concat = require("gulp-concat");
+const rename = require('gulp-rename');
 const fs = require("fs");
 const del = require("del");
 
@@ -16,8 +17,8 @@ function cleanTask() {
     ]);
 }
 
-function getSrcTask() {
-    return gulp.src("src/**/*.*")
+function copySrcTask() {
+    return gulp.src(["src/**/*.*", "LICENSE.md"])
         .pipe(gulp.dest("build", {"overwrite": true}));
 }
 
@@ -77,7 +78,7 @@ function wrapSourceWithFunctionTask(cb) {
 function wrapLicenceAsCommentTask(cb) {
     const writable = fs.createWriteStream("build/license_final.js");
     writable.write("/*\n");
-    const readable = fs.createReadStream("LICENSE.md");
+    const readable = fs.createReadStream("build/LICENSE.md");
     readable.pipe(writable, {"end": false});
     readable.on("end", () => {
         writable.end("*/\n");
@@ -86,9 +87,20 @@ function wrapLicenceAsCommentTask(cb) {
 }
 
 function finalConcatTask() {
-    return gulp.src(["build/ytbsp.meta.js", "build/license_final.js", "build/globals.js", "build/source_final.js"])
-        .pipe(concat("ytbsp.user.js.js"))
+    return gulp.src(["build/header.js", "build/license_final.js", "build/globals.js", "build/source_final.js"])
+        .pipe(concat("ytbsp.user.js"))
         .pipe(gulp.dest("./build"));
+}
+
+function renameHeaderTask() {
+    return gulp.src("build/header.js")
+        .pipe(rename("ytbsp.meta.js"))
+        .pipe(gulp.dest("./build"));
+}
+
+function copyToDistTask() {
+    return gulp.src(["build/ytbsp.user.js", "build/ytbsp.meta.js"])
+        .pipe(gulp.dest("./dist", {"overwrite": true}));
 }
 
 function watchTask(cb) {
@@ -96,10 +108,11 @@ function watchTask(cb) {
     cb();
 }
 
-const baseTask = gulp.series(cleanTask, getSrcTask, lessTask, cssToJsTask, concatSourceTask, gulp.parallel(wrapSourceWithFunctionTask, wrapLicenceAsCommentTask));
+const baseTask = gulp.series(cleanTask, copySrcTask, lessTask, cssToJsTask, concatSourceTask, gulp.parallel(wrapSourceWithFunctionTask, wrapLicenceAsCommentTask));
 exports.default = gulp.series(baseTask, finalConcatTask);
 exports.babel = gulp.series(baseTask, babelTask, finalConcatTask);
 exports.uglify = gulp.series(baseTask, babelTask, uglifyTask, finalConcatTask);
+exports.release = gulp.series(exports.uglify, renameHeaderTask, copyToDistTask);
 exports.clean = cleanTask;
 exports.watch = watchTask;
 
