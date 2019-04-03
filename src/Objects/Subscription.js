@@ -1,4 +1,4 @@
-/* global $, getLoader, saveList, loadingProgress, buildApiRequest, config, subList, cachedVideoInformation, Video */
+/* global $, getLoader, saveList, loadingProgress, buildApiRequest, config, subList, cachedVideoInformation, Video, handleViewChange */
 
 class Subscription {
 
@@ -245,7 +245,7 @@ class Subscription {
         } else {
             this.row.show();
         }
-        this.updateInView(Date.now());
+        handleViewChange();
     }
 
     // Displays the Loader.

@@ -210,15 +210,15 @@ class Video {
                     const info = $("p", thumb);
                     img.attr("src", $(".ytbsp-thumb-large-url", clip).val());
                     img.addClass("ytbsp-thumb-large");
-                    img.css("width", (160 * config.enlargeFactor) + "px");
-                    img.css("height", (90 * config.enlargeFactor) + "px");
+                    img.css("width", `${160 * config.enlargeFactor}px`);
+                    img.css("height", `${90 * config.enlargeFactor}px`);
                     title.addClass("ytbsp-title-large");
-                    title.css("width", ((160 * config.enlargeFactor) - 4) + "px");
-                    title.css("left", (-(((160 * config.enlargeFactor) / 2) - 82)) + "px");
+                    title.css("width", `${(160 * config.enlargeFactor) - 4}px`);
+                    title.css("left", `${-(((160 * config.enlargeFactor) / 2) - 82)}px`);
                     clip.addClass("ytbsp-clip-large");
-                    clip.css("width", ((160 * config.enlargeFactor) + 4) + "px");
-                    clip.css("height", ((90 * config.enlargeFactor) + 4) + "px");
-                    clip.css("left", (-(((160 * config.enlargeFactor) / 2) - 82)) + "px");
+                    clip.css("width", `${(160 * config.enlargeFactor) + 4}px`);
+                    clip.css("height", `${(90 * config.enlargeFactor) + 4}px`);
+                    clip.css("left", `${-(((160 * config.enlargeFactor) / 2) - 82)}px`);
                     info.hide();
                 }, config.enlargeDelay);
             }
