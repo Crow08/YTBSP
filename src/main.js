@@ -1185,20 +1185,20 @@ function handleViewChange() {
     if (0 !== occupied) {
         occupied = 2;
     } else {
-      occupied = 1;
-      setTimeout(() => {
-          const changeEventTime = Date.now(); // The time the page was moved or resized.
-          subs.forEach((sub) => {
-              sub.updateInView(changeEventTime);
-          });
-          
-          if (2 === occupied) {
-              occupied = 0;
-              handleViewChange();
-          }else{
-              occupied = 0;
-          }
-      }, 0);
+        occupied = 1;
+        setTimeout(() => {
+            const changeEventTime = Date.now(); // The time the page was moved or resized.
+            subs.forEach((sub) => {
+                sub.updateInView(changeEventTime);
+            });
+
+            if (2 === occupied) {
+                occupied = 0;
+                handleViewChange();
+            } else {
+                occupied = 0;
+            }
+        }, 0);
     }
 }
 window.addEventListener("scroll", handleViewChange, false);
