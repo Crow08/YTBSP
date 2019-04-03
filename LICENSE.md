@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2015-2018 (Crow08)
+Copyright (c) 2015-2019 (Crow08)
 Copyright (c) 2014 (dzre)
 Copyright (c) 2011-2013 Marco D. Pfeiffer (Nemo64)
 

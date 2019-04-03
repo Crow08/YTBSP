@@ -1,7 +1,8 @@
 // ==UserScript==
 // @name         YouTube Better StartPage (YTBSP)
 // @description  Spotlights all subscriptions in an organized fashion on the startpage of YouTube.
-// @version      2.0.0
+// @version      2.0.1
+// @author       Nemo64, dzre, Crow08
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
@@ -16,7 +17,7 @@
 /*
 MIT License
 
-Copyright (c) 2015-2018 (Crow08)
+Copyright (c) 2015-2019 (Crow08)
 Copyright (c) 2014 (dzre)
 Copyright (c) 2011-2013 Marco D. Pfeiffer (Nemo64)
 
