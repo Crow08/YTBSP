@@ -1,21 +1,23 @@
 {
-  "name": "YTBSP",
-  "version": "1.0.0",
-  "description": "**Script Summary:** Gets the old subscription grid on the YouTube start page back.",
-  "main": "YTBSP.js",
-  "directories": {
-    "lib": "lib"
-  },
+  "name": "ytbsp",
+  "version": "2.0.1",
+  "description": "**Script Summary:** Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "build": "gulp default",
+    "babel": "gulp default",
+    "uglify": "gulp default",
+    "release": "gulp default",
+    "clean": "gulp clean",
+    "watch": "gulp watch"
   },
+  "private": true,
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Crow08/YTBSP.git"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "bugs": {
     "url": "https://github.com/Crow08/YTBSP/issues"
   },
@@ -28,6 +30,7 @@
     "gulp-babel": "^8.0.0",
     "gulp-cli": "^2.1.0",
     "gulp-concat": "^2.6.1",
+    "gulp-download": "^0.0.1",
     "gulp-less": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-uglify": "^3.0.2",

@@ -7,13 +7,20 @@ const path = require("path");
 const uglify = require("gulp-uglify");
 const babel = require("gulp-babel");
 const concat = require("gulp-concat");
-const rename = require('gulp-rename');
+const rename = require("gulp-rename");
+const download = require("gulp-download");
 const fs = require("fs");
 const del = require("del");
 
-function cleanTask() {
+function cleanBuildTask() {
     return del([
         "build/"
+    ]);
+}
+
+function cleanReleaseTask() {
+    return del([
+        "dist/"
     ]);
 }
 
@@ -44,7 +51,6 @@ function cssToJsTask(cb) {
 function uglifyTask() {
     return gulp.src("./build/source_final.js")
         .pipe(uglify())
-        .pipe(gulp.dest("./build/debug/uglify"))
         .pipe(gulp.dest("./build"));
 }
 
@@ -54,7 +60,6 @@ function babelTask() {
             "presets": ["@babel/env"],
             "sourceType": "script"
         }))
-        .pipe(gulp.dest("build/debug/babel"))
         .pipe(gulp.dest("build", {"overwrite": true}));
 }
 
@@ -92,15 +97,28 @@ function finalConcatTask() {
         .pipe(gulp.dest("./build"));
 }
 
-function renameHeaderTask() {
+function createMetaFile() {
     return gulp.src("build/header.js")
         .pipe(rename("ytbsp.meta.js"))
         .pipe(gulp.dest("./build"));
 }
 
-function copyToDistTask() {
+function releaseScript() {
     return gulp.src(["build/ytbsp.user.js", "build/ytbsp.meta.js"])
         .pipe(gulp.dest("./dist", {"overwrite": true}));
+}
+
+function copyExtensionSrcToDistTask() {
+    return gulp.src(["build/ext/*.*", "build/ytbsp.user.js"])
+        .pipe(gulp.dest("./dist/ext", {"overwrite": true}));
+}
+
+function downloadExtensionLibsTask() {
+    return download([
+        "https://apis.google.com/js/api.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js"
+    ]).pipe(gulp.dest("./dist/ext/lib"));
 }
 
 function watchTask(cb) {
@@ -108,11 +126,12 @@ function watchTask(cb) {
     cb();
 }
 
-const baseTask = gulp.series(cleanTask, copySrcTask, lessTask, cssToJsTask, concatSourceTask, gulp.parallel(wrapSourceWithFunctionTask, wrapLicenceAsCommentTask));
+const baseTask = gulp.series(cleanBuildTask, copySrcTask, lessTask, cssToJsTask, concatSourceTask, gulp.parallel(wrapSourceWithFunctionTask, wrapLicenceAsCommentTask));
+const releaseExtensionTask = gulp.parallel(copyExtensionSrcToDistTask, downloadExtensionLibsTask);
 exports.default = gulp.series(baseTask, finalConcatTask);
 exports.babel = gulp.series(baseTask, babelTask, finalConcatTask);
 exports.uglify = gulp.series(baseTask, babelTask, uglifyTask, finalConcatTask);
-exports.release = gulp.series(exports.uglify, renameHeaderTask, copyToDistTask);
-exports.clean = cleanTask;
+exports.release = gulp.series(gulp.parallel(cleanReleaseTask, exports.uglify), createMetaFile, gulp.parallel(releaseScript, releaseExtensionTask));
+exports.clean = cleanBuildTask;
 exports.watch = watchTask;
 
