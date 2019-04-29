@@ -121,6 +121,51 @@ function downloadExtensionLibsTask() {
     ]).pipe(gulp.dest("./dist/ext/lib"));
 }
 
+function checkReleaseVersion() {
+    return new Promise((resolve, reject) => {
+        getVersionFromJson("./package.json", (packageVersion) => {
+            getVersionFromHeader("./src/header.js", (scriptVersion) => {
+                getVersionFromJson("./src/ext/manifest.json", (extVersion) => {
+                    getVersionFromHeader("./dist/ytbsp.meta.js", (oldScriptVersion) => {
+                        if (packageVersion === scriptVersion &&
+                        packageVersion === extVersion &&
+                        scriptVersion > oldScriptVersion) {
+                            resolve();
+                        } else {
+                            reject(new Error(" Package, script and extension version must be equal " +
+                            "and greater than old script version:\n" +
+                            `\tpackage version   \t:\t${packageVersion}\n` +
+                            `\tscript version    \t:\t${scriptVersion}\n` +
+                            `\textension version \t:\t${extVersion}\n` +
+                            `\told script version\t:\t${oldScriptVersion}\n`));
+                        }
+                    });
+                });
+            });
+        });
+    });
+}
+
+function getVersionFromJson(filePath, cb) {
+    fs.readFile(filePath, "utf8", (e, json) => {
+        if (e) {
+            throw e;
+        }
+        cb(JSON.parse(json).version);
+    });
+}
+function getVersionFromHeader(filePath, cb) {
+    fs.readFile(filePath, "utf8", (e, header) => {
+        if (e) {
+            throw e;
+        }
+        const start = header.indexOf("version") + 7;
+        const length = header.indexOf("\n", start) - start;
+        cb(header.substr(start, length).trim());
+    });
+}
+
+
 function watchTask(cb) {
     gulp.watch(["src/*"], exports.default);
     cb();
@@ -131,7 +176,7 @@ const releaseExtensionTask = gulp.parallel(copyExtensionSrcToDistTask, downloadE
 exports.default = gulp.series(baseTask, finalConcatTask);
 exports.babel = gulp.series(baseTask, babelTask, finalConcatTask);
 exports.uglify = gulp.series(baseTask, babelTask, uglifyTask, finalConcatTask);
-exports.release = gulp.series(gulp.parallel(cleanReleaseTask, exports.uglify), createMetaFile, gulp.parallel(releaseScript, releaseExtensionTask));
+exports.release = gulp.series(checkReleaseVersion, gulp.parallel(cleanReleaseTask, exports.uglify), createMetaFile, gulp.parallel(releaseScript, releaseExtensionTask));
 exports.clean = cleanBuildTask;
 exports.watch = watchTask;
 
