@@ -2,7 +2,7 @@
 
 [![version](https://img.shields.io/github/package-json/v/Crow08/ytbsp.svg)](/package.json)
 [![dependencies](https://img.shields.io/librariesio/github/Crow08/ytbsp.svg)](/package.json)
-[![vulnerabilities](https://img.shields.io/snyk/vulnerabilities/github/Crow08/ytbsp.svg)](/package.json)
+[![Known Vulnerabilities](https://snyk.io/test/github/Crow08/YTBSP/badge.svg)](https://snyk.io/test/github/Crow08/YTBSP)
 [![license](https://img.shields.io/github/license/Crow08/ytbsp.svg)](/LICENSE.md)
 
 **Script Summary:** Gets the old subscription grid on the YouTube start page back.
