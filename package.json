@@ -4,9 +4,9 @@
   "description": "**Script Summary:** Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
   "scripts": {
     "build": "gulp default",
-    "babel": "gulp default",
-    "uglify": "gulp default",
-    "release": "gulp default",
+    "babel": "gulp babel",
+    "uglify": "gulp uglify",
+    "release": "gulp release",
     "clean": "gulp clean",
     "watch": "gulp watch"
   },
