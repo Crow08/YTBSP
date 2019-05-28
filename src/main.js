@@ -37,7 +37,7 @@ const SCOPE = "https://www.googleapis.com/auth/youtube.readonly https://www.goog
 // Selectors for external HTML elements:
 // YouTube selectors:
 const YT_APP = "ytd-app";
-const YT_STARTPAGE_BODY = "#page-manager.ytd-app";
+const YT_STARTPAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
 const YT_CHANNEL_LINK = "#owner-name > a";
