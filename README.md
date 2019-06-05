@@ -1,7 +1,7 @@
 # YouTube Better Startpage (YTBSP)
 
 [![version](https://img.shields.io/github/package-json/v/Crow08/ytbsp.svg)](/package.json)
-[![dependencies](https://img.shields.io/librariesio/github/Crow08/ytbsp.svg)](/package.json)
+[![dependencies](https://david-dm.org/Crow08/ytbsp.svg)](/package.json)
 [![Known Vulnerabilities](https://snyk.io/test/github/Crow08/YTBSP/badge.svg)](https://snyk.io/test/github/Crow08/YTBSP)
 [![license](https://img.shields.io/github/license/Crow08/ytbsp.svg)](/LICENSE.md)
 
