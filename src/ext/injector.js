@@ -5,7 +5,7 @@ s0.src = chrome.extension.getURL("lib/api.js");
 (document.head || document.documentElement).prepend(s0);
 const s1 = document.createElement("script");
 s1.async = false;
-s1.src = chrome.extension.getURL("lib/jquery.slim.min.js");
+s1.src = chrome.extension.getURL("lib/jquery.min.js");
 s0.parentNode.insertBefore(s1, s0.nextSibling);
 const s2 = document.createElement("script");
 s2.async = false;

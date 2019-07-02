@@ -14,7 +14,7 @@
 	 "run_at": "document_start",
 	 "matches": ["https://www.youtube.com/*"]
   }],
-  "web_accessible_resources": ["lib/api.js","lib/jquery.slim.min.js","lib/moment.min.js","ytbsp.user.js"],
+  "web_accessible_resources": ["lib/api.js","lib/jquery.min.js","lib/moment.min.js","ytbsp.user.js"],
   "permissions": [
     "activeTab",
     "storage"
