@@ -12,4 +12,6 @@
 // @downloadURL  https://raw.githubusercontent.com/Crow08/YTBSP/master/dist/ytbsp.user.js
 // @updateURL    https://raw.githubusercontent.com/Crow08/YTBSP/master/dist/ytbsp.meta.js
 // @grant        none
+// @run-at       document-start
+// @noframes
 // ==/UserScript==

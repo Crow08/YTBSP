@@ -87,7 +87,7 @@ function getSlider(id, checked, onChange) {
 
 // Create an div for us.
 const themeClass = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
-const mainDiv = $("<div/>", {"id": "YTBSP", "class": themeClass});
+let mainDiv = $("<div/>", {"id": "YTBSP", "class": themeClass});
 const menuStrip = $("<div/>", {"id": "ytbsp-menuStrip"});
 menuStrip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
     .append(getLoader("ytbsp-main-loader"))
@@ -127,7 +127,7 @@ function buildServerRequest(path, params = {}, method = "GET", body = {}) {
     case "GET":
         return $.getJSON(url);
     case "POST":
-        return $.post(url, body);
+        return $.post(url, JSON.stringify(body));
     case "DELETE":
         return $.ajax({url, "type": "DELETE"});
     default:
@@ -213,9 +213,9 @@ function loadRemoteConfig() {
         buildServerRequest("/settingsFile", {})
             .then((response) => {
                 if (response) {
-                    config.useRemoteData = "0" !== response.useRemoteData;
-                    config.hideSeenVideos = "0" !== response.hideSeenVideos;
-                    config.hideEmptySubs = "0" !== response.hideEmptySubs;
+                    config.useRemoteData = response.useRemoteData;
+                    config.hideSeenVideos = response.hideSeenVideos;
+                    config.hideEmptySubs = response.hideEmptySubs;
                     config.maxSimSubLoad = response.maxSimSubLoad;
                     config.maxVidsPerRow = response.maxVidsPerRow;
                     config.maxVidsPerSub = response.maxVidsPerSub;
@@ -225,7 +225,7 @@ function loadRemoteConfig() {
                     config.playerQuality = response.playerQuality;
                     config.timeToMarkAsSeen = response.timeToMarkAsSeen;
                     config.screenThreshold = response.screenThreshold;
-                    config.autoPauseVideo = "0" !== response.autoPauseVideo;
+                    config.autoPauseVideo = response.autoPauseVideo;
                 }
                 $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
                 $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
@@ -299,7 +299,7 @@ function getRemoteVideoInformation() {
                     console.error("Error parsing video information!");
                     resolve([]);
                 } else {
-                    resolve(data);
+                    resolve(JSON.parse(data));
                 }
             }).
             catch(reject);
@@ -1010,7 +1010,11 @@ const observer = new MutationObserver((() => {
     }
     // Inject YTBSP main div if not injected already.
     if (0 === mainDiv.parent().length && 0 !== $(YT_CONTENT).length) {
-        $(YT_CONTENT).prepend(mainDiv);
+        if (0 === $(YT_CONTENT).find("#YTBSP").length) {
+            $(YT_CONTENT).prepend(mainDiv);
+        } else {
+            mainDiv = $(YT_CONTENT).find("#YTBSP");
+        }
         $(window).scrollTop(0);
     }
     // Detect going fullscreen.
@@ -1070,8 +1074,7 @@ function getServerId() {
         const poll = () => {
             setTimeout(() => {
                 if (!serverId) {
-                    console.log("ping");
-                    popup.postMessage("PING!", SERVER_URL);
+                    popup.postMessage("id_poll", SERVER_URL);
                     poll();
                 }
             }, 1000);
