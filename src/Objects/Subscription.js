@@ -1,4 +1,4 @@
-/* global $, getLoader, saveList, loadingProgress, buildApiRequest, config, subList, cachedVideoInformation, Video, handleViewChange */
+/* global $, getLoader, saveList, loadingProgress, buildServerRequest, config, subList, cachedVideoInformation, Video, handleViewChange */
 
 class Subscription {
 
@@ -82,16 +82,8 @@ class Subscription {
     // Fetches and rebuilds subscription row based on updated videos.
     updateSubVideos() {
         loadingProgress(1, false, this);
-        buildApiRequest(
-            "GET",
-            "/youtube/v3/playlistItems",
-            {
-                "maxResults": config.maxVidsPerSub,
-                "part": "snippet",
-                "fields": "items(snippet(publishedAt,resourceId/videoId,thumbnails(maxres,medium),title)),nextPageToken,pageInfo,prevPageToken",
-                "playlistId": this.id.replace(/^UC/u, "UU")
-            }
-        ).then(processRequestVids);
+        buildServerRequest("/playlistItems", {"maxResults": config.maxVidsPerSub, "playlistId": this.id})
+            .then(processRequestVids);
 
         const that = this;
 

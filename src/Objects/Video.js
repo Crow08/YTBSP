@@ -1,4 +1,4 @@
-/* global $, loadingProgress, buildApiRequest, isDarkModeEnabled, openVideoWithSPF, config */
+/* global $, loadingProgress, buildServerRequest, isDarkModeEnabled, openVideoWithSPF, config */
 
 // TODO: find better solution
 const timeouts = {};
@@ -116,41 +116,34 @@ class Video {
         const that = this;
         if ("0:00" === this.duration) {
             loadingProgress(1);
-            buildApiRequest(
-                "GET",
-                "/youtube/v3/videos",
-                {
-                    "part": "contentDetails,statistics",
-                    "fields": "items(contentDetails/duration,statistics/viewCount)",
-                    "id": that.vid
-                }
-            ).then((response) => {
-                if (Object.prototype.hasOwnProperty.call(response, "items") && 1 === response.items.length) {
-                    if (Object.prototype.hasOwnProperty.call(response.items[0], "contentDetails") && Object.prototype.hasOwnProperty.call(response.items[0].contentDetails, "duration")) {
-                        const duration = window.moment.duration(response.items[0].contentDetails.duration);
-                        if (0 === duration.hours()) {
-                            that.duration = window.moment(`${duration.minutes()}:${duration.seconds()}`, "m:s").format("mm:ss");
-                        } else {
-                            that.duration = window.moment(`${duration.hours()}:${duration.minutes()}:${duration.seconds()}`, "h:m:s").format("HH:mm:ss");
+            buildServerRequest("/videoInfo", {"videoId": that.vid})
+                .then((response) => {
+                    if (Object.prototype.hasOwnProperty.call(response, "items") && 1 === response.items.length) {
+                        if (Object.prototype.hasOwnProperty.call(response.items[0], "contentDetails") && Object.prototype.hasOwnProperty.call(response.items[0].contentDetails, "duration")) {
+                            const duration = window.moment.duration(response.items[0].contentDetails.duration);
+                            if (0 === duration.hours()) {
+                                that.duration = window.moment(`${duration.minutes()}:${duration.seconds()}`, "m:s").format("mm:ss");
+                            } else {
+                                that.duration = window.moment(`${duration.hours()}:${duration.minutes()}:${duration.seconds()}`, "h:m:s").format("HH:mm:ss");
+                            }
                         }
-                    }
-                    if (Object.prototype.hasOwnProperty.call(response.items[0], "statistics") && Object.prototype.hasOwnProperty.call(response.items[0].statistics, "viewCount")) {
-                        const count = parseInt(response.items[0].statistics.viewCount, 10);
+                        if (Object.prototype.hasOwnProperty.call(response.items[0], "statistics") && Object.prototype.hasOwnProperty.call(response.items[0].statistics, "viewCount")) {
+                            const count = parseInt(response.items[0].statistics.viewCount, 10);
 
-                        if (1000000 < count) {
-                            that.clicks = `${Math.round(count / 1000000 * 10) / 10}M views`; // Rounded million views.
-                        }
-                        else if (10000 < count) {
-                            that.clicks = `${Math.round(count / 1000)}K views`; // Rounded thousand views.
-                        }
-                        else {
-                            that.clicks = `${count} views`; // Exact view count under thousand.
+                            if (1000000 < count) {
+                                that.clicks = `${Math.round(count / 1000000 * 10) / 10}M views`; // Rounded million views.
+                            }
+                            else if (10000 < count) {
+                                that.clicks = `${Math.round(count / 1000)}K views`; // Rounded thousand views.
+                            }
+                            else {
+                                that.clicks = `${count} views`; // Exact view count under thousand.
+                            }
                         }
                     }
-                }
-                that.updateThumb(inView);
-                loadingProgress(-1);
-            });
+                    that.updateThumb(inView);
+                    loadingProgress(-1);
+                });
         }
 
         this.clipItem = $("<a/>", {"href": `/watch?v=${this.vid}`, "class": "ytbsp-clip", "data-vid": this.vid});
