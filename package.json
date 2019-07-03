@@ -1,6 +1,6 @@
 {
   "name": "ytbsp",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "**Script Summary:** Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
   "scripts": {
     "build": "gulp default",
