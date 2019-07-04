@@ -1,6 +1,6 @@
 {
   "name": "ytbsp",
-  "version": "2.0.3",
+  "version": "2.1.1",
   "description": "**Script Summary:** Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
   "scripts": {
     "build": "gulp default",
@@ -23,11 +23,11 @@
   },
   "homepage": "https://github.com/Crow08/YTBSP#readme",
   "dependencies": {
-    "@babel/core": "^7.4.4",
-    "@babel/preset-env": "^7.4.4",
-    "del": "^4.1.1",
-    "eslint": "^5.16.0",
-    "gulp": "^4.0.1",
+    "@babel/core": "^7.5.0",
+    "@babel/preset-env": "^7.5.0",
+    "del": "^5.0.0",
+    "eslint": "^6.0.1",
+    "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-cli": "^2.2.0",
     "gulp-concat": "^2.6.1",

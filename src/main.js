@@ -1,4 +1,6 @@
-/* global jQuery, $, gapi, GM_info, Subscription, Player, cssString */
+/* global jQuery, $, GM_info, Subscription, Player, cssString */
+
+const SERVER_URL = "https://ytbsp-server.herokuapp.com"; // "http://localhost:3000";
 
 const resolutions = {"Ultra": "highres",
     "2880p": "hd2880",
@@ -13,7 +15,7 @@ const resolutions = {"Ultra": "highres",
 
 // Config:
 const config = {
-    "useRemoteData": true,					// DEFAULT: true (using Google Drive as remote storage).
+    "useRemoteData": true,					// DEFAULT: true (using Cloud as remote storage).
     "maxSimSubLoad": 10,						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
     "maxVidsPerRow": 9,						// DEFAULT: 9.
     "maxVidsPerSub": 36,						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
@@ -28,11 +30,6 @@ const config = {
     "hideSeenVideos": false,					// DEFAULT: false.
     "hideEmptySubs": true					// DEFAULT: true.
 };
-
-// OAuth2 variables:
-const CLIENT_ID = "281397662073-jv0iupog9cdb0eopi3gu6ce543v0jo65.apps.googleusercontent.com";
-const DISCOVERY_DOCS = ["https://www.googleapis.com/discovery/v1/apis/youtube/v3/rest", "https://www.googleapis.com/discovery/v1/apis/drive/v3/rest"];
-const SCOPE = "https://www.googleapis.com/auth/youtube.readonly https://www.googleapis.com/auth/drive.appdata";
 
 // Selectors for external HTML elements:
 // YouTube selectors:
@@ -68,7 +65,6 @@ const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margi
 
 let corruptCache = false;
 let cachedVideoInformation = [];
-let remoteSaveFileID = null;
 
 // Start page is YTBSP.
 let isNative = false;
@@ -91,7 +87,7 @@ function getSlider(id, checked, onChange) {
 
 // Create an div for us.
 const themeClass = isDarkModeEnabled() ? "ytbsp-dark-theme" : "ytbsp-light-theme";
-const mainDiv = $("<div/>", {"id": "YTBSP", "class": themeClass});
+let mainDiv = $("<div/>", {"id": "YTBSP", "class": themeClass});
 const menuStrip = $("<div/>", {"id": "ytbsp-menuStrip"});
 menuStrip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
     .append(getLoader("ytbsp-main-loader"))
@@ -124,105 +120,31 @@ let autoPauseThisVideo = null;
 // Call functions on startup.
 onScriptStart();
 
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// Start OAuth Stuff
-
-gapi.load("client:auth2", initClient);
-
-let retryInit = 5; // Retry limit for client init with oauth.
-
-// OAuth init
-function initClient() {
-    // Initialize the gapi.client object, which app uses to make API requests.
-    gapi.client.init({
-        "clientId": CLIENT_ID,
-        "discoveryDocs": DISCOVERY_DOCS,
-        "scope": SCOPE
-    }).then(() => {
-        if (0 >= retryInit) {
-            return;
-        }
-        retryInit = 0;
-        window.GoogleAuth = gapi.auth2.getAuthInstance();
-        // Handle initial sign-in state. (Determine if user is already signed in.)
-        setSignInStatus();
-    }, (reason) => {
-        if (0 >= retryInit) {
-            return;
-        }
-        retryInit = 0;
-        console.error(`Google API client initialization failed:\n${reason}`);
-    });
-    setTimeout(() => {
-        if (0 >= --retryInit) {
-            return;
-        }
-        initClient(); // Retry with timeout because youtube can reset gapi and the promise never returns.
-    }, 1000);
-}
-
-// OAuth sign in.
-function setSignInStatus() {
-    const user = window.GoogleAuth.currentUser.get();
-    const isAuthorized = user.hasGrantedScopes(SCOPE);
-    if (isAuthorized) {
-        // Start loading save data.
-        startAPIRequests();
-    } else {
-        window.GoogleAuth.signIn().then(
-            () => {
-                // Sign in successful then start loading save data.
-                startAPIRequests();
-            },
-            (error) => {
-                // Display popup-blocked message.
-                if ("popup_blocked_by_browser" === error.error) {
-                    alert("please allow popups for this page and reload!");
-                } else {
-                    console.error(`Google user sign-in failed:\n${error}`);
-                }
-            }
-        );
+// Build proper Server request.
+function buildServerRequest(path, params = {}, method = "GET", body = {}) {
+    const url = `${SERVER_URL}${path}?${encodeQueryData({...params, "id": serverId})}`;
+    switch (method) {
+    case "GET":
+        return $.getJSON(url);
+    case "POST":
+        return $.post(url, JSON.stringify(body));
+    case "DELETE":
+        return $.ajax({url, "type": "DELETE"});
+    default:
+        return new Promise((resolve, reject) => { reject(new Error(`Unknown method: ${method}`)); });
     }
+
 }
 
-// Prevent unnecessary request parameters.
-function removeEmptyParams(params) {
-    for (const p in params) {
-        if (!params[p] || "undefined" === params[p]) {
-            delete params[p];
+function encodeQueryData(params) {
+    const ret = [];
+    for (const para in params) {
+        if (Object.prototype.hasOwnProperty.call(params, para)) {
+            ret.push(`${encodeURIComponent(para)}=${encodeURIComponent(params[para])}`);
         }
     }
-    return params;
+    return ret.join("&");
 }
-
-// Build proper OAuth request.
-function buildApiRequest(requestMethod, path, params, properties) {
-    return new Promise(((resolve, reject) => {
-        const cleanParams = removeEmptyParams(params);
-        let request;
-        if (properties) {
-            request = gapi.client.request({
-                "body": properties,
-                "method": requestMethod,
-                "path": path,
-                "params": cleanParams
-            });
-        } else {
-            request = gapi.client.request({
-                "method": requestMethod,
-                "path": path,
-                "params": cleanParams
-            });
-        }
-        request.execute((response) => {
-            resolve(response);
-        });
-    }));
-}
-
-// End OAuth Stuff.
-// /////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 let loading = 0; // 0: all subs / videos loaded.
 let saveQueued = false;
@@ -254,9 +176,14 @@ function loadingProgress(loadingDelta, saveWhenDone = false, sub = null) {
 }
 
 config.useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
+let serverId = localStorage.getItem("YTBSP-ServerId");
+
+if (serverId) {
+    startAPIRequests();
+}
 
 // This function is called after successful OAuth login.
-// Loads configuration and video information from local storage or G-Drive,
+// Loads configuration and video information from local or cloud storage,
 // Then starts loading subscriptions.
 function startAPIRequests()	{
     // Get app configuration.
@@ -270,37 +197,6 @@ function startAPIRequests()	{
     });
 }
 
-// Load G-Drive File Id only.
-function loadRemoteFileId() {
-    return new Promise(((resolve, reject) => {
-        loadingProgress(1);
-        buildApiRequest(
-            "GET",
-            "/drive/v3/files",
-            {
-                "q": "name = 'YTBSP.json'",
-                "fields": "files(id)",
-                "spaces": "appDataFolder"
-            }
-        ).then((response) => {
-            const files = response.files;
-            // Check if save file exists or has to be created.
-            if (files && 0 < files.length) {
-                // Save file exists.
-                remoteSaveFileID = files[0].id;
-            } else {
-                // Save file does not exist.
-                // Create new save file.
-                createRemoteSaveData().then(() => {
-                    resolve();
-                });
-            }
-            loadingProgress(-1);
-            resolve();
-        });
-    }));
-}
-
 // Load Script configuration.
 function loadConfig() {
     if (config.useRemoteData) {
@@ -310,56 +206,39 @@ function loadConfig() {
 
 }
 
-// Load Script configuration from G-Drive file.
+// Load Script configuration from cloud storage.
 function loadRemoteConfig() {
     return new Promise(((resolve, reject) => {
         loadingProgress(1);
-        buildApiRequest(
-            "GET",
-            "/drive/v3/files",
-            {
-                "q": "name = 'YTBSP.json'",
-                "fields": "files(appProperties,id,name)",
-                "spaces": "appDataFolder"
-            }
-        ).then((response) => {
-            const files = response.files;
-            // Check if save file exists or has to be created.
-            if (files && 0 < files.length) {
-                // Save file exists.
-                // Parse the config.
-                remoteSaveFileID = files[0].id;
-                config.useRemoteData = "0" !== files[0].appProperties.useRemoteData;
-                config.hideSeenVideos = "0" !== files[0].appProperties.hideSeenVideos;
-                config.hideEmptySubs = "0" !== files[0].appProperties.hideEmptySubs;
-                config.maxSimSubLoad = files[0].appProperties.maxSimSubLoad;
-                config.maxVidsPerRow = files[0].appProperties.maxVidsPerRow;
-                config.maxVidsPerSub = files[0].appProperties.maxVidsPerSub;
-                config.enlargeDelay = files[0].appProperties.enlargeDelay;
-                config.enlargeFactor = files[0].appProperties.enlargeFactor;
-                config.enlargeFactorNative = files[0].appProperties.enlargeFactorNative;
-                config.playerQuality = files[0].appProperties.playerQuality;
-                config.timeToMarkAsSeen = files[0].appProperties.timeToMarkAsSeen;
-                config.screenThreshold = files[0].appProperties.screenThreshold;
-                config.autoPauseVideo = "0" !== files[0].appProperties.autoPauseVideo;
+        buildServerRequest("/settingsFile", {})
+            .then((response) => {
+                if (response) {
+                    config.useRemoteData = response.useRemoteData;
+                    config.hideSeenVideos = response.hideSeenVideos;
+                    config.hideEmptySubs = response.hideEmptySubs;
+                    config.maxSimSubLoad = response.maxSimSubLoad;
+                    config.maxVidsPerRow = response.maxVidsPerRow;
+                    config.maxVidsPerSub = response.maxVidsPerSub;
+                    config.enlargeDelay = response.enlargeDelay;
+                    config.enlargeFactor = response.enlargeFactor;
+                    config.enlargeFactorNative = response.enlargeFactorNative;
+                    config.playerQuality = response.playerQuality;
+                    config.timeToMarkAsSeen = response.timeToMarkAsSeen;
+                    config.screenThreshold = response.screenThreshold;
+                    config.autoPauseVideo = response.autoPauseVideo;
+                }
                 $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
                 $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
-            } else {
-                // Save file does not exist.
-                // Create new save file.
-                createRemoteSaveData().then(() => {
-                    resolve();
-                });
-            }
-            loadingProgress(-1);
-            resolve();
-        });
+                loadingProgress(-1);
+                resolve();
+            })
+            .catch(reject);
     }));
 }
 
 // Load Script configuration from local storage
 function loadLocalConfig() {
-    return new Promise(((resolve, reject) => {
+    return new Promise(((resolve) => {
         config.useRemoteData = "0" !== localStorage.getItem("YTBSP_useRemoteData");
         config.hideSeenVideos = "0" !== localStorage.getItem("YTBSP_hideSeenVideos");
         config.hideEmptySubs = "0" !== localStorage.getItem("YTBSP_hideEmptySubs");
@@ -379,76 +258,25 @@ function loadLocalConfig() {
     }));
 }
 
-// Create new save file on G-Drive.
-function createRemoteSaveData() {
-    return new Promise(((resolve, reject) => {
-        loadingProgress(1);
-        buildApiRequest(
-            "POST",
-            "/drive/v3/files",
-            {"fields": "appProperties,id,name"},
-            {
-                "parents": ["appDataFolder"],
-                "name": "YTBSP.json",
-                "appProperties": {
-                    "useRemoteData": config.useRemoteData,
-                    "hideSeenVideos": config.hideSeenVideos,
-                    "hideEmptySubs": config.hideEmptySubs,
-                    "maxSimSubLoad": config.maxSimSubLoad,
-                    "maxVidsPerRow": config.maxVidsPerRow,
-                    "maxVidsPerSub": config.maxVidsPerSub,
-                    "enlargeDelay": config.enlargeDelay,
-                    "enlargeFactor": config.enlargeFactor,
-                    "enlargeFactorNative": config.enlargeFactorNative,
-                    "playerQuality": config.playerQuality,
-                    "timeToMarkAsSeen": config.timeToMarkAsSeen,
-                    "screenThreshold": config.screenThreshold,
-                    "autoPauseVideo": config.autoPauseVideo
-                }
-            }
-        ).then((response) => {
-            remoteSaveFileID = response.id;
-            // Config variables are already initialized with default values.
-            $("#ytbsp-hideSeenVideosCb").prop("checked", config.hideSeenVideos);
-            $("#ytbsp-hideEmptySubsCb").prop("checked", config.hideEmptySubs);
-            loadingProgress(-1, true);
-            resolve();
-        });
-    }));
-}
-
-// Delete save file on G-Drive.
+// Delete save file from cloud storage.
 // eslint-disable-next-line no-unused-vars
 function deleteRemoteSaveData() {
     return new Promise(((resolve, reject) => {
-        if (null === remoteSaveFileID) {
-            loadRemoteFileId().then(() => {
-                if (null !== remoteSaveFileID) {
-                    deleteRemoteSaveData().then(() => { resolve(); });
-                } else {
-                    resolve();
-                }
-            });
-        } else {
-            buildApiRequest(
-                "DELETE",
-                `/drive/v3/files/${remoteSaveFileID}`,
-                {}
-            ).then(() => {
-                remoteSaveFileID = null;
-                deleteRemoteSaveData().then(() => { resolve(); });
-            });
-        }
+        buildServerRequest("/settingsFile", {}, "DELETE")
+            .then(resolve)
+            .catch(reject);
     }));
 }
 
 // Load video information.
 function loadVideoInformation() {
     return new Promise(((resolve, reject) => {
-        getVideoInformation().then((data) => {
-            cachedVideoInformation = data;
-            resolve();
-        });
+        getVideoInformation().
+            then((data) => {
+                cachedVideoInformation = data;
+                resolve();
+            }).
+            catch(reject);
     }));
 }
 
@@ -461,34 +289,26 @@ function getVideoInformation() {
 
 }
 
-// Load video information from G-Drive file.
+// Load video information from cloud storage.
 function getRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
-        if (null === remoteSaveFileID) {
-            loadRemoteFileId().then(() => {
-                getRemoteVideoInformation().then((data) => { resolve(data); });
-            });
-        } else {
-            // Request file content from API.
-            buildApiRequest(
-                "GET",
-                `/drive/v3/files/${remoteSaveFileID}`,
-                {"alt": "media"}
-            ).then((data) => {
+        // Request file content from API.
+        buildServerRequest("/watchInfo", {})
+            .then((data) => {
                 if ("undefined" === typeof data || null === data || "" === data) {
                     console.error("Error parsing video information!");
                     resolve([]);
                 } else {
-                    resolve(data);
+                    resolve(JSON.parse(data));
                 }
-            });
-        }
+            }).
+            catch(reject);
     }));
 }
 
 // Loads and parses local storage data.
 function getLocalVideoInformation() {
-    return new Promise(((resolve, reject) => {
+    return new Promise(((resolve) => {
         // Get Cache from localStorage and set config.
         let cache = localStorage.getItem("YTBSP");
         corruptCache = "1" === localStorage.getItem("YTBSPcorruptcache"); // DEFAULT: false.
@@ -517,53 +337,32 @@ function getLocalVideoInformation() {
 function saveConfig() {
     if (config.useRemoteData) {
         return new Promise(((resolve, reject) => {
-            saveLocalConfig().then(() => {
-                saveRemoteConfig().then(() => { resolve(); });
-            });
+            saveLocalConfig().
+                then(() => {
+                    saveRemoteConfig().then(() => { resolve(); });
+                }).
+                catch(reject);
         }));
     }
     return saveLocalConfig();
 
 }
 
-// Save configuration to G-Drive file.
+// Save configuration to cloud storage.
 function saveRemoteConfig() {
     return new Promise(((resolve, reject) => {
-        if (null === remoteSaveFileID) {
-            loadRemoteFileId().then(() => {
-                saveRemoteConfig().then(() => { resolve(); });
-            });
-        } else {
-            buildApiRequest(
-                "PATCH",
-                `/drive/v3/files/${remoteSaveFileID}`,
-                {},
-                {"appProperties": {
-                    "useRemoteData": config.useRemoteData ? "1" : "0",
-                    "hideSeenVideos": config.hideSeenVideos ? "1" : "0",
-                    "hideEmptySubs": config.hideEmptySubs ? "1" : "0",
-                    "maxSimSubLoad": config.maxSimSubLoad,
-                    "maxVidsPerRow": config.maxVidsPerRow,
-                    "maxVidsPerSub": config.maxVidsPerSub,
-                    "enlargeDelay": config.enlargeDelay,
-                    "enlargeFactor": config.enlargeFactor,
-                    "enlargeFactorNative": config.enlargeFactorNative,
-                    "playerQuality": config.playerQuality,
-                    "timeToMarkAsSeen": config.timeToMarkAsSeen,
-                    "screenThreshold": config.screenThreshold,
-                    "autoPauseVideo": config.autoPauseVideo ? "1" : "0"
-                }}
-            ).then(() => {
+        buildServerRequest("/settingsFile", {}, "POST", config).
+            then(() => {
                 localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
                 resolve();
-            });
-        }
+            }).
+            catch(reject);
     }));
 }
 
 // Save config to local storage file.
 function saveLocalConfig() {
-    return new Promise(((resolve, reject) => {
+    return new Promise(((resolve) => {
         localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
         localStorage.setItem("YTBSP_hideSeenVideos", config.hideSeenVideos ? "1" : "0");
         localStorage.setItem("YTBSP_hideEmptySubs", config.hideEmptySubs ? "1" : "0");
@@ -585,56 +384,23 @@ function saveLocalConfig() {
 function saveVideoInformation() {
     if (config.useRemoteData) {
         return new Promise(((resolve, reject) => {
-            saveLocalVideoInformation().then(() => {
-                saveRemoteVideoInformation().then(() => { resolve(); });
-            });
+            saveLocalVideoInformation().
+                then(() => {
+                    saveRemoteVideoInformation().then(() => { resolve(); });
+                }).
+                catch(reject);
         }));
     }
     return saveLocalVideoInformation();
 
 }
 
-// Save video information to G-Drive file.
+// Save video information to cloud storage.
 function saveRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
-        if (null === remoteSaveFileID) {
-            loadRemoteFileId().then(() => {
-                saveRemoteVideoInformation().then(() => { resolve(); });
-            });
-        } else {
-            const contentString = JSON.stringify(cachedVideoInformation);
-            const boundary = "-------314159265358979323846";
-            const delimiter = `\r\n--${boundary}\r\n`;
-            const closeDelimiter = `\r\n--${boundary}--`;
-
-            const contentType = "text/plain" || "application/octet-stream";
-            // Updating the metadata is optional and you can instead use the value from drive.files.get.
-            const base64Data = btoa(encodeURIComponent(contentString).replace(
-                /%([0-9A-F]{2})/gu,
-                (match, p1) => String.fromCharCode("0x" + p1)
-            ));
-            const multipartRequestBody =
-                `${delimiter
-                }Content-Type: application/json\r\n\r\n${
-                    JSON.stringify({}) // Metadata goes here.
-                }${delimiter
-                }Content-Type: ${contentType}\r\n` +
-                "Content-Transfer-Encoding: base64\r\n" +
-                `\r\n${
-                    base64Data
-                }${closeDelimiter}`;
-
-            const request = gapi.client.request({"path": `/upload/drive/v3/files/${remoteSaveFileID}`,
-                "method": "PATCH",
-                "params": {"uploadType": "multipart", "alt": "json"},
-                "headers": {
-                    "Content-Type": `multipart/mixed; boundary="${boundary}"`
-                },
-                "body": multipartRequestBody});
-            request.execute(() => {
-                resolve();
-            });
-        }
+        buildServerRequest("/watchInfo", {}, "POST", cachedVideoInformation).
+            then(resolve).
+            catch(reject);
     }));
 }
 
@@ -663,42 +429,17 @@ const subs = []; // Main subscription array contains all subs and in extension a
 // Gets subs from api. (Called after successful OAuth-login and save data loading.)
 function requestSubs() {
     loadingProgress(1);
-    buildApiRequest(
-        "GET",
-        "/youtube/v3/subscriptions",
-        {
-            "mine": "true",
-            "part": "snippet",
-            "maxResults": config.maxSimSubLoad,
-            "fields": "items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken"
-        }
-    ).then(processRequestSubs);
+    buildServerRequest("/subscriptions", {"maxResults": config.maxSimSubLoad})
+        .then(processRequestSubs);
 }
 
 // Parses api results into subs and requests recursively more sub pages if needed.
 function processRequestSubs(response) {
-    // If Request was denied retry login.
-    if (Object.prototype.hasOwnProperty.call(response, "error")) {
-        console.error("OAuth failed! retrying...");
-        window.GoogleAuth.disconnect();
-        setSignInStatus();
-        loadingProgress(-1);
-        return;
-    }
     // If there is another page of subs request it.
     if (("undefined" !== typeof response.nextPageToken) && (null !== response.nextPageToken)) {
         loadingProgress(1);
-        buildApiRequest(
-            "GET",
-            "/youtube/v3/subscriptions",
-            {
-                "mine": "true",
-                "part": "snippet",
-                "maxResults": config.maxSimSubLoad,
-                "pageToken": response.nextPageToken,
-                "fields": "items(snippet(resourceId/channelId,title)),nextPageToken,pageInfo,prevPageToken"
-            }
-        ).then(processRequestSubs);
+        buildServerRequest("/subscriptions", {"maxResults": config.maxSimSubLoad, "pageToken": response.nextPageToken})
+            .then(processRequestSubs);
     }
     // Create subs from the api response.
     response.items.forEach((item) => {
@@ -710,16 +451,8 @@ function processRequestSubs(response) {
 // Check if subscription is still subscribed and if so append it.
 function checkAndAppendSub(forChannelId) {
     loadingProgress(1);
-    buildApiRequest(
-        "GET",
-        "/youtube/v3/subscriptions",
-        {
-            "mine": "true",
-            "part": "snippet",
-            "forChannelId": forChannelId,
-            "fields": "items(snippet(resourceId/channelId,title)),pageInfo"
-        }
-    ).then(processCheckedSubs);
+    buildServerRequest("/subscriptions", {"forChannelId": forChannelId})
+        .then(processCheckedSubs);
 }
 
 // Parses api results into subs if still subscribed.
@@ -881,7 +614,7 @@ function createBackupDialog(saveData) {
     backupDialog.append($("<h1/>", {"html": "How do I do this?"}));
     backupDialog.append($("<p/>", {"html": "Just copy the content of the following text box and save it somewhere.<br />" +
                                     "To import it again copy it into the text box and press import data."}));
-    backupDialog.append($("<p/>", {"html": "The save data from local storage and Google Drive are compatible and interchangeable."}));
+    backupDialog.append($("<p/>", {"html": "The save data from local and cloud storage are compatible and interchangeable."}));
     backupDialog.append($("<textarea/>", {"id": "ytbsp-export-import-textarea", "html": saveData}));
 
     const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"});
@@ -904,7 +637,7 @@ function createBackupDialog(saveData) {
     };
     endDiv.append(getSlider("ytbsp-backup-switch", config.useRemoteData, backupSwitch));
 
-    endDiv.append($("<h2/>", {"html": "Google Drive"}));
+    endDiv.append($("<h2/>", {"html": "Cloud Storage"}));
     endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "close", "on": {"click": closeModal}}));
 
     const importData = function() {
@@ -954,7 +687,7 @@ function createSettingsDialog() {
         .append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", config.hideSeenVideos)))
         .append($("<td>")));
     settingsTable.append($("<tr>")
-        .append($("<td>", {"html": "Use Google Drive"}))
+        .append($("<td>", {"html": "Use cloud storage"}))
         .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", config.useRemoteData)))
         .append($("<td>"), {"html": "Allows synchronization between browsers. May result in slower loading times."}));
     settingsTable.append($("<tr>")
@@ -1277,7 +1010,11 @@ const observer = new MutationObserver((() => {
     }
     // Inject YTBSP main div if not injected already.
     if (0 === mainDiv.parent().length && 0 !== $(YT_CONTENT).length) {
-        $(YT_CONTENT).prepend(mainDiv);
+        if (0 === $(YT_CONTENT).find("#YTBSP").length) {
+            $(YT_CONTENT).prepend(mainDiv);
+        } else {
+            mainDiv = $(YT_CONTENT).find("#YTBSP");
+        }
         $(window).scrollTop(0);
     }
     // Detect going fullscreen.
@@ -1328,6 +1065,32 @@ $(window).bind("storage", (e) => {
     }
 });
 
+function getServerId() {
+    $.get(`${SERVER_URL}/authUrl`, (result) => {
+        const popup = window.open(result, "Auth", "width=600,height=400,status=yes,scrollbars=yes,resizable=yes");
+        popup.focus();
+        console.log(popup);
+        // Bind the event.
+        const poll = () => {
+            setTimeout(() => {
+                if (!serverId) {
+                    popup.postMessage("id_poll", SERVER_URL);
+                    poll();
+                }
+            }, 1000);
+        };
+        poll();
+        window.addEventListener("message", (event) => {
+            if ("https://www.youtube.com" !== event.origin && !isNaN(event.data)) {
+                serverId = event.data;
+                localStorage.setItem("YTBSP-ServerId", serverId);
+                location.reload();
+            }
+        }, false);
+
+    });
+}
+
 // LifecycleHook: Startup:
 // Executed once as soon as possible, before bulk of the main script.
 function onScriptStart() {
@@ -1340,6 +1103,9 @@ function onScriptStart() {
 // LifecycleHook: DocumentRead:
 // Executed once as soon as the native page has finished loading.
 $(document).ready(() => {
+    if (!serverId) {
+        getServerId();
+    }
     $(YT_STARTPAGE_BODY).hide();
     initPageChangeObserver();
     handlePageChange();

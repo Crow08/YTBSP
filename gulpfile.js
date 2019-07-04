@@ -115,8 +115,7 @@ function copyExtensionSrcToDistTask() {
 
 function downloadExtensionLibsTask() {
     return download([
-        "https://apis.google.com/js/api.js",
-        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.slim.min.js",
+        "https://cdnjs.cloudflare.com/ajax/libs/jquery/3.3.1/jquery.min.js",
         "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.21.0/moment.min.js"
     ]).pipe(gulp.dest("./dist/ext/lib"));
 }
