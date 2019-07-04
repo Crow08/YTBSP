@@ -15,7 +15,7 @@ const resolutions = {"Ultra": "highres",
 
 // Config:
 const config = {
-    "useRemoteData": true,					// DEFAULT: true (using Google Drive as remote storage).
+    "useRemoteData": true,					// DEFAULT: true (using Cloud as remote storage).
     "maxSimSubLoad": 10,						// DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
     "maxVidsPerRow": 9,						// DEFAULT: 9.
     "maxVidsPerSub": 36,						// DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
@@ -183,7 +183,7 @@ if (serverId) {
 }
 
 // This function is called after successful OAuth login.
-// Loads configuration and video information from local storage or G-Drive,
+// Loads configuration and video information from local or cloud storage,
 // Then starts loading subscriptions.
 function startAPIRequests()	{
     // Get app configuration.
@@ -206,7 +206,7 @@ function loadConfig() {
 
 }
 
-// Load Script configuration from G-Drive file.
+// Load Script configuration from cloud storage.
 function loadRemoteConfig() {
     return new Promise(((resolve, reject) => {
         loadingProgress(1);
@@ -258,7 +258,7 @@ function loadLocalConfig() {
     }));
 }
 
-// Delete save file on G-Drive.
+// Delete save file from cloud storage.
 // eslint-disable-next-line no-unused-vars
 function deleteRemoteSaveData() {
     return new Promise(((resolve, reject) => {
@@ -289,7 +289,7 @@ function getVideoInformation() {
 
 }
 
-// Load video information from G-Drive file.
+// Load video information from cloud storage.
 function getRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
         // Request file content from API.
@@ -348,7 +348,7 @@ function saveConfig() {
 
 }
 
-// Save configuration to G-Drive file.
+// Save configuration to cloud storage.
 function saveRemoteConfig() {
     return new Promise(((resolve, reject) => {
         buildServerRequest("/settingsFile", {}, "POST", config).
@@ -395,7 +395,7 @@ function saveVideoInformation() {
 
 }
 
-// Save video information to G-Drive file.
+// Save video information to cloud storage.
 function saveRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
         buildServerRequest("/watchInfo", {}, "POST", cachedVideoInformation).
@@ -614,7 +614,7 @@ function createBackupDialog(saveData) {
     backupDialog.append($("<h1/>", {"html": "How do I do this?"}));
     backupDialog.append($("<p/>", {"html": "Just copy the content of the following text box and save it somewhere.<br />" +
                                     "To import it again copy it into the text box and press import data."}));
-    backupDialog.append($("<p/>", {"html": "The save data from local storage and Google Drive are compatible and interchangeable."}));
+    backupDialog.append($("<p/>", {"html": "The save data from local and cloud storage are compatible and interchangeable."}));
     backupDialog.append($("<textarea/>", {"id": "ytbsp-export-import-textarea", "html": saveData}));
 
     const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"});
@@ -637,7 +637,7 @@ function createBackupDialog(saveData) {
     };
     endDiv.append(getSlider("ytbsp-backup-switch", config.useRemoteData, backupSwitch));
 
-    endDiv.append($("<h2/>", {"html": "Google Drive"}));
+    endDiv.append($("<h2/>", {"html": "Cloud Storage"}));
     endDiv.append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "close", "on": {"click": closeModal}}));
 
     const importData = function() {
@@ -687,7 +687,7 @@ function createSettingsDialog() {
         .append($("<td>").append(getSlider("ytbsp-settings-hideSeenVideos", config.hideSeenVideos)))
         .append($("<td>")));
     settingsTable.append($("<tr>")
-        .append($("<td>", {"html": "Use Google Drive"}))
+        .append($("<td>", {"html": "Use cloud storage"}))
         .append($("<td>").append(getSlider("ytbsp-settings-useRemoteData", config.useRemoteData)))
         .append($("<td>"), {"html": "Allows synchronization between browsers. May result in slower loading times."}));
     settingsTable.append($("<tr>")
