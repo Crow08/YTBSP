@@ -38,7 +38,7 @@
     "gulp-rename": "^1.4.0",
     "gulp-uglify": "^3.0.2",
     "less": "^3.9.0",
-    "snyk": "^1.193.2"
+    "snyk": "^1.193.3"
   },
   "snyk": true
 }
