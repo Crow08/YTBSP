@@ -8,7 +8,9 @@
     "uglify": "gulp uglify",
     "release": "gulp release",
     "clean": "gulp clean",
-    "watch": "gulp watch"
+    "watch": "gulp watch",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "private": true,
   "repository": {
@@ -23,10 +25,10 @@
   },
   "homepage": "https://github.com/Crow08/YTBSP#readme",
   "dependencies": {
-    "@babel/core": "^7.5.0",
-    "@babel/preset-env": "^7.5.0",
+    "@babel/core": "^7.5.5",
+    "@babel/preset-env": "^7.5.5",
     "del": "^5.0.0",
-    "eslint": "^6.0.1",
+    "eslint": "^6.1.0",
     "gulp": "^4.0.2",
     "gulp-babel": "^8.0.0",
     "gulp-cli": "^2.2.0",
@@ -35,6 +37,8 @@
     "gulp-less": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-uglify": "^3.0.2",
-    "less": "^3.9.0"
-  }
+    "less": "^3.9.0",
+    "snyk": "^1.195.1"
+  },
+  "snyk": true
 }
