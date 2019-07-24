@@ -116,7 +116,7 @@ class Video {
         const that = this;
         if ("0:00" === this.duration) {
             loadingProgress(1);
-            buildServerRequest("/videoInfo", {"videoId": that.vid})
+            buildServerRequest("/videos", {"videoId": that.vid})
                 .then((response) => {
                     if (Object.prototype.hasOwnProperty.call(response, "items") && 1 === response.items.length) {
                         if (Object.prototype.hasOwnProperty.call(response.items[0], "contentDetails") && Object.prototype.hasOwnProperty.call(response.items[0].contentDetails, "duration")) {

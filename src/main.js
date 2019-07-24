@@ -210,7 +210,7 @@ function loadConfig() {
 function loadRemoteConfig() {
     return new Promise(((resolve, reject) => {
         loadingProgress(1);
-        buildServerRequest("/settingsFile", {})
+        buildServerRequest("/settings", {})
             .then((response) => {
                 if (response) {
                     config.useRemoteData = response.useRemoteData;
@@ -262,7 +262,7 @@ function loadLocalConfig() {
 // eslint-disable-next-line no-unused-vars
 function deleteRemoteSaveData() {
     return new Promise(((resolve, reject) => {
-        buildServerRequest("/settingsFile", {}, "DELETE")
+        buildServerRequest("/settings", {}, "DELETE")
             .then(resolve)
             .catch(reject);
     }));
@@ -293,7 +293,7 @@ function getVideoInformation() {
 function getRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
         // Request file content from API.
-        buildServerRequest("/watchInfo", {})
+        buildServerRequest("/videoStates", {})
             .then((data) => {
                 if ("undefined" === typeof data || null === data || "" === data) {
                     console.error("Error parsing video information!");
@@ -351,7 +351,7 @@ function saveConfig() {
 // Save configuration to cloud storage.
 function saveRemoteConfig() {
     return new Promise(((resolve, reject) => {
-        buildServerRequest("/settingsFile", {}, "POST", config).
+        buildServerRequest("/settings", {}, "POST", config).
             then(() => {
                 localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
                 resolve();
@@ -398,7 +398,7 @@ function saveVideoInformation() {
 // Save video information to cloud storage.
 function saveRemoteVideoInformation() {
     return new Promise(((resolve, reject) => {
-        buildServerRequest("/watchInfo", {}, "POST", cachedVideoInformation).
+        buildServerRequest("/videoStates", {}, "POST", cachedVideoInformation).
             then(resolve).
             catch(reject);
     }));
