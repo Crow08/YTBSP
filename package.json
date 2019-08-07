@@ -31,10 +31,12 @@
     "gulp-babel": "^8.0.0",
     "gulp-cli": "^2.2.0",
     "gulp-concat": "^2.6.1",
-    "gulp-download": "^0.0.1",
     "gulp-less": "^4.0.1",
     "gulp-rename": "^1.4.0",
     "gulp-uglify": "^3.0.2",
-    "less": "^3.9.0"
+    "less": "^3.9.0",
+    "request": "^2.88.0",
+    "through": "^2.3.8",
+    "vinyl": "^2.2.0"
   }
 }

@@ -8,7 +8,7 @@ const uglify = require("gulp-uglify");
 const babel = require("gulp-babel");
 const concat = require("gulp-concat");
 const rename = require("gulp-rename");
-const download = require("gulp-download");
+const download = require("./gulp-download");
 const fs = require("fs");
 const del = require("del");
 
