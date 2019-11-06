@@ -24,7 +24,7 @@
   "homepage": "https://github.com/Crow08/YTBSP#readme",
   "dependencies": {
     "@babel/core": "^7.5.5",
-    "@babel/preset-env": "^7.5.5",
+    "@babel/preset-env": "^7.7.1",
     "del": "^5.1.0",
     "eslint": "^6.3.0",
     "gulp": "^4.0.2",
