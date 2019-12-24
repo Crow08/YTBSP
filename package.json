@@ -32,7 +32,7 @@
     "gulp-cli": "^2.2.0",
     "gulp-concat": "^2.6.1",
     "gulp-less": "^4.0.1",
-    "gulp-rename": "^1.4.0",
+    "gulp-rename": "^2.0.0",
     "gulp-uglify": "^3.0.2",
     "less": "^3.10.3",
     "request": "^2.88.0",
