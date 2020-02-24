@@ -887,7 +887,12 @@ function addThumbnailEnlargeCss() {
     css.type = "text/css";
     css.id = "ytbsp-css-thumb";
     css.innerHTML =
-        `ytd-thumbnail:hover { transform: scale(${config.enlargeFactorNative}); border: solid ${config.enlargeFactorNative / 2.0}px ${altBorderColor}; padding: 0px; z-index: 2; }` +
+        `ytd-thumbnail:hover { 
+            transform: scale(${config.enlargeFactorNative}); 
+            border: solid ${config.enlargeFactorNative / 2.0}px ${altBorderColor}; 
+            padding: 0px; z-index: 2; 
+            transition-delay: ${config.enlargeDelay}ms;
+        }` +
         `ytd-thumbnail { padding: ${config.enlargeFactorNative / 2.0}px }` +
         "#video-title { width: 200px; }" +
         "#scroll-container.yt-horizontal-list-renderer { overflow: visible; }";
