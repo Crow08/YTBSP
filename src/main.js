@@ -51,7 +51,7 @@ const MA_TOOLBAR = "#info-contents > ytd-video-primary-info-renderer > div";
 // Startpage_body display: none is defined via stylesheet to prevent native page to blink through when loading.
 // (When page has finished loading initially this rule has to be removed, to prevent feed pages from loading with display: none)
 const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
-const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; margin-left: 120px; background: transparent; }
+const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -30px; background: transparent; }
     ${YT_GUIDE}{ z-index: 0 !important;}`;
 const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: 0px; }
     ${YT_GUIDE}{ z-index: 0 !important; width: var(--app-drawer-width, 256px); }`;
