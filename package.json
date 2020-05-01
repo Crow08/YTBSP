@@ -8,7 +8,9 @@
     "uglify": "gulp uglify",
     "release": "gulp release",
     "clean": "gulp clean",
-    "watch": "gulp watch"
+    "watch": "gulp watch",
+    "snyk-protect": "snyk protect",
+    "prepare": "npm run snyk-protect"
   },
   "private": true,
   "repository": {
@@ -37,6 +39,8 @@
     "less": "^3.10.3",
     "request": "^2.88.0",
     "through": "^2.3.8",
-    "vinyl": "^2.2.0"
-  }
+    "vinyl": "^2.2.0",
+    "snyk": "^1.316.1"
+  },
+  "snyk": true
 }
