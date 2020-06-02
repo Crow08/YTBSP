@@ -443,7 +443,9 @@ function processRequestSubs(response) {
     }
     // Create subs from the api response.
     response.items.forEach((item) => {
-        subs.push(new Subscription(item.snippet));
+        if (-1 === subs.findIndex((x) => item.snippet.resourceId.channelId === x.id)) {
+            subs.push(new Subscription(item.snippet));
+        }
     });
     loadingProgress(-1);
 }
