@@ -20,6 +20,7 @@
         "array-element-newline": "off",
         "brace-style": "off",
         "dot-location": "off",
+        "function-call-argument-newline": "off",
         "func-names": "off",
         "func-style": "off",
         "id-length": "off",
