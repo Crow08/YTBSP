@@ -705,6 +705,8 @@ function createSettingsDialog() {
     }
     playerQualitySelect.val(config.playerQuality);
 
+    const deleteButton = $("<input/>", {"type": "button", "class": "ytbsp-func", "value": "Delete user data", "on": {"click": deleteUserData}});
+    deleteButton.css({"background-color": "#bb3333", "border-radius": "2px"});
     settingsTable.append($("<tr>")
         .append($("<td>", {"html": "Player Quality"}))
         .append($("<td>").append(playerQualitySelect))
@@ -738,9 +740,13 @@ function createSettingsDialog() {
         .append($("<td>").append($("<input>", {"type": "number", "min": "1", "step": "0.01", "id": "ytbsp-settings-enlargeFactorNative", "value": config.enlargeFactorNative})))
         .append($("<td>", {"html": "Default: 2.0 | 1 : disable thumbnail enlarge"})));
     settingsTable.append($("<tr>")
-        .append($("<td>", {"html": "threshold to preload thumbnails"}))
+        .append($("<td>", {"html": "Threshold to preload thumbnails"}))
         .append($("<td>").append($("<input>", {"type": "number", "min": "0", "id": "ytbsp-settings-screenThreshold", "value": config.screenThreshold})).append(" px"))
         .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
+    settingsTable.append($("<tr>")
+        .append($("<td>", {"html": "User data"}))
+        .append($("<td>").append(deleteButton))
+        .append($("<td>", {"html": "Be careful, this con not be undone!"})));
     settingsDialog.append(settingsTable);
 
     // Function for save button.
@@ -777,9 +783,11 @@ function createSettingsDialog() {
     } catch (e) {
         console.info("Tampermonkey variables not available.");
     }
+    const userIdInformation = `User ID: ${localStorage.getItem("YTBSP-ServerId")}`;
     const endDiv = $("<div/>", {"id": "ytbsp-modal-end-div"})
         .append($("<a/>", {"html": "https://github.com/Crow08/YTBSP", "href": "https://github.com/Crow08/YTBSP", "target": "_blank", "class": "ytbsp-func", "style": "font-size: 1rem;"}))
         .append($("<p/>", {"html": versionInformation, "class": "ytbsp-func", "style": "font-size: 1rem;"}))
+        .append($("<p/>", {"html": userIdInformation, "class": "ytbsp-func", "style": "font-size: 1rem;"}))
         .append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "Cancel", "on": {"click": closeModal}}))
         .append($("<input/>", {"type": "submit", "class": "ytbsp-func", "value": "Save", "on": {"click": saveSettings}}));
     return settingsDialog.append(endDiv);
@@ -808,6 +816,38 @@ function closeModal() {
     if (0 !== modal.length) {
         modal.css("display", "none");
         modal.css("opacity", "0");
+    }
+}
+
+function deleteUserData() {
+    if (confirm("delete all user data?")) {
+        buildServerRequest("/deleteUserData", {}, "DELETE", cachedVideoInformation)
+            .then(() => {
+                localStorage.removeItem("YTBSP-ServerId");
+                localStorage.removeItem("YTBSP");
+                localStorage.removeItem("YTBSPbackup");
+                localStorage.removeItem("YTBSPcorruptcache");
+                localStorage.removeItem("YTBSP_useRemoteData");
+                localStorage.removeItem("YTBSP_hideSeenVideos");
+                localStorage.removeItem("YTBSP_hideEmptySubs");
+                localStorage.removeItem("YTBSP_maxSimSubLoad");
+                localStorage.removeItem("YTBSP_maxVidsPerRow");
+                localStorage.removeItem("YTBSP_maxVidsPerSub");
+                localStorage.removeItem("YTBSP_enlargeDelay");
+                localStorage.removeItem("YTBSP_enlargeFactor");
+                localStorage.removeItem("YTBSP_enlargeFactorNative");
+                localStorage.removeItem("YTBSP_playerQuality");
+                localStorage.removeItem("YTBSP_timeToMarkAsSeen");
+                localStorage.removeItem("YTBSP_screenThreshold");
+                localStorage.removeItem("YTBSP_autoPauseVideo");
+                setTimeout(() => {
+                    location.reload();
+                }, 200);
+            }).
+            catch((e) => {
+                alert("something went wrong!");
+                console.error(e);
+            });
     }
 }
 
@@ -1076,7 +1116,6 @@ function getServerId() {
     $.get(`${SERVER_URL}/authUrl`, (result) => {
         const popup = window.open(result, "Auth", "width=600,height=400,status=yes,scrollbars=yes,resizable=yes");
         popup.focus();
-        console.log(popup);
         // Bind the event.
         const poll = () => {
             setTimeout(() => {
