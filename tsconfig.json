@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "target": "ES3",
+    "watch": true,
+    "lib": ["DOM", "ES2020"],
+    "types": ["node"]
+  }
+}
