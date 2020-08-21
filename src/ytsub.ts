@@ -1,26 +1,28 @@
-import * as MINIGET from "miniget";
+import Subscription from "./Model/Subscription"
+import MINIGET from "miniget";
 import * as querystring from "querystring";
 
-const test = async () => {
-  console.log("START TEST");
-
+export default async () => {
   const body = getSubPageBody()
 
-  const contentJson = getContentJson(await body);
+  const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
   const cfgJson = getConfigurationJson(await body);
 
-  const continuation = contentJson["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["continuations"][0]["nextContinuationData"]["continuation"];
-  const clickTrackingParams = contentJson["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["continuations"][0]["nextContinuationData"]["clickTrackingParams"];
+  let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
 
-  const spfBody = getSPFSubContinuationBody(cfgJson, continuation, clickTrackingParams);
+  const continuations = contentJson["continuations"]
+  if(continuations){
+    for (const continuationObject of continuations) {
+      const continuation = continuationObject["nextContinuationData"]["continuation"];
+      const clickTrackingParams = continuationObject["nextContinuationData"]["clickTrackingParams"];
+      const spfBody = getSPFSubContinuationBody(cfgJson, continuation, clickTrackingParams);
+      const spfJson = JSON.parse(await spfBody);
+      const spfItems = spfJson[1]["response"]["continuationContents"]["sectionListContinuation"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+      allItems = allItems.concat(spfItems);
+    }
+  }
 
-  const spfJson = JSON.parse(await spfBody);
-
-  const initialItems = contentJson["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
-  const spfItems = spfJson[1]["response"]["continuationContents"]["sectionListContinuation"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
-  const allItems = initialItems.concat(spfItems);
-
-  console.log(allItems);
+  return convertToSubscriptions(allItems);
 }
 
 function getConfigurationJson(body: string): any {
@@ -30,7 +32,6 @@ function getConfigurationJson(body: string): any {
   while(jsonString[jsonString.length - 1] !== '}'){
     jsonString = jsonString.substring(0, jsonString.length - 1);
   }
-
   return JSON.parse(jsonString);
 }
 
@@ -41,7 +42,6 @@ function getContentJson(body: string): any {
   while(jsonString[jsonString.length - 1] !== '}'){
     jsonString = jsonString.substring(0, jsonString.length - 1);
   }
-
   return JSON.parse(jsonString);
 }
 
@@ -55,15 +55,12 @@ async function getSubPageBody() : Promise<string>{
 
 async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string>{
   const headers = getSPFHeader(cfgJson);
-
   const options = { headers };
-
   const params = querystring.stringify({
     "ctoken": continuation,
     "continuation": continuation,
     "itct": clickTrackingParams
   });
-
   return await MINIGET("https://www.youtube.com/browse_ajax?" + params, options).text();
 }
 
@@ -75,7 +72,6 @@ function getSPFHeader(cfgJson){
   const pageLabel = cfgJson["PAGE_BUILD_LABEL"];
   const variantsChecksum = cfgJson["VARIANTS_CHECKSUM"];
   const idToken = cfgJson["ID_TOKEN"];
-
   return {
     "X-SPF-Previous": "https://www.youtube.com/feed/channels",
     "X-SPF-Referer": "https://www.youtube.com/feed/channels",
@@ -92,4 +88,17 @@ function getSPFHeader(cfgJson){
   };
 }
 
-export {test}
+function convertToSubscriptions (items: object[]): Subscription[] {
+  const subscriptions: Subscription[] = [];
+  items.forEach(item => {
+    const channelItem = item["channelRenderer"];
+    const sub = new Subscription();
+    sub.channelId = channelItem["channelId"];
+    sub.channelName = channelItem["title"]["simpleText"];
+    sub.playlistId = sub.channelId.replace(/^UC/u, "UU");
+    sub.channelUrl = new URL("/channel/" + sub.channelId, document.baseURI);
+    sub.iconUrl = channelItem["thumbnail"]["thumbnails"][0]["url"];
+    subscriptions.push(sub);
+  });
+  return subscriptions
+}

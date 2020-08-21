@@ -1,9 +1,18 @@
-import * as ytpl from "ytpl";
-import * as ytsub from "./ytsub";
+import PageService, { PageState } from "./Services/PageService";
+import YTBSPComponent from "./Components/YTBSPComponent";
 
-/*ytpl("UU_aEa8K-EOJ3D6gOs7HcyNg", {limit: 100,
-  headers: {}}).
-  then((playlist): void => console.log(playlist)).
-  catch((err) => console.error(err));
-*/
-ytsub.test();
+console.log("script start");
+const ytbspComponent = new YTBSPComponent();
+
+PageService.updateNativeStyleRuleModifications(PageState.LOADING);
+
+PageService.addDocumentReadyListener(() => {
+  console.log("document ready");
+  PageService.injectYTBSP(ytbspComponent);
+  PageService.startPageObserver();
+
+  PageService.updateNativeStyleRuleModifications();
+  PageService.addPageChangeListener(() => {
+    PageService.updateNativeStyleRuleModifications();
+  });
+})
