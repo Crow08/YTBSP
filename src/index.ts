@@ -7,12 +7,12 @@ const ytbspComponent = new YTBSPComponent();
 PageService.updateNativeStyleRuleModifications(PageState.LOADING);
 
 PageService.addDocumentReadyListener(() => {
-  console.log("document ready");
-  PageService.injectYTBSP(ytbspComponent);
-  PageService.startPageObserver();
+    console.log("document ready");
+    PageService.injectYTBSP(ytbspComponent);
+    PageService.startPageObserver();
 
-  PageService.updateNativeStyleRuleModifications();
-  PageService.addPageChangeListener(() => {
     PageService.updateNativeStyleRuleModifications();
-  });
+    PageService.addPageChangeListener(() => {
+        PageService.updateNativeStyleRuleModifications();
+    });
 })
