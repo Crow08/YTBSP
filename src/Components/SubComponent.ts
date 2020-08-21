@@ -122,19 +122,11 @@ export default class SubComponent extends Component {
             if (this.sub.videos.some((vid) => vid.id === responseItem.id)) {
                 return;
             }
-
             const video = new Video(responseItem.id);
-
-            if (Object.prototype.hasOwnProperty.call(responseItem, "title")) {
-                video.title = responseItem.title;
-            }
-            if (Object.prototype.hasOwnProperty.call(responseItem, "duration")) {
-                video.duration = responseItem.duration;
-            }
-
-            if (Object.prototype.hasOwnProperty.call(responseItem, "thumbnail")) {
-                video.thumb = responseItem.thumbnail;
-            }
+            video.title = responseItem.title;
+            video.duration = responseItem.duration;
+            video.thumb = video.thumbLarge = `http://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
+            video.thumbLarge = `http://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`;
 
             this.sub.videos.push(video);
         });
