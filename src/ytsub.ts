@@ -1,16 +1,16 @@
-import Subscription from "./Model/Subscription"
+import Subscription from "./Model/Subscription";
 import MINIGET from "miniget";
 import * as querystring from "querystring";
 
 export default async () => {
-    const body = getSubPageBody()
+    const body = getSubPageBody();
 
     const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
     const cfgJson = getConfigurationJson(await body);
 
     let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
 
-    const continuations = contentJson["continuations"]
+    const continuations = contentJson["continuations"];
     if (continuations) {
         for (const continuationObject of continuations) {
             const continuation = continuationObject["nextContinuationData"]["continuation"];
@@ -23,13 +23,13 @@ export default async () => {
     }
 
     return convertToSubscriptions(allItems);
-}
+};
 
 function getConfigurationJson(body: string): any {
     let jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
     jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
     jsonString = jsonString.trim();
-    while (jsonString[jsonString.length - 1] !== '}') {
+    while (jsonString[jsonString.length - 1] !== "}") {
         jsonString = jsonString.substring(0, jsonString.length - 1);
     }
     return JSON.parse(jsonString);
@@ -39,7 +39,7 @@ function getContentJson(body: string): any {
     let jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
     jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
     jsonString = jsonString.trim();
-    while (jsonString[jsonString.length - 1] !== '}') {
+    while (jsonString[jsonString.length - 1] !== "}") {
         jsonString = jsonString.substring(0, jsonString.length - 1);
     }
     return JSON.parse(jsonString);
@@ -47,7 +47,7 @@ function getContentJson(body: string): any {
 
 async function getSubPageBody(): Promise<string> {
     const headers = {
-        'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36'
+        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
     };
     const options = {headers};
     return await MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true", options).text();
@@ -100,5 +100,5 @@ function convertToSubscriptions(items: object[]): Subscription[] {
         sub.iconUrl = channelItem["thumbnail"]["thumbnails"][0]["url"];
         subscriptions.push(sub);
     });
-    return subscriptions
+    return subscriptions;
 }

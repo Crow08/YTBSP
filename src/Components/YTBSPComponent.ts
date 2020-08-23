@@ -1,9 +1,9 @@
-import SubListComponent from './SubListComponent';
-import Component from './Component';
-import * as ComponentUtils from './ComponentUtils';
-import PageService from '../Services/PageService';
+import SubListComponent from "./SubListComponent";
+import Component from "./Component";
+import * as ComponentUtils from "./ComponentUtils";
+import PageService from "../Services/PageService";
 import $ from "jquery";
-import playerService from '../Services/PlayerService';
+import playerService from "../Services/PlayerService";
 
 export default class YTBSPComponent extends Component {
     subList: SubListComponent;
@@ -27,7 +27,7 @@ export default class YTBSPComponent extends Component {
 
         PageService.addPageChangeListener(() => this.updateLocation());
         PageService.addDocumentReadyListener(() => {
-            this.updateLocation()
+            this.updateLocation();
             this.setTheme(PageService.isDarkModeEnabled());
         });
 

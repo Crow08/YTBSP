@@ -2,7 +2,6 @@ import Component from "./Component";
 import Video from "../Model/Video";
 import PageService from "../Services/PageService";
 import SubComponent from "./SubComponent";
-import { close } from "fs";
 
 export default class VideoComponent extends Component {
     video: Video;
@@ -65,7 +64,7 @@ export default class VideoComponent extends Component {
 
     handleOpenVideo(event) {
         event.preventDefault();
-        if (event.target.classList.contains(this.closeItem.attr('class'))) {
+        if (event.target.classList.contains(this.closeItem.attr("class"))) {
             return;
         }
         PageService.openVideoWithSPF(this.video.id);
@@ -79,7 +78,7 @@ export default class VideoComponent extends Component {
 
     toggleSeen() {
         this.video.seen = !this.video.seen;
-        this.updateSeenButton()
+        this.updateSeenButton();
         this.subComp.updateVideoList();
     }
 

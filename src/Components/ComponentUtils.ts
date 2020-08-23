@@ -1,5 +1,5 @@
-import $ from 'jquery';
-import Component from './Component';
+import $ from "jquery";
+import Component from "./Component";
 
 export class Slider extends Component {
     private input: JQuery;
@@ -11,7 +11,7 @@ export class Slider extends Component {
             "type": "checkbox",
             "checked": checked,
             "on": {"change": onChange}
-        })
+        });
         this.component.append(this.input);
         this.component.append($("<div/>", {"class": "ytbsp-slider-rail"}));
         this.component.append($("<div/>", {"class": "ytbsp-slider-knob"}));
@@ -35,11 +35,11 @@ export class Loader extends Component {
 // Universal loader as resource.
 const getLoader = (id: string): Loader => {
     return new Loader(id);
-}
+};
 
 // Make slider as resource.
 const getSlider = (id: string, checked: boolean, onChange: (event: Event) => void): Slider => {
     return new Slider(id, checked, onChange);
-}
+};
 
-export { getLoader, getSlider }
+export { getLoader, getSlider };

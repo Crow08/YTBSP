@@ -21,6 +21,8 @@ module.exports = {
     "rules": {
         "indent": ["error", 4],
         "quotes": ["error", "double"],
-        "semi": ["error", "always"]
-    }
+        "semi": ["error", "always"],
+        "@typescript-eslint/no-unused-vars": "warn",
+    },
+    "reportUnusedDisableDirectives": true,
 };

@@ -1,5 +1,5 @@
-import $ from 'jquery';
-import Component from './Component';
+import $ from "jquery";
+import Component from "./Component";
 
 export default class ModalComponent extends Component {
 

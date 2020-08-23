@@ -1,4 +1,4 @@
-import Configuration from "../Model/Configuration"
+import Configuration from "../Model/Configuration";
 
 class ConfigService {
     private configuration: Configuration;
@@ -29,7 +29,7 @@ class ConfigService {
             callback(this.configuration);
         });
     }
-};
+}
 
 const configService = new ConfigService();
 export default configService;

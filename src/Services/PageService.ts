@@ -1,5 +1,5 @@
 import YTBSPComponent from "../Components/YTBSPComponent";
-import '../Less/ytbsp-stylesheet.less'
+import "../Less/ytbsp-stylesheet.less";
 import $ from "jquery";
 
 // YouTube selectors:
@@ -37,20 +37,20 @@ export enum PageState {
 
 const getStyleRulesForPageState = (pageState: PageState): string => {
     switch (pageState) {
-        case PageState.LOADING:
-            return bodyStyleLoading;
-        case PageState.STARTPAGE:
-            return bodyStyleStartpage;
-        case PageState.VIDEO:
-            return bodyStyleVideo;
-        case PageState.SEARCH:
-            return bodyStyleSearch;
-        case PageState.PLAYLIST:
-            return bodyStylePlaylist;
-        default:
-            return bodyStyleDefault;
+    case PageState.LOADING:
+        return bodyStyleLoading;
+    case PageState.STARTPAGE:
+        return bodyStyleStartpage;
+    case PageState.VIDEO:
+        return bodyStyleVideo;
+    case PageState.SEARCH:
+        return bodyStyleSearch;
+    case PageState.PLAYLIST:
+        return bodyStylePlaylist;
+    default:
+        return bodyStyleDefault;
     }
-}
+};
 
 const getPageState = (): PageState => {
     if ((/^(\/?|((\/feed\/)(trending|subscriptions|history)\/?))?$/iu).test(location.pathname)) {
@@ -64,19 +64,17 @@ const getPageState = (): PageState => {
     } else {
         return PageState.DEFAULT;
     }
-}
+};
 
 const debounce = (func, wait) => {
     let timeout;
     return function executedFunction() {
-        const context = this;
-        const args = arguments;
         const later = () => {
             timeout = null;
         };
         if (!timeout) {
             timeout = setTimeout(later, wait);
-            func.apply(context, args);
+            func.apply(this, arguments);
         }
     };
 };
@@ -110,14 +108,14 @@ class PageService {
                     this.isFullscreen = true;
                     this.onToggleFullscreenCallbackList.forEach(callback => {
                         callback(true);
-                    })
+                    });
                 }
             } else {
                 if (this.isFullscreen) {
                     this.isFullscreen = false;
                     this.onToggleFullscreenCallbackList.forEach(callback => {
                         callback(false);
-                    })
+                    });
                 }
             }
         });
@@ -169,7 +167,7 @@ class PageService {
     }
 
     triggerViewChange() {
-        debounce(() => this.handleViewChange(), 200)
+        debounce(() => this.handleViewChange(), 200);
     }
 
     updateNativeStyleRuleModifications(state?: PageState) {
@@ -257,6 +255,6 @@ class PageService {
     getPlayerControls(): JQuery {
         return $(YT_PLAYER_CONTROL);
     }
-};
+}
 const pageService = new PageService();
 export default pageService;
