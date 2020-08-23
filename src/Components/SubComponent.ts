@@ -1,8 +1,8 @@
 import $ from "jquery";
 import ytpl from "ytpl";
-import * as ComponentUtils from './ComponentUtils';
+import * as ComponentUtils from "./ComponentUtils";
 import ConfigService from "../Services/ConfigService";
-import Component from './Component';
+import Component from "./Component";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import VideoComponent from "./VideoComponent";
@@ -17,7 +17,7 @@ function arrayMove(arr: any[], oldIndex: number, newIndex: number): any[] {
     }
     arr.splice(newIndex, 0, arr.splice(oldIndex, 1)[0]);
     return arr;
-};
+}
 
 export default class SubComponent extends Component {
     private sub: Subscription;
@@ -30,7 +30,7 @@ export default class SubComponent extends Component {
     constructor(sub: Subscription) {
         super($("<li/>", {"class": "ytbsp-subscription"}));
         this.sub = sub;
-        const menuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"})
+        const menuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
         this.expandButton = $("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"}).click(() => {
             this.subShowMore();
         });

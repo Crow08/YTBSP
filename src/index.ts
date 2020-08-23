@@ -15,4 +15,4 @@ PageService.addDocumentReadyListener(() => {
     PageService.addPageChangeListener(() => {
         PageService.updateNativeStyleRuleModifications();
     });
-})
+});

@@ -9,7 +9,7 @@ export enum Resolutions {
     P360 = "medium",
     P240 = "small",
     P144 = "tiny"
-};
+}
 
 export default class Configuration {
     useRemoteData = true;               // DEFAULT: true (using Cloud as remote storage).

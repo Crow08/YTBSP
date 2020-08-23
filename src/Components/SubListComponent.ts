@@ -1,4 +1,4 @@
-import Component from './Component';
+import Component from "./Component";
 import ytsub from "../ytsub";
 import $ from "jquery";
 import Configuration from "../Model/Configuration";
@@ -14,7 +14,7 @@ export default class SubListComponent extends Component {
 
     constructor() {
         super($("<div/>", {"id": "ytbsp-subsWrapper"}));
-        const strip = $("<div/>", {"id": "ytbsp-subsMenuStrip"})
+        const strip = $("<div/>", {"id": "ytbsp-subsMenuStrip"});
         strip.append($("<button/>", {
             "id": "ytbsp-removeAllVideos",
             "class": "ytbsp-func",
@@ -47,8 +47,8 @@ export default class SubListComponent extends Component {
 
     onUpdateConfig(config: Configuration): void {
         this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
-        this.hideEmptySubsCb.prop('checked', config.hideEmptySubs);
-        this.hideSeenVideosCb.prop('checked', config.hideSeenVideos);
+        this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
+        this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
     }
 
     updateSubs(subs: Subscription[]): void {

@@ -31,14 +31,14 @@ class PlayerService {
             return modifiedPlay(this);
         };
 
-        this.resetAutoplay()
+        this.resetAutoplay();
         PageService.addPageChangeListener(() => this.resetAutoplay());
     }
 
     togglePictureInPicturePlayer() {
         const playerParentRef = PageService.getPlayerControls();
         if (playerParentRef && playerParentRef[0] && playerParentRef[0]["player"]) {
-            playerParentRef[0]["player"].togglePictureInPicture()
+            playerParentRef[0]["player"].togglePictureInPicture();
         }
     }
 
