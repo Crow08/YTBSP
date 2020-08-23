@@ -1,16 +1,17 @@
-import Component from "./Component";
-import ytsub from "../ytsub";
 import $ from "jquery";
 import Configuration from "../Model/Configuration";
 import Subscription from "../Model/Subscription";
-import SubComponent from "./SubComponent";
 import ConfigService from "../Services/ConfigService";
+import DataService from "../Services/DataService";
+import ytsub from "../ytsub";
+import Component from "./Component";
+import SubComponent from "./SubComponent";
 
 export default class SubListComponent extends Component {
-    hideEmptySubsCb: JQuery;
-    hideSeenVideosCb: JQuery;
-    subList: JQuery;
-    subComponents: SubComponent[] = [];
+    private hideEmptySubsCb: JQuery;
+    private hideSeenVideosCb: JQuery;
+    private subList: JQuery;
+    private subComponents: SubComponent[] = [];
 
     constructor() {
         super($("<div/>", {"id": "ytbsp-subsWrapper"}));
@@ -31,7 +32,7 @@ export default class SubListComponent extends Component {
             .append(this.hideSeenVideosCb)
             .append("Hide seen videos"));
         this.hideEmptySubsCb = $("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox"})
-            .change(() => ConfigService.updateConfig({hideEmptySubsCb: this.hideEmptySubsCb.prop("checked")}));
+            .change(() => ConfigService.updateConfig({hideEmptySubs: this.hideEmptySubsCb.prop("checked")}));
         strip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func"})
             .append(this.hideEmptySubsCb)
             .append("Hide empty subs"));
@@ -39,24 +40,10 @@ export default class SubListComponent extends Component {
         this.subList = $("<ul/>", {"id": "ytbsp-subsList"});
         this.component.append(this.subList);
 
-        ytsub().then((subs) => this.updateSubs(subs)).catch((err) => console.error(err));
+        ytsub().then((subs) => this.initSubs(subs)).catch((err) => console.error(err));
 
         this.onUpdateConfig(ConfigService.getConfig());
         ConfigService.addChangeListener((config) => this.onUpdateConfig(config));
-    }
-
-    onUpdateConfig(config: Configuration): void {
-        this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
-        this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
-        this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
-    }
-
-    updateSubs(subs: Subscription[]): void {
-        subs.forEach(sub => {
-            const subComp = new SubComponent(sub);
-            this.subComponents.push(subComp);
-            this.subList.append(subComp.component);
-        });
     }
 
     removeAllVideos(): void {
@@ -69,5 +56,34 @@ export default class SubListComponent extends Component {
         this.subComponents.forEach(subComp => {
             subComp.subResetAllVideos();
         });
+    }
+
+    updateAllSubs() {
+        this.subComponents.forEach((comp) => {
+            comp.reloadSubVideos().catch((error) => console.log(error));
+        });
+    }
+
+    private initSubs(subs: Subscription[]): void {
+        subs.forEach(sub => {
+            const cachedSub = DataService.getSubscription(sub.channelId);
+            if ("undefined" !== typeof cachedSub) {
+                sub.updateSubscription(cachedSub);
+            }
+            this.setupNewSubscription(sub);
+        });
+    }
+
+    private setupNewSubscription(sub: Subscription) {
+        DataService.upsertSubscription(sub.channelId, () => sub);
+        const subComp = new SubComponent(sub);
+        this.subComponents.push(subComp);
+        this.subList.append(subComp.component);
+    }
+
+    private onUpdateConfig(config: Configuration): void {
+        this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
+        this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
+        this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
     }
 }

@@ -1,10 +1,11 @@
+import $ from "jquery";
 import YTBSPComponent from "../Components/YTBSPComponent";
 import "../Less/ytbsp-stylesheet.less";
-import $ from "jquery";
+import Timeout = NodeJS.Timeout;
 
 // YouTube selectors:
 const YT_APP = "ytd-app";
-const YT_STARTPAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
+const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
 const YT_CHANNEL_LINK = "#owner-name > a, #upload-info > #channel-name > #container #text-container > #text > a";
@@ -17,30 +18,30 @@ const YT_VIDEO_STREAM = ".video-stream";
 const YT_FEED_FILTER = "#chips > ytd-feed-filter-chip-bar-renderer";
 
 // Style rules depending on the loaded native page.
-const bodyStyleLoading = `${YT_STARTPAGE_BODY} { background: transparent; display:none; }`;
-const bodyStyleStartpage = `${YT_STARTPAGE_BODY} { margin-top: -10px; background: transparent; }
+const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
+const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -10px; background: transparent; }
     ${YT_GUIDE}{ z-index: 3 !important;}
     ${YT_FEED_FILTER}{ top: 78px !important; }`;
-const bodyStyleVideo = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -20px; }
+const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
     ${YT_GUIDE}{ z-index: 3 !important; width: var(--app-drawer-width, 256px); }`;
-const bodyStyleSearch = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -20px; }
+const bodyStyleSearch = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
     ${YT_GUIDE}{ z-index: 3; !important;}`;
-const bodyStyleDefault = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -30px;}
+const bodyStyleDefault = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -30px;}
     ${YT_GUIDE}{ z-index: 3; !important;}`;
-const bodyStylePlaylist = `${YT_STARTPAGE_BODY} { background: transparent; margin-top: -60px; }
+const bodyStylePlaylist = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -60px; }
     ${YT_GUIDE}{ z-index: 3; !important;}
-    ${YT_STARTPAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
+    ${YT_START_PAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
 export enum PageState {
-    DEFAULT, LOADING, STARTPAGE, VIDEO, SEARCH, PLAYLIST
+    DEFAULT, LOADING, START_PAGE, VIDEO, SEARCH, PLAYLIST
 }
 
 const getStyleRulesForPageState = (pageState: PageState): string => {
     switch (pageState) {
     case PageState.LOADING:
         return bodyStyleLoading;
-    case PageState.STARTPAGE:
-        return bodyStyleStartpage;
+    case PageState.START_PAGE:
+        return bodyStyleStartPage;
     case PageState.VIDEO:
         return bodyStyleVideo;
     case PageState.SEARCH:
@@ -54,7 +55,7 @@ const getStyleRulesForPageState = (pageState: PageState): string => {
 
 const getPageState = (): PageState => {
     if ((/^(\/?|((\/feed\/)(trending|subscriptions|history)\/?))?$/iu).test(location.pathname)) {
-        return PageState.STARTPAGE;
+        return PageState.START_PAGE;
     } else if ((/^\/?watch$/u).test(location.pathname)) {
         return PageState.VIDEO;
     } else if ((/^\/?results$/u).test(location.pathname)) {
@@ -65,16 +66,16 @@ const getPageState = (): PageState => {
         return PageState.DEFAULT;
     }
 };
-
-const debounce = (func, wait) => {
-    let timeout;
+const debounceInterval = 200;
+const debounce = (func: () => void) => {
+    let timeout: Timeout;
     return function executedFunction() {
-        const later = () => {
+        const later = (): void => {
             timeout = null;
         };
         if (!timeout) {
-            timeout = setTimeout(later, wait);
-            func.apply(this, arguments);
+            timeout = setTimeout(later, debounceInterval);
+            func.apply(this);
         }
     };
 };
@@ -128,15 +129,15 @@ class PageService {
             this.onDocumentReadyCallbackList = [];
         });
 
-        window.addEventListener("scroll", debounce(() => this.handleViewChange(), 200), false);
-        window.addEventListener("resize", debounce(() => this.handleViewChange(), 200), false);
+        window.addEventListener("scroll", debounce(() => this.handleViewChange()), false);
+        window.addEventListener("resize", debounce(() => this.handleViewChange()), false);
     }
 
     private handleViewChange = () => {
         this.onViewChangeCallbackList.forEach(callback => {
             callback();
         });
-    }
+    };
 
     startPageObserver() {
         this.observer.observe(document.querySelector("body"), {"childList": true, "subtree": true});
@@ -167,13 +168,12 @@ class PageService {
     }
 
     triggerViewChange() {
-        debounce(() => this.handleViewChange(), 200);
+        debounce(() => this.handleViewChange());
     }
 
     updateNativeStyleRuleModifications(state?: PageState) {
         $("#ytbsp-yt-css").remove();
         const css = document.createElement("style");
-        css.type = "text/css";
         css.id = "ytbsp-yt-css";
         css.innerHTML = getStyleRulesForPageState(state ? state : getPageState());
         document.head.appendChild(css);
@@ -183,12 +183,11 @@ class PageService {
         $("#ytbsp-hideNative-css").remove();
         if (hideNative) {
             const css = document.createElement("style");
-            css.type = "text/css";
             css.id = "ytbsp-hideNative-css";
-            css.innerHTML = YT_STARTPAGE_BODY + "{display: none}";
+            css.innerHTML = YT_START_PAGE_BODY + "{display: none}";
             document.head.appendChild(css);
         }
-        // TODO: Workaround: After unhiding the native page thumbnails won't load.
+        // TODO: Workaround: After a switch back to the native page thumbnails won't load.
         setTimeout(() => {
             window.dispatchEvent(new Event("resize"));
         }, 200);
@@ -198,7 +197,6 @@ class PageService {
         const altBorderColor = this.isDarkModeEnabled() ? "#737373" : "#737373";
         $("#ytbsp-css-thumb").remove();
         const css = document.createElement("style");
-        css.type = "text/css";
         css.id = "ytbsp-css-thumb";
         css.innerHTML =
             `ytd-thumbnail:hover {
@@ -256,5 +254,6 @@ class PageService {
         return $(YT_PLAYER_CONTROL);
     }
 }
+
 const pageService = new PageService();
 export default pageService;

@@ -1,12 +1,14 @@
 import $ from "jquery";
 import ytpl from "ytpl";
-import * as ComponentUtils from "./ComponentUtils";
-import ConfigService from "../Services/ConfigService";
-import Component from "./Component";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
-import VideoComponent from "./VideoComponent";
+import ConfigService from "../Services/ConfigService";
+import DataService from "../Services/DataService";
 import PageService from "../Services/PageService";
+import Component from "./Component";
+import * as ComponentUtils from "./ComponentUtils";
+import { Loader } from "./ComponentUtils";
+import VideoComponent from "./VideoComponent";
 
 function arrayMove(arr: any[], oldIndex: number, newIndex: number): any[] {
     if (newIndex >= arr.length) {
@@ -20,16 +22,17 @@ function arrayMove(arr: any[], oldIndex: number, newIndex: number): any[] {
 }
 
 export default class SubComponent extends Component {
-    private sub: Subscription;
-    videoList: JQuery;
-    videoComponents: VideoComponent[] = [];
+    channelId: string;
+    private videoList: JQuery;
+    private videoComponents: VideoComponent[] = [];
+    private loader: Loader;
 
-    isExpanded: boolean;
-    expandButton: JQuery;
+    private isExpanded: boolean;
+    private expandButton: JQuery;
 
     constructor(sub: Subscription) {
         super($("<li/>", {"class": "ytbsp-subscription"}));
-        this.sub = sub;
+        this.channelId = sub.channelId;
         const menuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
         this.expandButton = $("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"}).click(() => {
             this.subShowMore();
@@ -48,53 +51,45 @@ export default class SubComponent extends Component {
                 this.subSeenAllVideos();
             }))
             .append(this.expandButton));
-        menuStrip.append($("<div/>", {"class": "ytbsp-loaderDiv"}).append(ComponentUtils.getLoader(`loader_${this.sub.channelId}`).component));
-        menuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"}).append($("<a/>", {"href": this.sub.channelUrl}).append(this.sub.channelName)));
+        this.loader = ComponentUtils.getLoader(`loader_${sub.channelId}`);
+        menuStrip.append(this.loader.component);
+        menuStrip.append($("<h3/>", {"class": "ytbsp-subTitle"}).append($("<a/>", {"href": sub.channelUrl}).append(sub.channelName)));
         this.component.append(menuStrip);
-        this.videoList = $("<ul/>", {"class": "ytbsp-subVids"});
+        this.videoList = $("<ul/>", {"class": "ytbsp-subVideos"});
         this.component.append(this.videoList);
 
         this.updateHiddenState();
-        ConfigService.addChangeListener(() => this.updateVideoList());
-        PageService.addViewChangeListener(() => this.updateVisibility());
-        this.reloadSubVideos();
-    }
+        this.reloadSubVideos().then(() => {
+            ConfigService.addChangeListener(() => this.updateVideoList());
+            DataService.addSubscriptionChangeListener(sub.channelId, () => this.updateVideoList());
+            PageService.addViewChangeListener(() => this.updateVisibility());
+        }).catch((error) => {
+            console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`);
+            console.error(error);
+        });
 
-    // Hides subscription if needed.
-    updateHiddenState(): void {
-        if (this.videoComponents.length === 0 && ConfigService.getConfig().hideEmptySubs) {
-            this.component.hide();
-            PageService.triggerViewChange();
-        } else {
-            this.component.show();
-            this.updateVisibility();
-        }
     }
 
     // Function to remove all videos.
     subRemoveAllVideos(): void {
-        this.sub.videos.forEach((video, i) => {
-            this.sub.videos[i].removed = true;
+        DataService.updateSubVideos(this.channelId, (video) => {
+            video.removed = true;
         });
-        this.updateVideoList();
     }
 
     // Function to reset all videos.
     subResetAllVideos(): void {
-        this.sub.videos.forEach((video, i) => {
-            this.sub.videos[i].seen = false;
-            this.sub.videos[i].removed = false;
-
+        DataService.updateSubVideos(this.channelId, (video) => {
+            video.seen = false;
+            video.removed = false;
         });
-        this.updateVideoList();
     }
 
     // Function to see all.
     subSeenAllVideos(): void {
-        this.sub.videos.forEach((video, i) => {
-            this.sub.videos[i].seen = true;
+        DataService.updateSubVideos(this.channelId, (video) => {
+            video.seen = true;
         });
-        this.updateVideoList();
     }
 
     // Function to show more.
@@ -109,37 +104,30 @@ export default class SubComponent extends Component {
     }
 
     // Fetches and rebuilds subscription row based on updated videos.
-    reloadSubVideos(): void {
-        ytpl(this.sub.playlistId, {limit: ConfigService.getConfig().maxVideosPerSub, headers: {}})
-            .then((response) => {
-                this.processRequestVids(response);
-                this.updateVideoList();
-            });
-    }
-
-    processRequestVids(response: ytpl.result): void {
-        response.items.forEach((responseItem) => {
-            if (this.sub.videos.some((vid) => vid.id === responseItem.id)) {
-                return;
-            }
-            const video = new Video(responseItem.id);
-            video.title = responseItem.title;
-            video.duration = responseItem.duration;
-            video.thumb = video.thumbLarge = `http://i.ytimg.com/vi/${video.id}/mqdefault.jpg`;
-            video.thumbLarge = `http://i.ytimg.com/vi/${video.id}/maxresdefault.jpg`;
-
-            this.sub.videos.push(video);
+    reloadSubVideos(): Promise<void> {
+        this.loader.showLoader();
+        return new Promise<void>((resolve, reject) => {
+            ytpl(DataService.getSubscription(this.channelId).playlistId, {
+                limit: ConfigService.getConfig().maxVideosPerSub,
+                headers: {}
+            })
+                .then((response) => {
+                    this.processRequestVideos(response);
+                    this.updateVideoList();
+                    resolve();
+                }).catch(reject);
         });
     }
 
     // (Re-)Build the list of videos.
     updateVideoList(): void {
+        this.loader.showLoader();
         let visibleItemIndex = 0;
         const limit = this.isExpanded ? ConfigService.getConfig().maxVideosPerSub : ConfigService.getConfig().maxVideosPerRow;
         $("br", this.videoList).remove();
         // Now loop through the videos.
-        this.sub.videos.forEach((video) => {
-            const oldIndex = this.videoComponents.findIndex((vidComp) => vidComp.video.id === video.id);
+        DataService.getSubscription(this.channelId).videos.forEach((video) => {
+            const oldIndex = this.videoComponents.findIndex((vidComp) => vidComp.videoId === video.id);
             // if the list is full, return.
             if (visibleItemIndex >= limit) {
                 // if the item is already in the list but exceeds the limit, remove it.
@@ -171,7 +159,7 @@ export default class SubComponent extends Component {
                 }
             } else if (!video.removed && !(ConfigService.getConfig().hideSeenVideos && video.seen)) {
                 // Create new component for video.
-                const newVidComp = new VideoComponent(video, this);
+                const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
                 // Insert new thumb.
                 if (visibleItemIndex === 0) {
@@ -195,9 +183,38 @@ export default class SubComponent extends Component {
 
         // Handle visibility.
         this.updateHiddenState();
+        this.loader.hideLoader();
     }
 
-    updateVisibility(): void {
+    // Hides subscription if needed.
+    private updateHiddenState(): void {
+        if (this.videoComponents.length === 0 && ConfigService.getConfig().hideEmptySubs) {
+            this.component.hide();
+            PageService.triggerViewChange();
+        } else {
+            this.component.show();
+            this.updateVisibility();
+        }
+    }
+
+    private processRequestVideos(response: ytpl.result): void {
+        response.items.forEach((responseItem) => {
+            DataService.upsertVideo(responseItem.id, ((currentVideo) => {
+                if ("undefined" === typeof currentVideo) {
+                    currentVideo = new Video(responseItem.id);
+                }
+                currentVideo.updateVideo({
+                    title: responseItem.title,
+                    duration: responseItem.duration,
+                    thumb: `https://i.ytimg.com/vi/${responseItem.id}/mqdefault.jpg`,
+                    thumbLarge: `https://i.ytimg.com/vi/${responseItem.id}/maxresdefault.jpg`
+                });
+                return currentVideo;
+            }), this.channelId);
+        });
+    }
+
+    private updateVisibility(): void {
         if (this.isInView()) {
             this.videoComponents.forEach(element => {
                 element.updateVisibility();
