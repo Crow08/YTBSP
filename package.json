@@ -3,6 +3,7 @@
     "version": "3.0.0",
     "description": "Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
     "scripts": {
+        "lint": "eslint --format unix src/",
         "build": "webpack --config webpack.config.js"
     },
     "private": true,
