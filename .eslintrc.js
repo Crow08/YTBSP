@@ -21,6 +21,7 @@ module.exports = {
         "@typescript-eslint"
     ],
     "rules": {
+        // Here is the core list of rules: https://eslint.org/docs/rules/
         "indent": ["error", 4],
         "quotes": ["error", "double"],
         "semi": ["error", "always"],
