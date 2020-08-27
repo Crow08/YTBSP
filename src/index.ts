@@ -1,7 +1,8 @@
 import YTBSPComponent from "./Components/YTBSPComponent";
 import Subscription from "./Model/Subscription";
 import ConfigService from "./Services/ConfigService";
-import dataService from "./Services/DataService";
+import DataService from "./Services/DataService";
+import MarkAsSeenService from "./Services/MarkAsSeenService";
 import PageService, { PageState } from "./Services/PageService";
 import PersistenceService from "./Services/PersistenceService";
 
@@ -21,7 +22,7 @@ PersistenceService.loadConfig(false).then((config) => {
         subs.forEach((subDTO) => {
             const sub = new Subscription();
             sub.updateSubscription(subDTO);
-            dataService.upsertSubscription(sub.channelId, () => sub);
+            DataService.upsertSubscription(sub.channelId, () => sub);
         });
         atScriptDataLoaded();
     });
@@ -31,6 +32,7 @@ PageService.addDocumentReadyListener(() => {
     console.log("document ready");
     PageService.injectYTBSP(ytbspComponent);
     PageService.startPageObserver();
+    MarkAsSeenService.checkPage();
 
     PageService.updateNativeStyleRuleModifications();
     PageService.addPageChangeListener(() => {

@@ -82,6 +82,7 @@ const debounce = (func: () => void) => {
 
 class PageService {
 
+    isDocumentReady = false;
     private observer: MutationObserver;
     private oldHref: string;
     private isFullscreen: boolean;
@@ -89,7 +90,6 @@ class PageService {
     private onToggleFullscreenCallbackList: ((isFullscreen: boolean) => void)[] = [];
     private onDocumentReadyCallbackList: (() => void)[] = [];
     private onViewChangeCallbackList: (() => void)[] = [];
-    isDocumentReady = false;
 
     constructor() {
         this.oldHref = document.location.href;
@@ -132,12 +132,6 @@ class PageService {
         window.addEventListener("scroll", debounce(() => this.handleViewChange()), false);
         window.addEventListener("resize", debounce(() => this.handleViewChange()), false);
     }
-
-    private handleViewChange = () => {
-        this.onViewChangeCallbackList.forEach(callback => {
-            callback();
-        });
-    };
 
     startPageObserver() {
         this.observer.observe(document.querySelector("body"), {"childList": true, "subtree": true});
@@ -253,6 +247,19 @@ class PageService {
     getPlayerControls(): JQuery {
         return $(YT_PLAYER_CONTROL);
     }
+
+    getChannelId(): string | undefined {
+        if (0 !== $(YT_CHANNEL_LINK).length) {
+            return $(YT_CHANNEL_LINK).attr("href").match(/\/channel\/([^&]*)/u)[1];
+        }
+        return undefined;
+    }
+
+    private handleViewChange = () => {
+        this.onViewChangeCallbackList.forEach(callback => {
+            callback();
+        });
+    };
 }
 
 const pageService = new PageService();
