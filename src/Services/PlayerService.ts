@@ -35,10 +35,12 @@ class PlayerService {
         PageService.addPageChangeListener(() => this.resetAutoplay());
     }
 
-    togglePictureInPicturePlayer() {
-        const playerParentRef = PageService.getPlayerControls();
-        if (playerParentRef && playerParentRef[0] && playerParentRef[0]["player"]) {
-            playerParentRef[0]["player"].togglePictureInPicture();
+    togglePictureInPicturePlayer(on: boolean) {
+        const player = PageService.getPlayer();
+        if(on && player.length !== 0) {
+            player[0]["requestPictureInPicture"]();
+        } else{
+            document["exitPictureInPicture"]();
         }
     }
 
