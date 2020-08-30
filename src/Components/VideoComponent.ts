@@ -1,7 +1,9 @@
+import PlayerService from "../Services/PlayerService";
 import Component from "./Component";
 import Video from "../Model/Video";
 import PageService from "../Services/PageService";
 import SubComponent from "./SubComponent";
+import ClickEvent = JQuery.ClickEvent;
 
 export default class VideoComponent extends Component {
     video: Video;
@@ -62,12 +64,13 @@ export default class VideoComponent extends Component {
 
     }
 
-    handleOpenVideo(event) {
+    handleOpenVideo(event: ClickEvent) {
         event.preventDefault();
         if (event.target.classList.contains(this.closeItem.attr("class"))) {
             return;
         }
         PageService.openVideoWithSPF(this.video.id);
+        PlayerService.togglePictureInPicturePlayer(false);
     }
 
     updateVisibility() {
