@@ -2,6 +2,7 @@ import $ from "jquery";
 import PageService from "../Services/PageService";
 import persistenceService from "../Services/PersistenceService";
 import playerService from "../Services/PlayerService";
+import BackupModalComponent from "./BackupModalComponent";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import ModalComponent from "./ModalComponent";
@@ -38,6 +39,13 @@ export default class YTBSPComponent extends Component {
             "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}}
         );
         fixedBar.append(settingsButton);
+        const backupButton = $("<button/>", {
+            "id": "ytbsp-backup",
+            "class": "ytbsp-func ytbsp-hideWhenNative",
+            "html": "Backup",
+            "on": {"click": () => this.modal.openModal(new BackupModalComponent(this.modal))}}
+        );
+        fixedBar.append(backupButton);
         this.component.append(fixedBar);
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
