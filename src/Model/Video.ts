@@ -3,13 +3,13 @@ import VideoDTO from "./VideoDTO";
 export default class Video {
     id: string;
 
-    title;
-    thumb;
-    thumbLarge;
-    duration;
-    uploaded;
-    pubDate;
-    clicks;
+    title: string;
+    thumb: string;
+    thumbLarge: string;
+    duration: string;
+    uploaded: string;
+    pubDate: string;
+    clicks: string;
 
     seen = false;
     removed = false;

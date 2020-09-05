@@ -138,6 +138,18 @@
         font-size: 1.4rem;
         line-height: 1.6rem;
         font-weight: 500;
+        position: relative;
+    }
+    
+    .ytbsp-title-large {
+        position: relative;
+        z-index: 4;
+        .bg-color-mixin();
+        text-align: center;
+        border-width: 0px 2px 2px 2px;
+        border-style: solid;
+        .alt-border-color-mixin();
+        padding: 2px;
     }
 }
 
@@ -148,17 +160,6 @@
     text-decoration: none;
     font-size: 1.6rem;
     font-weight: 500;
-}
-
-#ytbsp-subs .ytbsp-title-large {
-    position: relative;
-    z-index: 1;
-    .bg-color-mixin();
-    text-align: center;
-    border-width: 0px 2px 2px 2px;
-    border-style: solid;
-    .alt-border-color-mixin();
-    padding: 2px;
 }
 
 .ytbsp-clip {
@@ -175,7 +176,7 @@
 }
 
 .ytbsp-clip-large {
-    z-index: 1;
+    z-index: 4;
     top: -45px;
     margin-bottom: -44px;
     border: none;
