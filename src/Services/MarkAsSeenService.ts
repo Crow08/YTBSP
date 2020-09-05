@@ -1,13 +1,13 @@
-import ConfigService from "./ConfigService";
-import DataService from "./DataService";
-import PageService from "./PageService";
+import configService from "./ConfigService";
+import dataService from "./DataService";
+import pageService from "./PageService";
 import Timeout = NodeJS.Timeout;
 
 class MarkAsSeenService {
     markAsSeenTimeout: Timeout = null;
 
     constructor() {
-        PageService.addPageChangeListener(() => this.checkPage());
+        pageService.addPageChangeListener(() => this.checkPage());
     }
 
     checkPage() {
@@ -20,16 +20,16 @@ class MarkAsSeenService {
     // Mark as seen after at least X seconds.
     private startMarkAsSeenTimeout(): void {
         this.markAsSeenTimeout = setTimeout(() => {
-            const videoId = location.href.match(/v=([^&]{11})/u)[1];
+            const videoId = /v=([^&]{11})/u.exec(location.href)[1];
             if (videoId) {
-                DataService.upsertVideo(videoId, (video) => {
+                dataService.upsertVideo(videoId, (video) => {
                     if ("undefined" !== typeof video) {
                         video.updateVideo({seen: true});
                     }
                     return video;
-                }, PageService.getChannelId());
+                }, false, pageService.getChannelId());
             }
-        }, ConfigService.getConfig().timeToMarkAsSeen * 1000);
+        }, configService.getConfig().timeToMarkAsSeen * 1000);
     }
 }
 

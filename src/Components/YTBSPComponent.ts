@@ -1,5 +1,5 @@
 import $ from "jquery";
-import PageService from "../Services/PageService";
+import pageService from "../Services/PageService";
 import persistenceService from "../Services/PersistenceService";
 import playerService from "../Services/PlayerService";
 import BackupModalComponent from "./BackupModalComponent";
@@ -36,27 +36,27 @@ export default class YTBSPComponent extends Component {
             "id": "ytbsp-settings",
             "class": "ytbsp-func ytbsp-hideWhenNative",
             "html": "&#x2699;",
-            "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}}
-        );
+            "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}
+        });
         fixedBar.append(settingsButton);
         const backupButton = $("<button/>", {
             "id": "ytbsp-backup",
             "class": "ytbsp-func ytbsp-hideWhenNative",
             "html": "Backup",
-            "on": {"click": () => this.modal.openModal(new BackupModalComponent(this.modal))}}
-        );
+            "on": {"click": () => this.modal.openModal(new BackupModalComponent(this.modal))}
+        });
         fixedBar.append(backupButton);
         this.component.append(fixedBar);
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
 
-        PageService.addPageChangeListener(() => this.updateLocation());
-        PageService.addDocumentReadyListener(() => {
+        pageService.addPageChangeListener(() => this.updateLocation());
+        pageService.addDocumentReadyListener(() => {
             this.updateLocation();
-            this.setTheme(PageService.isDarkModeEnabled());
+            this.setTheme(pageService.isDarkModeEnabled());
         });
 
-        PageService.addToggleFullscreenListener((isFullscreen) => {
+        pageService.addToggleFullscreenListener((isFullscreen) => {
             if (isFullscreen) {
                 this.component.hide();
             } else {
@@ -78,22 +78,22 @@ export default class YTBSPComponent extends Component {
     }
 
     showNative(): void {
-        PageService.showNative();
+        pageService.showNative();
         this.subList.component.hide();
         this.isNative = true;
         this.toggleSlider.setValue(this.isNative);
         if (this.toggleGuide) {
-            PageService.toggleGuide();
+            pageService.toggleGuide();
         }
     }
 
     hideNative(): void {
-        PageService.hideNative();
+        pageService.hideNative();
         this.subList.component.show();
         this.isNative = false;
         this.toggleSlider.setValue(this.isNative);
         if (this.toggleGuide) {
-            PageService.toggleGuide();
+            pageService.toggleGuide();
         }
     }
 
@@ -115,7 +115,7 @@ export default class YTBSPComponent extends Component {
         }
     }
 
-    private toggleLoaderRefresh(loading: boolean) {
+    private toggleLoaderRefresh(loading: boolean): void {
         if (loading) {
             this.loader.component.show();
             this.refresh.hide();

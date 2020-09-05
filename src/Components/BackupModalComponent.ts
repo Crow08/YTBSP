@@ -1,6 +1,6 @@
 import $ from "jquery";
-import DataService from "../Services/DataService";
-import PersistenceService from "../Services/PersistenceService";
+import dataService from "../Services/DataService";
+import persistenceService from "../Services/PersistenceService";
 import Component from "./Component";
 import ModalComponent from "./ModalComponent";
 
@@ -29,7 +29,7 @@ export default class BackupModalComponent extends Component {
         this.component.append(this.buildBottomControls());
     }
 
-    private buildBottomControls() {
+    private buildBottomControls(): JQuery {
         return $("<div/>", {"id": "ytbsp-modal-end-div"})
             .append($("<input/>", {
                 "type": "submit",
@@ -59,23 +59,23 @@ export default class BackupModalComponent extends Component {
         input.onchange = async () => {
             const files = Array.from(input.files);
             if (files[0]) {
-                PersistenceService.addSaveListener((state) => {
+                persistenceService.addSaveListener((state) => {
                     if (state == "end") {
                         location.reload();
                     }
                 });
                 this.modal.closeModal();
-                PersistenceService.saveVideoInfo(await files[0].text());
+                persistenceService.saveVideoInfo(await files[0].text());
 
             }
         };
         input.click();
     }
 
-    private exportData() {
+    private exportData(): void {
         const link = document.createElement("a");
         link.download = "data.json";
-        const blob = new Blob([DataService.exportVideoData()], {"type": "text/json"});
+        const blob = new Blob([dataService.exportVideoData()], {"type": "text/json"});
         link.href = window.URL.createObjectURL(blob);
         link.click();
     }

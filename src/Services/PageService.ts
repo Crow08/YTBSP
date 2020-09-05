@@ -80,6 +80,20 @@ const debounce = (func: () => void) => {
     };
 };
 
+interface YTApp {
+    fire: (key: string, data: {
+        endpoint?: {
+            watchEndpoint: {
+                videoId: string
+            },
+            webNavigationEndpointData: {
+                url: string,
+                webPageType: string
+            }
+        }
+    }) => void;
+}
+
 class PageService {
 
     isDocumentReady = false;
@@ -206,7 +220,7 @@ class PageService {
     }
 
     isDarkModeEnabled(): boolean {
-        const color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/u);
+        const color = getComputedStyle(document.documentElement).backgroundColor.match(/\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/ug);
         const dark = document.documentElement.getAttribute("dark");
         return dark !== null || (color && 384 > (parseInt(color[1], 10) + parseInt(color[2], 10) + parseInt(color[3], 10)));
     }
@@ -220,7 +234,7 @@ class PageService {
     }
 
     toggleGuide(): void {
-        const ytdApp = document.querySelector("ytd-app");
+        const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
         ytdApp["fire"]("yt-guide-toggle", {});
         // Workaround: After opening guide sidebar scroll information gets lost.
         setTimeout(() => {
@@ -230,7 +244,7 @@ class PageService {
 
     openVideoWithSPF(id: string) {
         // Using a native YT event to mimic a native navigation.
-        const ytdApp = document.querySelector(YT_APP);
+        const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
         ytdApp["fire"]("yt-navigate", {
             "endpoint": {
                 "watchEndpoint": {
@@ -250,7 +264,7 @@ class PageService {
 
     getChannelId(): string | undefined {
         if (0 !== $(YT_CHANNEL_LINK).length) {
-            return $(YT_CHANNEL_LINK).attr("href").match(/\/channel\/([^&]*)/u)[1];
+            return /\/channel\/([^&]*)/u.exec($(YT_CHANNEL_LINK).attr("href"))[1];
         }
         return undefined;
     }

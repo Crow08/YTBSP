@@ -1,42 +1,42 @@
 import YTBSPComponent from "./Components/YTBSPComponent";
 import Subscription from "./Model/Subscription";
-import ConfigService from "./Services/ConfigService";
-import DataService from "./Services/DataService";
-import MarkAsSeenService from "./Services/MarkAsSeenService";
-import PageService, { PageState } from "./Services/PageService";
-import PersistenceService from "./Services/PersistenceService";
+import configService from "./Services/ConfigService";
+import dataService from "./Services/DataService";
+import markAsSeenService from "./Services/MarkAsSeenService";
+import pageService, { PageState } from "./Services/PageService";
+import persistenceService from "./Services/PersistenceService";
 
 console.log("script start");
 
-PageService.updateNativeStyleRuleModifications(PageState.LOADING);
+pageService.updateNativeStyleRuleModifications(PageState.LOADING);
 const ytbspComponent = new YTBSPComponent();
 
-PersistenceService.loadConfig(false).then((config) => {
-    ConfigService.setConfig(config);
+persistenceService.loadConfig(false).then((config) => {
+    configService.setConfig(config);
     if (config.useRemoteData) {
-        PersistenceService.loadConfig(true).then((remoteConfig) => {
-            ConfigService.setConfig(remoteConfig);
-        });
+        persistenceService.loadConfig(true).then((remoteConfig) => {
+            configService.setConfig(remoteConfig);
+        }).catch(e => console.error(e));
     }
-    PersistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
+    persistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
         subs.forEach((subDTO) => {
             const sub = new Subscription();
             sub.updateSubscription(subDTO);
-            DataService.upsertSubscription(sub.channelId, () => sub);
+            dataService.upsertSubscription(sub.channelId, () => sub);
         });
         atScriptDataLoaded();
-    });
-});
+    }).catch(e => console.error(e));
+}).catch(e => console.error(e));
 
-PageService.addDocumentReadyListener(() => {
+pageService.addDocumentReadyListener(() => {
     console.log("document ready");
-    PageService.injectYTBSP(ytbspComponent);
-    PageService.startPageObserver();
-    MarkAsSeenService.checkPage();
+    pageService.injectYTBSP(ytbspComponent);
+    pageService.startPageObserver();
+    markAsSeenService.checkPage();
 
-    PageService.updateNativeStyleRuleModifications();
-    PageService.addPageChangeListener(() => {
-        PageService.updateNativeStyleRuleModifications();
+    pageService.updateNativeStyleRuleModifications();
+    pageService.addPageChangeListener(() => {
+        pageService.updateNativeStyleRuleModifications();
     });
 });
 

@@ -1,8 +1,8 @@
 import $ from "jquery";
 import Configuration from "../Model/Configuration";
 import Subscription from "../Model/Subscription";
-import ConfigService from "../Services/ConfigService";
-import DataService from "../Services/DataService";
+import configService from "../Services/ConfigService";
+import dataService from "../Services/DataService";
 import ytsub from "../ytsub";
 import Component from "./Component";
 import SubComponent from "./SubComponent";
@@ -27,12 +27,12 @@ export default class SubListComponent extends Component {
             "html": "Reset all videos"
         }).click(() => this.resetAllVideos()));
         this.hideSeenVideosCb = $("<input/>", {"id": "ytbsp-hideSeenVideosCb", "type": "checkbox"})
-            .change(() => ConfigService.updateConfig({hideSeenVideos: this.hideSeenVideosCb.prop("checked")}));
+            .change(() => configService.updateConfig({hideSeenVideos: this.hideSeenVideosCb.prop("checked") as boolean}));
         strip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func"})
             .append(this.hideSeenVideosCb)
             .append("Hide seen videos"));
         this.hideEmptySubsCb = $("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox"})
-            .change(() => ConfigService.updateConfig({hideEmptySubs: this.hideEmptySubsCb.prop("checked")}));
+            .change(() => configService.updateConfig({hideEmptySubs: this.hideEmptySubsCb.prop("checked") as boolean}));
         strip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func"})
             .append(this.hideEmptySubsCb)
             .append("Hide empty subs"));
@@ -42,8 +42,8 @@ export default class SubListComponent extends Component {
 
         ytsub().then((subs) => this.initSubs(subs)).catch((err) => console.error(err));
 
-        this.onUpdateConfig(ConfigService.getConfig());
-        ConfigService.addChangeListener((config) => this.onUpdateConfig(config));
+        this.onUpdateConfig(configService.getConfig());
+        configService.addChangeListener((config) => this.onUpdateConfig(config));
     }
 
     removeAllVideos(): void {
@@ -58,15 +58,15 @@ export default class SubListComponent extends Component {
         });
     }
 
-    updateAllSubs() {
+    updateAllSubs(): void {
         this.subComponents.forEach((comp) => {
-            comp.reloadSubVideos().catch((error) => console.log(error));
+            comp.reloadSubVideos().catch((error) => console.error(error));
         });
     }
 
     private initSubs(subs: Subscription[]): void {
         subs.forEach(sub => {
-            const cachedSub = DataService.getSubscription(sub.channelId);
+            const cachedSub = dataService.getSubscription(sub.channelId);
             if ("undefined" !== typeof cachedSub) {
                 sub.updateSubscription(cachedSub);
             }
@@ -74,8 +74,8 @@ export default class SubListComponent extends Component {
         });
     }
 
-    private setupNewSubscription(sub: Subscription) {
-        DataService.upsertSubscription(sub.channelId, () => sub);
+    private setupNewSubscription(sub: Subscription): void {
+        dataService.upsertSubscription(sub.channelId, () => sub);
         const subComp = new SubComponent(sub);
         this.subComponents.push(subComp);
         this.subList.append(subComp.component);

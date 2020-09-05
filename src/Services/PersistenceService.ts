@@ -1,6 +1,6 @@
 import Configuration, { Resolutions } from "../Model/Configuration";
 import SubscriptionDTO from "../Model/SubscriptionDTO";
-import ConfigService from "./ConfigService";
+import configService from "./ConfigService";
 import Timeout = NodeJS.Timeout;
 
 const stringToResolution = (value: string): Resolutions | undefined =>
@@ -22,7 +22,7 @@ class PersistenceService {
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
 
-    private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string) {
+    private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
         if (property !== null) {
             const resolution = stringToResolution(property);
@@ -32,7 +32,7 @@ class PersistenceService {
         }
     }
 
-    private static applyNumberPropertyFromLocalStorage(config: Configuration, key: string) {
+    private static applyNumberPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
         if (property !== null) {
             const number = Number(property);
@@ -42,7 +42,7 @@ class PersistenceService {
         }
     }
 
-    private static applyBooleanPropertyFromLocalStorage(config: Configuration, key: string) {
+    private static applyBooleanPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
         if (property !== null) {
             config[key] = "1" === property;
@@ -51,7 +51,7 @@ class PersistenceService {
 
     public loadConfig(remote?: boolean): Promise<Configuration> {
         if ("undefined" === typeof remote) {
-            remote = ConfigService.getConfig().useRemoteData;
+            remote = configService.getConfig().useRemoteData;
         }
         if (remote) {
             return this.loadRemoteConfig();
@@ -61,7 +61,7 @@ class PersistenceService {
 
     public saveConfing(config: Configuration, remote?: boolean): Promise<void> {
         if ("undefined" === typeof remote) {
-            remote = ConfigService.getConfig().useRemoteData;
+            remote = configService.getConfig().useRemoteData;
         }
         if (remote) {
             return this.saveRemoteConfig(config);
@@ -71,7 +71,7 @@ class PersistenceService {
 
     public loadVideoInfo(remote?: boolean): Promise<SubscriptionDTO[]> {
         if ("undefined" === typeof remote) {
-            remote = ConfigService.getConfig().useRemoteData;
+            remote = configService.getConfig().useRemoteData;
         }
         console.log("LOAD");
         if (remote) {
@@ -82,7 +82,7 @@ class PersistenceService {
 
     public saveVideoInfo(subs: string, remote?: boolean): void {
         if ("undefined" === typeof remote) {
-            remote = ConfigService.getConfig().useRemoteData;
+            remote = configService.getConfig().useRemoteData;
         }
         if (!this.saveQueued) {
             this.saveQueued = true;
@@ -193,7 +193,7 @@ class PersistenceService {
             // If we have a data parse it.
             if (null !== rawData && "" !== rawData) {
                 try {
-                    subs = JSON.parse(rawData);
+                    subs = JSON.parse(rawData) as unknown as SubscriptionDTO[];
                 } catch (e) {
                     reject("Error parsing cache!");
                 }
@@ -221,7 +221,7 @@ class PersistenceService {
         }));
     }
 
-    private onNotifySave(state: "start" | "end") {
+    private onNotifySave(state: "start" | "end"): void {
         this.onSaveCallbackList.forEach(callback => {
             callback(state);
         });

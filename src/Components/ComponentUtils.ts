@@ -18,7 +18,7 @@ export class Slider extends Component {
     }
 
     getValue(): boolean {
-        return this.input.prop("checked");
+        return this.input.prop("checked") as boolean;
     }
 
     setValue(newValue: boolean): void {
@@ -36,7 +36,7 @@ export class Loader extends Component {
     }
 
     // Displays the Loader.
-    showLoader() {
+    showLoader(): void {
         this.component.css("width", "16px");
         setTimeout(() => {
             this.loader.css("opacity", "1");
@@ -44,7 +44,7 @@ export class Loader extends Component {
     }
 
     // Removes the Loader.
-    hideLoader() {
+    hideLoader(): void {
         setTimeout(() => {
             this.loader.css("opacity", "0");
             setTimeout(() => {

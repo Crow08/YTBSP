@@ -1,4 +1,4 @@
-import ConfigService from "../Services/ConfigService";
+import configService from "../Services/ConfigService";
 
 export default class Component {
     component: JQuery;
@@ -11,7 +11,7 @@ export default class Component {
         const offsetTop = this.component.offset().top;
         const screenTop = document.body.scrollTop || document.documentElement.scrollTop;
         const screenBottom = screenTop + window.innerHeight;
-        const threshold = ConfigService.getConfig().screenThreshold;
+        const threshold = configService.getConfig().screenThreshold;
 
         return ((offsetTop - threshold) < screenBottom) && ((offsetTop + threshold) > screenTop);
     }

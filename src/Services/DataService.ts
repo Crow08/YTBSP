@@ -1,6 +1,6 @@
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
-import PersistenceService from "./PersistenceService";
+import persistenceService from "./PersistenceService";
 
 class DataService {
     private subscriptions: Subscription[] = [];
@@ -19,7 +19,7 @@ class DataService {
         return sub.videos.find(vid => vid.id === videoId);
     }
 
-    upsertSubscription(channelId: string, func: ((sub: Subscription | undefined) => Subscription), silent= false): void {
+    upsertSubscription(channelId: string, func: ((sub: Subscription | undefined) => Subscription), silent = false): void {
         const sub = this.subscriptions.find(curSub => curSub.channelId === channelId);
         const newSub = func(sub);
         if ("undefined" === typeof sub) {
@@ -27,12 +27,12 @@ class DataService {
         } else {
             sub.updateSubscription(newSub);
         }
-        if(!silent) {
+        if (!silent) {
             this.onDataUpdated(channelId);
         }
     }
 
-    upsertVideo(videoId: string, func: ((video: Video | undefined) => Video), silent= false, channelId?: string,): void {
+    upsertVideo(videoId: string, func: ((video: Video | undefined) => Video), silent = false, channelId?: string,): void {
         const sub = this.getSubscriptionForVideo(videoId, channelId);
         if ("undefined" === typeof sub) {
             return;
@@ -44,16 +44,16 @@ class DataService {
         } else {
             video.updateVideo(newVideo);
         }
-        if(!silent) {
+        if (!silent) {
             this.onDataUpdated(sub.channelId);
         }
     }
 
-    updateSubVideos(channelId: string, func: (vid: Video) => void, silent= false): void {
+    updateSubVideos(channelId: string, func: (vid: Video) => void, silent = false): void {
         this.getSubscription(channelId).videos.forEach(video => {
             func(video);
         });
-        if(!silent) {
+        if (!silent) {
             this.onDataUpdated(channelId);
         }
     }
@@ -85,7 +85,7 @@ class DataService {
                 callback();
             });
         }
-        PersistenceService.saveVideoInfo(this.exportVideoData());
+        persistenceService.saveVideoInfo(this.exportVideoData());
     }
 }
 

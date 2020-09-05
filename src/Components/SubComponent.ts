@@ -2,24 +2,13 @@ import $ from "jquery";
 import ytpl from "ytpl";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
-import ConfigService from "../Services/ConfigService";
-import DataService from "../Services/DataService";
-import PageService from "../Services/PageService";
+import configService from "../Services/ConfigService";
+import dataService from "../Services/DataService";
+import pageService from "../Services/PageService";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import { Loader } from "./ComponentUtils";
 import VideoComponent from "./VideoComponent";
-
-function arrayMove(arr: any[], oldIndex: number, newIndex: number): any[] {
-    if (newIndex >= arr.length) {
-        let k = newIndex - arr.length + 1;
-        while (k--) {
-            arr.push(undefined);
-        }
-    }
-    arr.splice(newIndex, 0, arr.splice(oldIndex, 1)[0]);
-    return arr;
-}
 
 export default class SubComponent extends Component {
     channelId: string;
@@ -60,9 +49,9 @@ export default class SubComponent extends Component {
 
         this.updateHiddenState();
         this.reloadSubVideos().then(() => {
-            ConfigService.addChangeListener(() => this.updateVideoList());
-            DataService.addSubscriptionChangeListener(sub.channelId, () => this.updateVideoList());
-            PageService.addViewChangeListener(() => this.updateVisibility());
+            configService.addChangeListener(() => this.updateVideoList());
+            dataService.addSubscriptionChangeListener(sub.channelId, () => this.updateVideoList());
+            pageService.addViewChangeListener(() => this.updateVisibility());
         }).catch((error) => {
             console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`);
             console.error(error);
@@ -70,16 +59,27 @@ export default class SubComponent extends Component {
 
     }
 
+    private static moveVideoComponent(arr: VideoComponent[], oldIndex: number, newIndex: number): VideoComponent[] {
+        if (newIndex >= arr.length) {
+            let k = newIndex - arr.length + 1;
+            while (k--) {
+                arr.push(undefined);
+            }
+        }
+        arr.splice(newIndex, 0, arr.splice(oldIndex, 1)[0]);
+        return arr;
+    }
+
     // Function to remove all videos.
     subRemoveAllVideos(): void {
-        DataService.updateSubVideos(this.channelId, (video) => {
+        dataService.updateSubVideos(this.channelId, (video) => {
             video.removed = true;
         });
     }
 
     // Function to reset all videos.
     subResetAllVideos(): void {
-        DataService.updateSubVideos(this.channelId, (video) => {
+        dataService.updateSubVideos(this.channelId, (video) => {
             video.seen = false;
             video.removed = false;
         });
@@ -87,7 +87,7 @@ export default class SubComponent extends Component {
 
     // Function to see all.
     subSeenAllVideos(): void {
-        DataService.updateSubVideos(this.channelId, (video) => {
+        dataService.updateSubVideos(this.channelId, (video) => {
             video.seen = true;
         });
     }
@@ -107,8 +107,8 @@ export default class SubComponent extends Component {
     reloadSubVideos(): Promise<void> {
         this.loader.showLoader();
         return new Promise<void>((resolve, reject) => {
-            ytpl(DataService.getSubscription(this.channelId).playlistId, {
-                limit: ConfigService.getConfig().maxVideosPerSub,
+            ytpl(dataService.getSubscription(this.channelId).playlistId, {
+                limit: configService.getConfig().maxVideosPerSub,
                 headers: {}
             })
                 .then((response) => {
@@ -123,10 +123,10 @@ export default class SubComponent extends Component {
     updateVideoList(): void {
         this.loader.showLoader();
         let visibleItemIndex = 0;
-        const limit = this.isExpanded ? ConfigService.getConfig().maxVideosPerSub : ConfigService.getConfig().maxVideosPerRow;
+        const limit = this.isExpanded ? configService.getConfig().maxVideosPerSub : configService.getConfig().maxVideosPerRow;
         $("br", this.videoList).remove();
         // Now loop through the videos.
-        DataService.getSubscription(this.channelId).videos.forEach((video) => {
+        dataService.getSubscription(this.channelId).videos.forEach((video) => {
             const oldIndex = this.videoComponents.findIndex((vidComp) => vidComp.videoId === video.id);
             // if the list is full, return.
             if (visibleItemIndex >= limit) {
@@ -140,14 +140,14 @@ export default class SubComponent extends Component {
             // if the element is already in the list.
             if (-1 !== oldIndex) {
                 // If that video is removed search for it and remove it when found.
-                if (video.removed || (ConfigService.getConfig().hideSeenVideos && video.seen)) {
+                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen)) {
                     this.videoComponents[oldIndex].component.remove();
                     this.videoComponents.splice(oldIndex, 1);
                 } else {
                     this.videoComponents[oldIndex].update();
                     // if the video position has changed, move it.
                     if (visibleItemIndex !== oldIndex) {
-                        arrayMove(this.videoComponents, oldIndex, visibleItemIndex);
+                        SubComponent.moveVideoComponent(this.videoComponents, oldIndex, visibleItemIndex);
                         this.videoComponents[oldIndex].component.remove();
                         if (visibleItemIndex === 0) {
                             this.videoList.prepend(this.videoComponents[0].component);
@@ -157,7 +157,7 @@ export default class SubComponent extends Component {
                     }
                     visibleItemIndex++;
                 }
-            } else if (!video.removed && !(ConfigService.getConfig().hideSeenVideos && video.seen)) {
+            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen)) {
                 // Create new component for video.
                 const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
@@ -170,7 +170,7 @@ export default class SubComponent extends Component {
                 visibleItemIndex++;
             }
             // Add a line break if the maximum number of items per row is exceeded.
-            if (1 < visibleItemIndex && 0 === (visibleItemIndex - 1) % ConfigService.getConfig().maxVideosPerRow) {
+            if (1 < visibleItemIndex && 0 === (visibleItemIndex - 1) % configService.getConfig().maxVideosPerRow) {
                 $("</br>").insertBefore(this.videoComponents[visibleItemIndex - 1].component);
             }
         }, this);
@@ -188,9 +188,9 @@ export default class SubComponent extends Component {
 
     // Hides subscription if needed.
     private updateHiddenState(): void {
-        if (this.videoComponents.length === 0 && ConfigService.getConfig().hideEmptySubs) {
+        if (this.videoComponents.length === 0 && configService.getConfig().hideEmptySubs) {
             this.component.hide();
-            PageService.triggerViewChange();
+            pageService.triggerViewChange();
         } else {
             this.component.show();
             this.updateVisibility();
@@ -199,7 +199,7 @@ export default class SubComponent extends Component {
 
     private processRequestVideos(response: ytpl.result): void {
         response.items.forEach((responseItem) => {
-            DataService.upsertVideo(responseItem.id, ((currentVideo) => {
+            dataService.upsertVideo(responseItem.id, ((currentVideo) => {
                 if ("undefined" === typeof currentVideo) {
                     currentVideo = new Video(responseItem.id);
                 }

@@ -1,10 +1,10 @@
 import moment from "moment";
 import ytdl from "ytdl-core";
-import PlayerService from "../Services/PlayerService";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
-import PageService from "../Services/PageService";
+import pageService from "../Services/PageService";
+import playerService from "../Services/PlayerService";
 import Component from "./Component";
 import ClickEvent = JQuery.ClickEvent;
 import Timeout = NodeJS.Timeout;
@@ -82,7 +82,27 @@ export default class VideoComponent extends Component {
         }
     }
 
-    private getAdditionalVideoInfos() {
+    toggleSeen(): void {
+        dataService.upsertVideo(this.videoId, (video) => {
+            video.seen = !video.seen;
+            return video;
+        });
+    }
+
+    // Abort enlargement process if not already open.
+    enlargeCancelTimeout(): void {
+        clearTimeout(this.enlargeTimeout);
+        this.enlargeTimeout = null;
+    }
+
+    update(): void {
+        const video = dataService.getVideo(this.videoId);
+        this.updateSeenButton(video);
+        this.updateClicks(video);
+        this.updateUploaded(video);
+    }
+
+    private getAdditionalVideoInfos(): void {
         ytdl.getBasicInfo(this.videoId).then(info => {
             const uploaded = moment(info.videoDetails.uploadDate);
             let uploadedText: string;
@@ -110,26 +130,6 @@ export default class VideoComponent extends Component {
         }).catch((e) => console.error(e));
     }
 
-    toggleSeen(): void {
-        dataService.upsertVideo(this.videoId, (video) => {
-            video.seen = !video.seen;
-            return video;
-        });
-    }
-
-    // Abort enlargement process if not already open.
-    enlargeCancelTimeout() {
-        clearTimeout(this.enlargeTimeout);
-        this.enlargeTimeout = null;
-    }
-
-    update() {
-        const video = dataService.getVideo(this.videoId);
-        this.updateSeenButton(video);
-        this.updateClicks(video);
-        this.updateUploaded(video);
-    }
-
     private updateClicks(video: Video): void {
         this.clicksItem.html(video.clicks);
     }
@@ -150,11 +150,11 @@ export default class VideoComponent extends Component {
 
     private handleOpenVideo(event: ClickEvent): void {
         event.preventDefault();
-        if (event.target.classList.contains(this.closeItem.attr("class"))) {
+        if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
             return;
         }
-        PageService.openVideoWithSPF(this.videoId);
-        PlayerService.togglePictureInPicturePlayer(false);
+        pageService.openVideoWithSPF(this.videoId);
+        playerService.togglePictureInPicturePlayer(false);
     }
 
     // Enlarge thumbnail and load higher resolution image.

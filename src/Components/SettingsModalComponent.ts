@@ -14,16 +14,16 @@ export default class SettingsModalComponent extends Component {
     private hideSeenVideosSlider: Slider;
     private useRemoteDataSlider: Slider;
     private autoPauseVideoSlider: Slider;
-    private playerQualitySelect: JQuery<HTMLElement>;
-    private maxSimSubLoadInput: JQuery<HTMLElement>;
-    private maxVideosPerRowInput: JQuery<HTMLElement>;
-    private maxVideosPerSubInput: JQuery<HTMLElement>;
-    private timeToMarkAsSeenInput: JQuery<HTMLElement>;
-    private enlargeDelayInput: JQuery<HTMLElement>;
-    private enlargeFactorInput: JQuery<HTMLElement>;
-    private enlargeFactorNativeInput: JQuery<HTMLElement>;
-    private screenThresholdInput: JQuery<HTMLElement>;
-    private deleteUserDataButton: JQuery<HTMLElement>;
+    private playerQualitySelect: JQuery;
+    private maxSimSubLoadInput: JQuery;
+    private maxVideosPerRowInput: JQuery;
+    private maxVideosPerSubInput: JQuery;
+    private timeToMarkAsSeenInput: JQuery;
+    private enlargeDelayInput: JQuery;
+    private enlargeFactorInput: JQuery;
+    private enlargeFactorNativeInput: JQuery;
+    private screenThresholdInput: JQuery;
+    private deleteUserDataButton: JQuery;
 
     constructor(modal: ModalComponent) {
         super($("<div/>"));
@@ -234,7 +234,7 @@ export default class SettingsModalComponent extends Component {
         return versionInformation;
     }
 
-    private buildBottomControls() {
+    private buildBottomControls(): JQuery {
         return $("<div/>", {"id": "ytbsp-modal-end-div"})
             .append($("<a/>", {
                 "html": "https://github.com/Crow08/YTBSP",
