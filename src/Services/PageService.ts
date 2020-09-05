@@ -20,16 +20,16 @@ const YT_FEED_FILTER = "#chips > ytd-feed-filter-chip-bar-renderer";
 // Style rules depending on the loaded native page.
 const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
 const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -10px; background: transparent; }
-    ${YT_GUIDE}{ z-index: 3 !important;}
-    ${YT_FEED_FILTER}{ top: 78px !important; }`;
-const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
-    ${YT_GUIDE}{ z-index: 3 !important; width: var(--app-drawer-width, 256px); }`;
+    ${YT_GUIDE} { z-index: 3 !important;}
+    ${YT_FEED_FILTER} { top: 78px !important; }`;
+const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: 0px; }
+    ${YT_GUIDE} { z-index: 3 !important; width: var(--app-drawer-width, 256px); }`;
 const bodyStyleSearch = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
-    ${YT_GUIDE}{ z-index: 3; !important;}`;
+    ${YT_GUIDE} { z-index: 3; !important;}`;
 const bodyStyleDefault = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -30px;}
-    ${YT_GUIDE}{ z-index: 3; !important;}`;
+    ${YT_GUIDE} { z-index: 3; !important;}`;
 const bodyStylePlaylist = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -60px; }
-    ${YT_GUIDE}{ z-index: 3; !important;}
+    ${YT_GUIDE} { z-index: 3; !important;}
     ${YT_START_PAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
 export enum PageState {
