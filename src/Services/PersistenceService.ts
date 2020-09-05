@@ -114,6 +114,26 @@ class PersistenceService {
         this.onSaveCallbackList.push(callback);
     }
 
+    deleteUserData(): Promise<void> {
+        return new Promise((resolve) => {
+            localStorage.removeItem("YTBSP_VideoInfo");
+            localStorage.removeItem("YTBSP_useRemoteData");
+            localStorage.removeItem("YTBSP_hideSeenVideos");
+            localStorage.removeItem("YTBSP_hideEmptySubs");
+            localStorage.removeItem("YTBSP_maxSimSubLoad");
+            localStorage.removeItem("YTBSP_maxVideosPerRow");
+            localStorage.removeItem("YTBSP_maxVideosPerSub");
+            localStorage.removeItem("YTBSP_enlargeDelay");
+            localStorage.removeItem("YTBSP_enlargeFactor");
+            localStorage.removeItem("YTBSP_enlargeFactorNative");
+            localStorage.removeItem("YTBSP_playerQuality");
+            localStorage.removeItem("YTBSP_timeToMarkAsSeen");
+            localStorage.removeItem("YTBSP_screenThreshold");
+            localStorage.removeItem("YTBSP_autoPauseVideo");
+            resolve();
+        });
+    }
+
     private loadLocalConfig(): Promise<Configuration> {
         return new Promise(((resolve) => {
             const config = new Configuration();
@@ -206,7 +226,6 @@ class PersistenceService {
             callback(state);
         });
     }
-
 }
 
 const persistenceService = new PersistenceService();

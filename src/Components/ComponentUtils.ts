@@ -60,7 +60,7 @@ const getLoader = (id: string): Loader => {
 };
 
 // Make slider as resource.
-const getSlider = (id: string, checked: boolean, onChange: (event: Event) => void): Slider => {
+const getSlider = (id: string, checked: boolean, onChange?: (event: Event) => void): Slider => {
     return new Slider(id, checked, onChange);
 };
 

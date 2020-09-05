@@ -4,6 +4,8 @@ import persistenceService from "../Services/PersistenceService";
 import playerService from "../Services/PlayerService";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
+import ModalComponent from "./ModalComponent";
+import SettingsModalComponent from "./SettingsModalComponent";
 import SubListComponent from "./SubListComponent";
 
 export default class YTBSPComponent extends Component {
@@ -13,6 +15,7 @@ export default class YTBSPComponent extends Component {
     private toggleSlider: ComponentUtils.Slider;
     private isNative = false;
     private toggleGuide = false;
+    private modal: ModalComponent;
 
     constructor() {
         super($("<div/>", {"id": "YTBSP"}));
@@ -28,7 +31,16 @@ export default class YTBSPComponent extends Component {
         fixedBar.append($("<div/>", {"id": "ytbsp-loaderSpan"})
             .append(this.loader.component)
             .append(this.refresh));
+        const settingsButton = $("<button/>", {
+            "id": "ytbsp-settings",
+            "class": "ytbsp-func ytbsp-hideWhenNative",
+            "html": "&#x2699;",
+            "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}}
+        );
+        fixedBar.append(settingsButton);
         this.component.append(fixedBar);
+        this.modal = new ModalComponent();
+        this.component.append(this.modal.component);
 
         PageService.addPageChangeListener(() => this.updateLocation());
         PageService.addDocumentReadyListener(() => {
@@ -43,7 +55,6 @@ export default class YTBSPComponent extends Component {
                 this.component.show();
             }
         });
-
         persistenceService.addSaveListener((state) => this.toggleLoaderRefresh(state === "start"));
     }
 
