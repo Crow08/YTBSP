@@ -1,3 +1,5 @@
+import moment from "moment";
+import ytdl from "ytdl-core";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
@@ -15,6 +17,8 @@ export default class VideoComponent extends Component {
     private titleItem: JQuery;
     private clipItem: JQuery;
     private enlargeTimeout: Timeout = null;
+    private clicksItem: JQuery;
+    private uploadItem: JQuery;
 
     constructor(video: Video) {
         super($("<li/>", {"class": "ytbsp-video-item"}));
@@ -30,8 +34,8 @@ export default class VideoComponent extends Component {
             "title": video.title,
             "html": video.title
         });
-        const clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
-        const uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
+        this.clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
+        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
         this.seenMarkerItem = $("<p/>", {
             "class": `ytbsp-seenMarker${video.seen ? " seen" : ""}`,
             "html": (video.seen ? "already seen" : "mark as seen")
@@ -52,8 +56,8 @@ export default class VideoComponent extends Component {
             .append(this.thumbItem)
             .append(durationItem));
         this.component.append(this.titleItem);
-        this.component.append(clicksItem);
-        this.component.append(uploadItem);
+        this.component.append(this.clicksItem);
+        this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
 
         // Register some events from this thumb.
@@ -73,7 +77,36 @@ export default class VideoComponent extends Component {
         const src = this.thumbItem.attr("src");
         if (this.isInView() && ("undefined" === typeof src || "" === src)) {
             this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumb);
+            this.getAdditionalVideoInfos();
         }
+    }
+
+    private getAdditionalVideoInfos() {
+        ytdl.getBasicInfo(this.videoId).then(info => {
+            const uploaded = moment(info.videoDetails.uploadDate);
+            let uploadedText: string;
+            if (moment().add(-2, "day").isBefore(uploaded)) {
+                uploadedText = uploaded.calendar().split(" at")[0];
+            } else {
+                uploadedText = uploaded.fromNow();
+            }
+
+            const viewCount = parseInt(info.videoDetails.viewCount, 10);
+            let viewsText: string;
+            if (1000000 < viewCount) {
+                viewsText = `${Math.round(viewCount / 1000000 * 10) / 10}M views`; // Rounded million views.
+            } else if (10000 < viewCount) {
+                viewsText = `${Math.round(viewCount / 1000)}K views`; // Rounded thousand views.
+            } else {
+                viewsText = `${viewCount} views`; // Exact view count under thousand.
+            }
+
+            dataService.upsertVideo(this.videoId, (video) => {
+                video.updateVideo({uploaded: uploadedText, clicks: viewsText});
+                return video;
+            }, true, info.videoDetails.channelId);
+            this.update();
+        }).catch((e) => console.error(e));
     }
 
     toggleSeen(): void {
@@ -81,11 +114,31 @@ export default class VideoComponent extends Component {
             video.seen = !video.seen;
             return video;
         });
-        this.updateSeenButton();
     }
 
-    updateSeenButton(): void {
-        if (dataService.getVideo(this.videoId).seen) {
+    // Abort enlargement process if not already open.
+    enlargeCancelTimeout() {
+        clearTimeout(this.enlargeTimeout);
+        this.enlargeTimeout = null;
+    }
+
+    update() {
+        const video = dataService.getVideo(this.videoId);
+        this.updateSeenButton(video);
+        this.updateClicks(video);
+        this.updateUploaded(video);
+    }
+
+    private updateClicks(video: Video): void {
+        this.clicksItem.html(video.clicks);
+    }
+
+    private updateUploaded(video: Video): void {
+        this.uploadItem.html(video.uploaded);
+    }
+
+    private updateSeenButton(video: Video): void {
+        if (video.seen) {
             this.seenMarkerItem.html("already seen");
             this.seenMarkerItem.addClass("seen");
         } else {
@@ -132,7 +185,7 @@ export default class VideoComponent extends Component {
     }
 
     // Reset thumbnail to original size
-    enlargeCancel(): void {
+    private enlargeCancel(): void {
         if (1 >= configService.getConfig().enlargeFactor) {
             return;
         }
@@ -151,11 +204,5 @@ export default class VideoComponent extends Component {
         this.clipItem.css("height", "");
         this.clipItem.css("left", "");
         infos.show();
-    }
-
-    // Abort enlargement process if not already open.
-    enlargeCancelTimeout() {
-        clearTimeout(this.enlargeTimeout);
-        this.enlargeTimeout = null;
     }
 }

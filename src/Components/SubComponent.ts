@@ -144,7 +144,7 @@ export default class SubComponent extends Component {
                     this.videoComponents[oldIndex].component.remove();
                     this.videoComponents.splice(oldIndex, 1);
                 } else {
-                    this.videoComponents[oldIndex].updateSeenButton();
+                    this.videoComponents[oldIndex].update();
                     // if the video position has changed, move it.
                     if (visibleItemIndex !== oldIndex) {
                         arrayMove(this.videoComponents, oldIndex, visibleItemIndex);
@@ -210,7 +210,7 @@ export default class SubComponent extends Component {
                     thumbLarge: `https://i.ytimg.com/vi/${responseItem.id}/maxresdefault.jpg`
                 });
                 return currentVideo;
-            }), this.channelId);
+            }), true, this.channelId);
         });
     }
 

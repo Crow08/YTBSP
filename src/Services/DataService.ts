@@ -19,7 +19,7 @@ class DataService {
         return sub.videos.find(vid => vid.id === videoId);
     }
 
-    upsertSubscription(channelId: string, func: ((sub: Subscription | undefined) => Subscription)): void {
+    upsertSubscription(channelId: string, func: ((sub: Subscription | undefined) => Subscription), silent= false): void {
         const sub = this.subscriptions.find(curSub => curSub.channelId === channelId);
         const newSub = func(sub);
         if ("undefined" === typeof sub) {
@@ -27,10 +27,12 @@ class DataService {
         } else {
             sub.updateSubscription(newSub);
         }
-        this.onDataUpdated(channelId);
+        if(!silent) {
+            this.onDataUpdated(channelId);
+        }
     }
 
-    upsertVideo(videoId: string, func: ((video: Video | undefined) => Video), channelId?: string,): void {
+    upsertVideo(videoId: string, func: ((video: Video | undefined) => Video), silent= false, channelId?: string,): void {
         const sub = this.getSubscriptionForVideo(videoId, channelId);
         if ("undefined" === typeof sub) {
             return;
@@ -42,14 +44,18 @@ class DataService {
         } else {
             video.updateVideo(newVideo);
         }
-        this.onDataUpdated(sub.channelId);
+        if(!silent) {
+            this.onDataUpdated(sub.channelId);
+        }
     }
 
-    updateSubVideos(channelId: string, func: (vid: Video) => void): void {
+    updateSubVideos(channelId: string, func: (vid: Video) => void, silent= false): void {
         this.getSubscription(channelId).videos.forEach(video => {
             func(video);
         });
-        this.onDataUpdated(channelId);
+        if(!silent) {
+            this.onDataUpdated(channelId);
+        }
     }
 
     addSubscriptionChangeListener(channelId: string, callback: () => void): void {
