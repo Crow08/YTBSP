@@ -1,13 +1,15 @@
+import VideoDTO from "./VideoDTO";
+
 export default class Video {
     id: string;
 
-    title = "missing title";
-    thumb = "";
-    thumbLarge = "";
-    duration = "0:00";
-    uploaded = "unknown";
-    pubDate = "unknown";
-    clicks = "unknown";
+    title;
+    thumb;
+    thumbLarge;
+    duration;
+    uploaded;
+    pubDate;
+    clicks;
 
     seen = false;
     removed = false;
@@ -56,5 +58,13 @@ export default class Video {
         if (Object.prototype.hasOwnProperty.call(info, "removed")) {
             this.removed = false !== info.removed ? info.removed : this.removed;
         }
+    }
+
+    getDTO(): VideoDTO {
+        return {
+            "id": this.id,
+            "seen": this.seen,
+            "removed": this.removed
+        };
     }
 }

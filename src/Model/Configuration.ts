@@ -12,10 +12,10 @@ export enum Resolutions {
 }
 
 export default class Configuration {
-    useRemoteData = true;               // DEFAULT: true (using Cloud as remote storage).
+    useRemoteData = false;               // DEFAULT: false (using Cloud as remote storage).
     maxSimSubLoad = 10;                 // DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
     maxVideosPerRow = 9;                // DEFAULT: 9.
-    maxVideosPerSub = 36;               // DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVidsPerRow).
+    maxVideosPerSub = 36;               // DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVideosPerRow).
     enlargeDelay = 500;                 // DEFAULT: 500 (in ms).
     enlargeFactor = 2.8;                // DEFAULT: 2.8 (x * 90px).
     enlargeFactorNative = 2.0;          // DEFAULT: 2.0 (x * 94px).
@@ -87,5 +87,23 @@ export default class Configuration {
         if (Object.prototype.hasOwnProperty.call(info, "hideEmptySubs")) {
             this.hideEmptySubs = info.hideEmptySubs;
         }
+    }
+
+    equals(config: Configuration): boolean {
+        return this.useRemoteData === config.useRemoteData &&
+            this.maxSimSubLoad === config.maxSimSubLoad &&
+            this.maxVideosPerRow === config.maxVideosPerRow &&
+            this.maxVideosPerSub === config.maxVideosPerSub &&
+            this.enlargeDelay === config.enlargeDelay &&
+            this.enlargeFactor === config.enlargeFactor &&
+            this.enlargeFactorNative === config.enlargeFactorNative &&
+            this.timeToMarkAsSeen === config.timeToMarkAsSeen &&
+            this.screenThreshold === config.screenThreshold &&
+            this.playerQuality === config.playerQuality &&
+            this.peekPlayerSizeFactor === config.peekPlayerSizeFactor &&
+            this.autoPauseVideo === config.autoPauseVideo &&
+            this.hideSeenVideos === config.hideSeenVideos &&
+            this.hideEmptySubs === config.hideEmptySubs;
+
     }
 }

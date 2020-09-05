@@ -1,44 +1,43 @@
-import Component from "./Component";
 import Video from "../Model/Video";
+import dataService from "../Services/DataService";
 import PageService from "../Services/PageService";
-import SubComponent from "./SubComponent";
+import Component from "./Component";
+import ClickEvent = JQuery.ClickEvent;
 
 export default class VideoComponent extends Component {
-    video: Video;
-    subComp: SubComponent;
-    seenMarkerItem: JQuery;
-    thumbItem: JQuery;
-    closeItem: JQuery;
+    videoId: string;
+    private seenMarkerItem: JQuery;
+    private thumbItem: JQuery;
+    private closeItem: JQuery;
 
-    constructor(video: Video, subComp: SubComponent) {
+    constructor(video: Video) {
         super($("<li/>", {"class": "ytbsp-video-item"}));
-        this.video = video;
-        this.subComp = subComp;
-        const clipItem = $("<a/>", {"href": `/watch?v=${this.video.id}`, "class": "ytbsp-clip"});
+        this.videoId = video.id;
+        const clipItem = $("<a/>", {"href": `/watch?v=${video.id}`, "class": "ytbsp-clip"});
         this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
-        this.thumbItem = $("<img/>", {"class": "ytbsp-thumb"});
+        this.thumbItem = $("<img  src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
         const durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
         const thumbLargeItem = $("<input/>", {
             "class": "ytbsp-thumb-large-url",
             "type": "hidden",
-            "value": this.video.thumbLarge ? this.video.thumbLarge : this.video.thumb
+            "value": video.thumbLarge ? video.thumbLarge : video.thumb
         });
         const titleItem = $("<a/>", {
-            "href": `/watch?v=${this.video.id}`,
+            "href": `/watch?v=${video.id}`,
             "class": "ytbsp-title",
-            "title": this.video.title,
-            "html": this.video.title
+            "title": video.title,
+            "html": video.title
         });
-        const clicksItem = $("<p/>", {"class": "ytbsp-views", "html": this.video.clicks});
-        const uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": this.video.uploaded});
+        const clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
+        const uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
         this.seenMarkerItem = $("<p/>", {
-            "class": `ytbsp-seenMarker${this.video.seen ? " seen" : ""}`,
-            "html": (this.video.seen ? "already seen" : "mark as seen")
+            "class": `ytbsp-seenMarker${video.seen ? " seen" : ""}`,
+            "html": (video.seen ? "already seen" : "mark as seen")
         });
 
         setTimeout(() => {
             // TODO: Workaround, because when executed synchronous time will not be displayed.
-            durationItem.html(this.video.duration);
+            durationItem.html(video.duration);
         }, 100);
 
         this.component.append(clipItem
@@ -54,41 +53,46 @@ export default class VideoComponent extends Component {
         // Register some events from this thumb.
         this.seenMarkerItem.click(() => this.toggleSeen());
         this.closeItem.click(() => {
-            this.video.removed = true;
-            this.subComp.updateVideoList();
+            dataService.upsertVideo(video.id, (video) => {
+                video.removed = true;
+                return video;
+            });
         });
 
         clipItem.add(titleItem).add(this.closeItem).click((event) => this.handleOpenVideo(event));
 
     }
 
-    handleOpenVideo(event) {
-        event.preventDefault();
-        if (event.target.classList.contains(this.closeItem.attr("class"))) {
-            return;
-        }
-        PageService.openVideoWithSPF(this.video.id);
-    }
-
-    updateVisibility() {
-        if (this.isInView()) {
-            this.thumbItem.attr("src", this.video.thumb);
+    updateVisibility(): void {
+        const src = this.thumbItem.attr("src");
+        if (this.isInView() && ("undefined" === typeof src || "" === src)) {
+            this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumb);
         }
     }
 
-    toggleSeen() {
-        this.video.seen = !this.video.seen;
+    toggleSeen(): void {
+        dataService.upsertVideo(this.videoId, (video) => {
+            video.seen = !video.seen;
+            return video;
+        });
         this.updateSeenButton();
-        this.subComp.updateVideoList();
     }
 
-    updateSeenButton() {
-        if (this.video.seen) {
+    updateSeenButton(): void {
+        if (dataService.getVideo(this.videoId).seen) {
             this.seenMarkerItem.html("already seen");
             this.seenMarkerItem.addClass("seen");
         } else {
             this.seenMarkerItem.html("mark as seen");
             this.seenMarkerItem.removeClass("seen");
         }
+    }
+
+    private handleOpenVideo(event: ClickEvent): void {
+        event.preventDefault();
+        if (event.target.classList.contains(this.closeItem.attr("class"))) {
+            return;
+        }
+        PageService.openVideoWithSPF(this.videoId);
     }
 }

@@ -1,10 +1,10 @@
-import PageService from "./PageService";
 import configService from "./ConfigService";
+import PageService from "./PageService";
 
 const defaultPlay: (() => Promise<void>) = HTMLMediaElement.prototype.play; // Save default play function before replacing it.
 let autoPauseThisVideo: boolean;
 
-const modifiedPlay = function (target): Promise<void> {
+const modifiedPlay = function(target): Promise<void> {
     // Need JQuery to be loaded.
     if (!PageService.isDocumentReady) {
         return;
@@ -19,15 +19,14 @@ const modifiedPlay = function (target): Promise<void> {
         }
         return;
     }
-    // Resume default behaviour.
+    // Resume default behavior.
     defaultPlay.call(target);
 };
 
 class PlayerService {
-
     constructor() {
         // Override play Function to prevent player from automatically starting the video after loading video page.
-        HTMLMediaElement.prototype.play = function () {
+        HTMLMediaElement.prototype.play = function() {
             return modifiedPlay(this);
         };
 

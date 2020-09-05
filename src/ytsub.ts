@@ -1,8 +1,8 @@
-import Subscription from "./Model/Subscription";
 import MINIGET from "miniget";
 import * as querystring from "querystring";
+import Subscription from "./Model/Subscription";
 
-export default async () => {
+export default async (): Promise<Subscription[]> => {
     const body = getSubPageBody();
 
     const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
@@ -88,7 +88,7 @@ function getSPFHeader(cfgJson) {
     };
 }
 
-function convertToSubscriptions(items: object[]): Subscription[] {
+function convertToSubscriptions(items: any[]): Subscription[] {
     const subscriptions: Subscription[] = [];
     items.forEach(item => {
         const channelItem = item["channelRenderer"];
