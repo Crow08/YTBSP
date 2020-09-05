@@ -1,3 +1,4 @@
+import PlayerService from "../Services/PlayerService";
 import Video from "../Model/Video";
 import dataService from "../Services/DataService";
 import PageService from "../Services/PageService";
@@ -94,5 +95,6 @@ export default class VideoComponent extends Component {
             return;
         }
         PageService.openVideoWithSPF(this.videoId);
+        PlayerService.togglePictureInPicturePlayer(false);
     }
 }

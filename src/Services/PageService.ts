@@ -12,7 +12,7 @@ const YT_CHANNEL_LINK = "#owner-name > a, #upload-info > #channel-name > #contai
 const YT_CONTENT = "#content";
 const YT_GUIDE = "app-drawer#guide";
 const YT_PLAYER_QUALITY = "yt-player-quality";
-const YT_PLAYER = "#movie_player";
+const YT_PLAYER = "#movie_player > div.html5-video-container > video";
 const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
 const YT_VIDEO_STREAM = ".video-stream";
 const YT_FEED_FILTER = "#chips > ytd-feed-filter-chip-bar-renderer";
@@ -250,8 +250,8 @@ class PageService {
         });
     }
 
-    getPlayerControls(): JQuery {
-        return $(YT_PLAYER_CONTROL);
+    getPlayer(): JQuery {
+        return $(YT_PLAYER);
     }
 }
 
