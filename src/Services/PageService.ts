@@ -1,6 +1,7 @@
 import $ from "jquery";
 import YTBSPComponent from "../Components/YTBSPComponent";
 import "../Less/ytbsp-stylesheet.less";
+import configService from "./ConfigService";
 import Timeout = NodeJS.Timeout;
 
 // YouTube selectors:
@@ -201,13 +202,19 @@ class PageService {
         }, 200);
     }
 
-    addThumbnailEnlargeCss(enlargeFactorNative: number, enlargeDelay: number) {
+    addThumbnailEnlargeCss() {
+        const enlargeFactorNative = configService.getConfig().enlargeFactorNative;
+        if (1 >= enlargeFactorNative) {
+            return;
+        }
         const altBorderColor = this.isDarkModeEnabled() ? "#737373" : "#737373";
+        const enlargeDelay = configService.getConfig().enlargeDelay;
         $("#ytbsp-css-thumb").remove();
         const css = document.createElement("style");
         css.id = "ytbsp-css-thumb";
         css.innerHTML =
-            `ytd-thumbnail:hover {
+            `ytd-thumbnail.ytd-grid-video-renderer:hover,
+            ytd-thumbnail.ytd-compact-video-renderer:hover {
             transform: scale(${enlargeFactorNative});
             border: solid ${enlargeFactorNative / 2.0}px ${altBorderColor};
             padding: 0px; z-index: 2;

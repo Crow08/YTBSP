@@ -26,6 +26,7 @@ persistenceService.loadConfig(false).then((config) => {
         });
         atScriptDataLoaded();
     }).catch(e => console.error(e));
+    pageService.addThumbnailEnlargeCss();
 }).catch(e => console.error(e));
 
 pageService.addDocumentReadyListener(() => {
