@@ -36,8 +36,13 @@ class PlayerService {
     }
 
     togglePictureInPicturePlayer(on: boolean) {
+        const controls = pageService.getPlayerControls();
+        if (on && 0 < controls.length && 1 !== (controls[0] as unknown as { player: { getPlayerState: () => number } }).player.getPlayerState()) {
+            return;
+        }
+
         const player = pageService.getPlayer();
-        if (on && player.length !== 0) {
+        if (on && 0 < player.length) {
             (player[0] as unknown as { requestPictureInPicture: () => void }).requestPictureInPicture();
         } else {
             // typescript type doesn't know this method yet (6.9.2020)
