@@ -42,10 +42,10 @@ export default class VideoComponent extends Component {
             "html": (video.seen ? "already seen" : "mark as seen")
         });
 
-        this.clipItem.mouseover(() => this.enlarge());
-        this.clipItem.mouseleave(() => this.enlargeCancelTimeout());
-        this.closeItem.mouseover(() => this.enlargeCancelTimeout());
-        this.component.mouseleave(() => this.enlargeCancel());
+        this.clipItem.mouseover(() => this.startEnlargeTimeout());
+        this.clipItem.mouseleave(() => this.abortEnlargeTimeout());
+        this.closeItem.mouseover(() => this.abortEnlargeTimeout());
+        this.component.mouseleave(() => this.resetThumbnail());
 
         setTimeout(() => {
             // TODO: Workaround, because when executed synchronous time will not be displayed.
@@ -87,12 +87,6 @@ export default class VideoComponent extends Component {
             video.seen = !video.seen;
             return video;
         });
-    }
-
-    // Abort enlargement process if not already open.
-    enlargeCancelTimeout(): void {
-        clearTimeout(this.enlargeTimeout);
-        this.enlargeTimeout = null;
     }
 
     update(): void {
@@ -158,41 +152,42 @@ export default class VideoComponent extends Component {
     }
 
     // Enlarge thumbnail and load higher resolution image.
-    private enlarge(): void {
+    private startEnlargeTimeout(): void {
         const enlargeFactor = configService.getConfig().enlargeFactor;
         if (1 >= enlargeFactor) {
             return;
         }
-        if (0 !== $(".ytbsp-x:hover", this).length) {
+        if (this.closeItem.is(":hover")) {
             return;
         }
 
         if (null === this.enlargeTimeout) {
-            this.enlargeTimeout = setTimeout(() => {
-                const info = $("p", this.component);
-                this.thumbItem.attr("src", this.thumbLargeUrl);
-                this.thumbItem.addClass("ytbsp-thumb-large");
-                this.thumbItem.css("width", `${160 * enlargeFactor}px`);
-                this.thumbItem.css("height", `${90 * enlargeFactor}px`);
-                this.titleItem.addClass("ytbsp-title-large");
-                this.titleItem.css("width", `${(160 * enlargeFactor) - 4}px`);
-                this.titleItem.css("left", `${-(((160 * enlargeFactor) / 2) - 82)}px`);
-                this.clipItem.addClass("ytbsp-clip-large");
-                this.clipItem.css("width", `${(160 * enlargeFactor) + 4}px`);
-                this.clipItem.css("height", `${(90 * enlargeFactor) + 4}px`);
-                this.clipItem.css("left", `${-(((160 * enlargeFactor) / 2) - 82)}px`);
-                info.hide();
-            }, configService.getConfig().enlargeDelay);
+            this.enlargeTimeout = setTimeout(() => this.enlargeThumbnail(enlargeFactor), configService.getConfig().enlargeDelay);
         }
     }
 
+    private enlargeThumbnail(enlargeFactor: number) {
+        const info = $("p", this.component);
+        this.thumbItem.attr("src", this.thumbLargeUrl);
+        this.thumbItem.addClass("ytbsp-thumb-large");
+        this.thumbItem.css("width", `${160 * enlargeFactor}px`);
+        this.thumbItem.css("height", `${90 * enlargeFactor}px`);
+        this.titleItem.addClass("ytbsp-title-large");
+        this.titleItem.css("width", `${(160 * enlargeFactor) - 4}px`);
+        this.titleItem.css("left", `${-(((160 * enlargeFactor) / 2) - 82)}px`);
+        this.clipItem.addClass("ytbsp-clip-large");
+        this.clipItem.css("width", `${(160 * enlargeFactor) + 4}px`);
+        this.clipItem.css("height", `${(90 * enlargeFactor) + 4}px`);
+        this.clipItem.css("left", `${-(((160 * enlargeFactor) / 2) - 82)}px`);
+        info.hide();
+    }
+
     // Reset thumbnail to original size
-    private enlargeCancel(): void {
+    private resetThumbnail(): void {
         if (1 >= configService.getConfig().enlargeFactor) {
             return;
         }
-        clearTimeout(this.enlargeTimeout);
-        this.enlargeTimeout = null;
+        this.abortEnlargeTimeout();
 
         const infos = $("p", this.component);
         this.thumbItem.removeClass("ytbsp-thumb-large");
@@ -206,5 +201,11 @@ export default class VideoComponent extends Component {
         this.clipItem.css("height", "");
         this.clipItem.css("left", "");
         infos.show();
+    }
+
+    // Abort enlargement process if not already open.
+    private abortEnlargeTimeout(): void {
+        clearTimeout(this.enlargeTimeout);
+        this.enlargeTimeout = null;
     }
 }
