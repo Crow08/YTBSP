@@ -269,6 +269,10 @@ class PageService {
         return $(YT_PLAYER);
     }
 
+    getPlayerControls(): JQuery {
+        return $(YT_PLAYER_CONTROL);
+    }
+
     getChannelId(): string | undefined {
         if (0 !== $(YT_CHANNEL_LINK).length) {
             return /\/channel\/([^&]*)/u.exec($(YT_CHANNEL_LINK).attr("href"))[1];
