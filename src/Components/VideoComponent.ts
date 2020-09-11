@@ -11,7 +11,6 @@ import Timeout = NodeJS.Timeout;
 
 export default class VideoComponent extends Component {
     videoId: string;
-    private thumbLargeUrl: string;
     private seenMarkerItem: JQuery;
     private thumbItem: JQuery;
     private closeItem: JQuery;
@@ -24,7 +23,6 @@ export default class VideoComponent extends Component {
     constructor(video: Video) {
         super($("<li/>", {"class": "ytbsp-video-item"}));
         this.videoId = video.id;
-        this.thumbLargeUrl = video.thumbLarge ? video.thumbLarge : video.thumb;
         this.clipItem = $("<a/>", {"href": `/watch?v=${video.id}`, "class": "ytbsp-clip"});
         this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
         this.thumbItem = $("<img  src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
@@ -98,26 +96,37 @@ export default class VideoComponent extends Component {
 
     private getAdditionalVideoInfos(): void {
         ytdl.getBasicInfo(this.videoId).then(info => {
+            const updateInfo = {};
             const uploaded = moment(info.videoDetails.uploadDate);
-            let uploadedText: string;
             if (moment().add(-2, "day").isBefore(uploaded)) {
-                uploadedText = uploaded.calendar().split(" at")[0];
+                updateInfo["uploaded"] = uploaded.calendar().split(" at")[0];
             } else {
-                uploadedText = uploaded.fromNow();
+                updateInfo["uploaded"] = uploaded.fromNow();
             }
 
             const viewCount = parseInt(info.videoDetails.viewCount, 10);
-            let viewsText: string;
             if (1000000 < viewCount) {
-                viewsText = `${Math.round(viewCount / 1000000 * 10) / 10}M views`; // Rounded million views.
+                updateInfo["clicks"] = `${Math.round(viewCount / 1000000 * 10) / 10}M views`; // Rounded million views.
             } else if (10000 < viewCount) {
-                viewsText = `${Math.round(viewCount / 1000)}K views`; // Rounded thousand views.
+                updateInfo["clicks"] = `${Math.round(viewCount / 1000)}K views`; // Rounded thousand views.
             } else {
-                viewsText = `${viewCount} views`; // Exact view count under thousand.
+                updateInfo["clicks"] = `${viewCount} views`; // Exact view count under thousand.
+            }
+
+            const thumbnails = info.videoDetails.thumbnail.thumbnails;
+            const isMedResAvailable = "undefined" !== typeof thumbnails.find(value => value.url.includes("mqdefault"));
+            const isMaxResAvailable = "undefined" !== typeof thumbnails.find(value => value.url.includes("maxresdefault"));
+            if (!isMedResAvailable) {
+                const medThumbnail = thumbnails.reduce((carry, current) => current.width < carry.width && current.width > 160 ? current : carry);
+                updateInfo["thumb"] = medThumbnail.url;
+            }
+            if (!isMaxResAvailable) {
+                const maxThumbnail = thumbnails.reduce((carry, current) => current.width > carry.width ? current : carry);
+                updateInfo["thumbLarge"] = maxThumbnail.url;
             }
 
             dataService.upsertVideo(this.videoId, (video) => {
-                video.updateVideo({uploaded: uploadedText, clicks: viewsText});
+                video.updateVideo(updateInfo);
                 return video;
             }, true, info.videoDetails.channelId);
             this.update();
@@ -168,7 +177,7 @@ export default class VideoComponent extends Component {
 
     private enlargeThumbnail(enlargeFactor: number) {
         const info = $("p", this.component);
-        this.thumbItem.attr("src", this.thumbLargeUrl);
+        this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumbLarge);
         this.thumbItem.addClass("ytbsp-thumb-large");
         this.thumbItem.css("width", `${160 * enlargeFactor}px`);
         this.thumbItem.css("height", `${90 * enlargeFactor}px`);
