@@ -61,7 +61,19 @@ async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTra
         "continuation": continuation,
         "itct": clickTrackingParams
     });
-    return await MINIGET("https://www.youtube.com/browse_ajax?" + params, options).text();
+
+    const stream = MINIGET("https://www.youtube.com/browse_ajax?" + params, options);
+    // TODO: "redirect" and "error" are both workarounds for the anti bot captcha redirect. you will be redirected but
+    //  the redirect fails because of cors problems.
+    stream.on("redirect", (url) => {
+        console.error("redirect: " + url);
+        window.open(url);
+    });
+    stream.on("error", (err) => {
+        console.error(err);
+        window.open("https://www.youtube.com/browse_ajax?" + params);
+    });
+    return await stream.text();
 }
 
 function getSPFHeader(cfgJson) {
