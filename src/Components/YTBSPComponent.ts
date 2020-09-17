@@ -24,7 +24,7 @@ export default class YTBSPComponent extends Component {
         this.refresh = $("<button/>", {"id": "ytbsp-refresh", "class": "ytbsp-func", "html": "&#x27F3;"});
         this.refresh.click(() => {
             this.toggleLoaderRefresh(true);
-            this.subList.updateAllSubs();
+            this.subList.updateAllSubs().finally(() => this.toggleLoaderRefresh(false));
         });
         const fixedBar = $("<div/>", {"id": "ytbsp-fixedBar"});
         this.toggleSlider = ComponentUtils.getSlider("ytbsp-togglePage", this.isNative, () => this.toggleNative());

@@ -58,10 +58,13 @@ export default class SubListComponent extends Component {
         });
     }
 
-    updateAllSubs(): void {
+    updateAllSubs(): Promise<void[]> {
+        const subPromiseList = [];
+
         this.subComponents.forEach((comp) => {
-            comp.reloadSubVideos().catch((error) => console.error(error));
+            subPromiseList.push(comp.reloadSubVideos());
         });
+        return Promise.all<void>(subPromiseList);
     }
 
     private initSubs(subs: Subscription[]): void {
