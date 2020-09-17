@@ -67,16 +67,24 @@ const getPageState = (): PageState => {
         return PageState.DEFAULT;
     }
 };
-const debounceInterval = 200;
-const debounce = (func: () => void) => {
+const throttleDuration = 400;
+const throttleTime = (func: () => void) => {
     let timeout: Timeout;
-    return function executedFunction() {
-        const later = (): void => {
-            timeout = null;
-        };
-        if (!timeout) {
-            timeout = setTimeout(later, debounceInterval);
+    let pendingFunc: () => void;
+    return function() {
+        if (timeout) {
+            pendingFunc = func;
+        }
+        else {
             func.apply(this);
+            pendingFunc = null;
+            timeout = setTimeout(
+                (): void => {
+                    timeout = null;
+                    if (pendingFunc) {
+                        pendingFunc.apply(this);
+                    }
+                }, throttleDuration);
         }
     };
 };
@@ -144,8 +152,8 @@ class PageService {
             this.onDocumentReadyCallbackList = [];
         });
 
-        window.addEventListener("scroll", debounce(() => this.handleViewChange()), false);
-        window.addEventListener("resize", debounce(() => this.handleViewChange()), false);
+        window.addEventListener("scroll", throttleTime(() => this.handleViewChange()), false);
+        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
     }
 
     startPageObserver() {
@@ -177,7 +185,7 @@ class PageService {
     }
 
     triggerViewChange() {
-        debounce(() => this.handleViewChange());
+        throttleTime(() => this.handleViewChange());
     }
 
     updateNativeStyleRuleModifications(state?: PageState) {
