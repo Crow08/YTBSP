@@ -208,7 +208,7 @@ export default class SettingsModalComponent extends Component {
         const select = $("<Select>", {"id": "ytbsp-settings-playerQuality"});
         Object.keys(Resolutions).forEach((resolution) => {
             let resText = resolution;
-            if (resolution[0] !== "P") {
+            if (resolution[0] === "P") {
                 resText = resolution.substring(1) + "p";
             }
             select.append($("<option>", {"value": Resolutions[resolution] as string, "html": resText}));
