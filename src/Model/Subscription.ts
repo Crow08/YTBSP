@@ -6,7 +6,6 @@ export default class Subscription {
     channelId: string;
     playlistId: string;
     channelUrl: URL;
-    iconUrl: URL;
     videos: Video[] = [];
 
     updateSubscription(info: {
@@ -14,7 +13,6 @@ export default class Subscription {
         channelId?: string,
         playlistId?: string,
         channelUrl?: URL,
-        iconUrl?: URL,
         videos?: {
             title?: string,
             thumb?: string,
@@ -41,9 +39,6 @@ export default class Subscription {
         }
         if (Object.prototype.hasOwnProperty.call(info, "channelUrl")) {
             this.channelUrl = info.channelUrl ? info.channelUrl : this.channelUrl;
-        }
-        if (Object.prototype.hasOwnProperty.call(info, "iconUrl")) {
-            this.iconUrl = info.iconUrl ? info.iconUrl : this.iconUrl;
         }
         if (Object.prototype.hasOwnProperty.call(info, "videos")) {
             info.videos.reverse().forEach(updateInfo => {
