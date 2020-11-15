@@ -2,29 +2,30 @@
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import MINIGET from "miniget";
 import * as querystring from "querystring";
-import Subscription from "./Model/Subscription";
+import Video from "./Model/Video";
 
-export default async (): Promise<Subscription[]> => {
-    const body = getSubPageBody();
+export default async (plistID: string, options: {limit: number}): Promise<Video[]> => {
+    const body = getPlaylistPageBody(plistID);
 
     const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
     const cfgJson = getConfigurationJson(await body);
 
-    let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+    let allItems: any[];
+    allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["playlistVideoListRenderer"]["contents"];
 
     const continuations = contentJson["continuations"];
     if (continuations) {
-        for (const continuationObject of continuations) {
+        /*for (const continuationObject of continuations) {
             const continuation = continuationObject["nextContinuationData"]["continuation"];
             const clickTrackingParams = continuationObject["nextContinuationData"]["clickTrackingParams"];
             const spfBody = getSPFSubContinuationBody(cfgJson, continuation, clickTrackingParams);
             const spfJson = JSON.parse(await spfBody);
             const spfItems = spfJson[1]["response"]["continuationContents"]["sectionListContinuation"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
             allItems = allItems.concat(spfItems);
-        }
+        }*/
     }
 
-    return convertToSubscriptions(allItems);
+    return convertToVideos(allItems);
 };
 
 function getConfigurationJson(body: string): any {
@@ -47,12 +48,12 @@ function getContentJson(body: string): any {
     return JSON.parse(jsonString);
 }
 
-async function getSubPageBody(): Promise<string> {
+async function getPlaylistPageBody(playlistId: string): Promise<string> {
     const headers = {
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
     };
     const options = {headers};
-    return await MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", options).text();
+    return await MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
 }
 
 async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
@@ -102,17 +103,28 @@ function getSPFHeader(cfgJson) {
     };
 }
 
-function convertToSubscriptions(items: any[]): Subscription[] {
-    const subscriptions: Subscription[] = [];
+function convertToVideos(items: any[]): Video[] {
+    const videos: Video[] = [];
     items.forEach(item => {
-        const channelItem = item["channelRenderer"];
-        const sub = new Subscription();
-        sub.channelId = channelItem["channelId"];
-        sub.channelName = channelItem["title"]["simpleText"];
-        sub.playlistId = sub.channelId.replace(/^UC/u, "UU");
-        sub.channelUrl = new URL("/channel/" + sub.channelId, document.baseURI);
-        sub.iconUrl = channelItem["thumbnail"]["thumbnails"][0]["url"];
-        subscriptions.push(sub);
+        const videoItem = item["playlistVideoRenderer"];
+        if(typeof videoItem === "undefined") {
+            if(typeof item["continuationItemRenderer"] !== "undefined") {
+                return;
+            } else {
+                console.error(`unknown Error:\n${JSON.stringify(item)}`);
+                return;
+            }
+        }
+        const vid = new Video(videoItem["videoId"]);
+        vid.title = videoItem["title"]["runs"][0]["text"];
+        vid.duration = videoItem["lengthText"]["simpleText"];
+        vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
+        vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
+        // vid.pubDate;
+        // vid.clicks;
+        // vid.uploaded;
+
+        videos.push(vid);
     });
-    return subscriptions;
+    return videos;
 }

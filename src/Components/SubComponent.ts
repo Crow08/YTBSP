@@ -1,5 +1,5 @@
 import $ from "jquery";
-import ytpl from "ytpl";
+import ytpl from "../ytpl";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
@@ -108,8 +108,7 @@ export default class SubComponent extends Component {
         this.loader.showLoader();
         return new Promise<void>((resolve, reject) => {
             ytpl(dataService.getSubscription(this.channelId).playlistId, {
-                limit: configService.getConfig().maxVideosPerSub,
-                headers: {}
+                limit: configService.getConfig().maxVideosPerSub
             })
                 .then((response) => {
                     this.processRequestVideos(response);
@@ -197,8 +196,8 @@ export default class SubComponent extends Component {
         }
     }
 
-    private processRequestVideos(response: ytpl.result): void {
-        response.items.forEach((responseItem) => {
+    private processRequestVideos(response: Video[]): void {
+        response.forEach((responseItem) => {
             dataService.upsertVideo(responseItem.id, ((currentVideo) => {
                 if ("undefined" === typeof currentVideo) {
                     currentVideo = new Video(responseItem.id);
