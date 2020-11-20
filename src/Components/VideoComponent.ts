@@ -1,4 +1,5 @@
 import moment from "moment";
+import { isPropertyName } from "typescript";
 import ytdl from "ytdl-core";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
@@ -14,6 +15,7 @@ export default class VideoComponent extends Component {
     private seenMarkerItem: JQuery;
     private thumbItem: JQuery;
     private closeItem: JQuery;
+    private addToQueueItem: JQuery;
     private titleItem: JQuery;
     private clipItem: JQuery;
     private enlargeTimeout: Timeout = null;
@@ -35,7 +37,11 @@ export default class VideoComponent extends Component {
         });
         this.clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
         this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
-        this.seenMarkerItem = $("<p/>", {
+        this.addToQueueItem = $("<p/>", {
+            "class": "ytbsp-seenMarker",
+            "html": "add to queue"
+        });
+        this.seenMarkerItem = $("<span/>", {
             "class": `ytbsp-seenMarker${video.seen ? " seen" : ""}`,
             "html": (video.seen ? "already seen" : "mark as seen")
         });
@@ -43,6 +49,7 @@ export default class VideoComponent extends Component {
         this.clipItem.mouseover(() => this.startEnlargeTimeout());
         this.clipItem.mouseleave(() => this.abortEnlargeTimeout());
         this.closeItem.mouseover(() => this.abortEnlargeTimeout());
+        this.addToQueueItem.mouseover(() => this.abortEnlargeTimeout());
         this.component.mouseleave(() => this.resetThumbnail());
 
         setTimeout(() => {
@@ -58,6 +65,8 @@ export default class VideoComponent extends Component {
         this.component.append(this.clicksItem);
         this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
+        this.component.append($("<span/>", {"class" : "ytbsp-spacer", "html": " | "}));
+        this.component.append(this.addToQueueItem);
 
         // Register some events from this thumb.
         this.seenMarkerItem.click(() => this.toggleSeen());
@@ -67,8 +76,17 @@ export default class VideoComponent extends Component {
                 return video;
             });
         });
+        
+        //this adds clicked video to a magical invisible youtube playlist
+        this.addToQueueItem.click(() => {
+            pageService.addToQueue(video.id);
+            this.addToQueueItem.css("color","green");
+            this.addToQueueItem.html("ADDED &#10003;");
+
+        });
 
         this.clipItem.add(this.titleItem).add(this.closeItem).click((event) => this.handleOpenVideo(event));
+        this.clipItem.add(this.titleItem).add(this.addToQueueItem).click((event) => this.handleOpenVideo(event));
 
     }
 
@@ -153,7 +171,7 @@ export default class VideoComponent extends Component {
 
     private handleOpenVideo(event: ClickEvent): void {
         event.preventDefault();
-        if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
+        if ((event.target as Element).classList.contains(this.closeItem.attr("class")) || (event.target as Element).classList.contains(this.addToQueueItem.attr("class"))) {
             return;
         }
         pageService.openVideoWithSPF(this.videoId);
