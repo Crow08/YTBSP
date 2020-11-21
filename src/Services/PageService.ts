@@ -111,8 +111,17 @@ interface YTApp {
                             videoId: string,
                             listType:string,
                             onCreateListCommand:{
-                                commandMetadata:{webCommandMetadata:{url:string,sendPost:boolean,apiUrl:string}},
-                                createPlaylistServiceEndpoint:{videoIds:string[]}
+                                commandMetadata:{
+                                    webCommandMetadata:{
+                                        url:string,
+                                        sendPost:boolean,
+                                        apiUrl:string
+                                    }
+                                },
+                                createPlaylistServiceEndpoint:{
+                                    videoIds:string[],
+                                    params: string
+                                }
                             },
                             videoIds:string[]
                         }
@@ -299,8 +308,17 @@ class PageService {
                             "videoId": id,
                             "listType":"PLAYLIST_EDIT_LIST_TYPE_QUEUE",
                             "onCreateListCommand":{
-                                "commandMetadata":{"webCommandMetadata":{"url":"/service_ajax","sendPost":true,"apiUrl":"/youtubei/v1/playlist/create"}},
-                                "createPlaylistServiceEndpoint":{"videoIds":[id]}
+                                "commandMetadata":{
+                                    "webCommandMetadata":{
+                                        "url":"/service_ajax",
+                                        "sendPost":true,
+                                        "apiUrl":"/youtubei/v1/playlist/create"
+                                    }
+                                },
+                                "createPlaylistServiceEndpoint":{
+                                    "videoIds":[id],
+                                    "params": "CAQ%3D"
+                                }
                             },
                             "videoIds":[id]
                         }
