@@ -6,7 +6,7 @@ import dataService from "../Services/DataService";
 import ytsub from "../ytsub";
 import Component from "./Component";
 import SubComponent from "./SubComponent";
-import QueueService from "../Services/QueueService";
+import queueService from "../Services/QueueService";
 import pageService from "../Services/PageService";
 
 export default class SubListComponent extends Component {
@@ -60,8 +60,12 @@ export default class SubListComponent extends Component {
     }
 
     startQueue(): void {
-        pageService.openVideoWithSPF(QueueService.getStartVideoId());
-        QueueService.resetStartVideoId();
+        if (queueService.getStartVideoId() == null){
+            alert("Queue is empty, you need to add videos first, duh!");
+            return;
+        }
+        pageService.openVideoWithSPF(queueService.getStartVideoId());
+        queueService.resetStartVideoId();
     }
 
     resetAllVideos(): void {

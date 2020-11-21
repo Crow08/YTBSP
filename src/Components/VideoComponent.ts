@@ -6,6 +6,7 @@ import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
 import pageService from "../Services/PageService";
 import playerService from "../Services/PlayerService";
+import queueService from "../Services/QueueService";
 import Component from "./Component";
 import ClickEvent = JQuery.ClickEvent;
 import Timeout = NodeJS.Timeout;
@@ -80,9 +81,9 @@ export default class VideoComponent extends Component {
         //this adds clicked video to a magical invisible youtube playlist
         this.addToQueueItem.click(() => {
             pageService.addToQueue(video.id);
+            queueService.setStartVideoId(video.id);
             this.addToQueueItem.css("color","green");
             this.addToQueueItem.html("ADDED &#10003;");
-
         });
 
         this.clipItem.add(this.titleItem).add(this.closeItem).click((event) => this.handleOpenVideo(event));
