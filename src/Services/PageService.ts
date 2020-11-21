@@ -297,7 +297,7 @@ class PageService {
 
     addToQueue(id: string): void {
         const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
-        const b = {
+        const queueEventArg = {
             "commandMetadata":{"webCommandMetadata":{"url":"/service_ajax","sendPost":true}},
             "signalServiceEndpoint":{
                 "signal":"CLIENT_SIGNAL",
@@ -326,14 +326,14 @@ class PageService {
                 ]
             }
         };
-        const a = {
-            args: [document.querySelector("ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer"),b],
+        const QueueEventRequest = {
+            args: [document.querySelector("ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer"),queueEventArg],
             actionName: "yt-service-request",
             disableBroadcast: false,
             optionalAction: false,
             returnValue: []
         };
-        ytdApp["fire"]("yt-action", a);
+        ytdApp["fire"]("yt-action", QueueEventRequest);
     }
 
     openVideoWithSPF(id: string): void {
