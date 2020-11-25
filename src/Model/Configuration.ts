@@ -26,6 +26,8 @@ export default class Configuration {
     autoPauseVideo = false;             // DEFAULT: false.
     hideSeenVideos = false;             // DEFAULT: false.
     hideEmptySubs = true;               // DEFAULT: true.
+    hideOlderVideos = false;            // DEFAULT: false.
+    videoDecomposeTime = 30;             // DEFAULT: 30 days.
 
     updateConfiguration(info: {
         useRemoteData?: boolean,
@@ -41,7 +43,9 @@ export default class Configuration {
         peekPlayerSizeFactor?: number,
         autoPauseVideo?: boolean,
         hideSeenVideos?: boolean,
+        hideOlderVideos?: boolean,
         hideEmptySubs?: boolean,
+        videoDecomposeTime?: number,
         [x: string]: any
 
     }): void {
@@ -84,8 +88,14 @@ export default class Configuration {
         if (Object.prototype.hasOwnProperty.call(info, "hideSeenVideos")) {
             this.hideSeenVideos = info.hideSeenVideos;
         }
+        if (Object.prototype.hasOwnProperty.call(info, "hideOlderVideos")) {
+            this.hideOlderVideos = info.hideOlderVideos;
+        }
         if (Object.prototype.hasOwnProperty.call(info, "hideEmptySubs")) {
             this.hideEmptySubs = info.hideEmptySubs;
+        }
+        if (Object.prototype.hasOwnProperty.call(info, "videoDecomposeTime")) {
+            this.videoDecomposeTime = info.videoDecomposeTime;
         }
     }
 
@@ -103,6 +113,8 @@ export default class Configuration {
             this.peekPlayerSizeFactor === config.peekPlayerSizeFactor &&
             this.autoPauseVideo === config.autoPauseVideo &&
             this.hideSeenVideos === config.hideSeenVideos &&
+            this.hideOlderVideos === config.hideOlderVideos &&
+            this.videoDecomposeTime === config.videoDecomposeTime &&
             this.hideEmptySubs === config.hideEmptySubs;
 
     }
