@@ -49,7 +49,6 @@ export default class VideoComponent extends Component {
         this.clipItem.mouseover(() => this.startEnlargeTimeout());
         this.clipItem.mouseleave(() => this.abortEnlargeTimeout());
         this.closeItem.mouseover(() => this.abortEnlargeTimeout());
-        this.addToQueueItem.mouseover(() => this.abortEnlargeTimeout());
         this.component.mouseleave(() => this.resetThumbnail());
 
         setTimeout(() => {
@@ -86,7 +85,6 @@ export default class VideoComponent extends Component {
         });
 
         this.clipItem.add(this.titleItem).add(this.closeItem).click((event) => this.handleOpenVideo(event));
-        this.clipItem.add(this.titleItem).add(this.addToQueueItem).click((event) => this.handleOpenVideo(event));
 
     }
 
@@ -171,7 +169,7 @@ export default class VideoComponent extends Component {
 
     private handleOpenVideo(event: ClickEvent): void {
         event.preventDefault();
-        if ((event.target as Element).classList.contains(this.closeItem.attr("class")) || (event.target as Element).classList.contains(this.addToQueueItem.attr("class"))) {
+        if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
             return;
         }
         pageService.openVideoWithSPF(this.videoId);
