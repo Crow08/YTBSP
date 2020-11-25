@@ -66,7 +66,6 @@ export default class SubListComponent extends Component {
     }
 
     startQueue(): void {
-        alert(configService.getConfig().hideOlderVideos);
         if (queueService.getStartVideoId() == null){
             alert("Queue is empty, let me choose a video for you!");
             //get rolled boy!
