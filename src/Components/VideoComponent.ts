@@ -115,6 +115,8 @@ export default class VideoComponent extends Component {
     private getAdditionalVideoInfos(): void {
         ytdl.getBasicInfo(this.videoId).then(info => {
             const updateInfo = {};
+            console.log(info.published);
+            updateInfo["pubDate"] = new Date(info.published);
             const uploaded = moment(info.videoDetails.uploadDate);
             if (moment().add(-2, "day").isBefore(uploaded)) {
                 updateInfo["uploaded"] = uploaded.calendar().split(" at")[0];

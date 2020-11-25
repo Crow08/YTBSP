@@ -140,7 +140,7 @@ export default class SubComponent extends Component {
             // if the element is already in the list.
             if (-1 !== oldIndex) {
                 // If that video is removed search for it and remove it when found.
-                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen) || (configService.getConfig().hideOlderVideos && this.isVideoOld(video.uploaded))) {
+                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen) || (configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
                     this.videoComponents[oldIndex].component.remove();
                     this.videoComponents.splice(oldIndex, 1);
                 } else {
@@ -157,7 +157,7 @@ export default class SubComponent extends Component {
                     }
                     visibleItemIndex++;
                 }
-            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.uploaded))) {
+            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
                 // Create new component for video.
                 const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
@@ -198,45 +198,23 @@ export default class SubComponent extends Component {
     }
 
     //calulate how old the video is and if its too old
-    isVideoOld(uploaded : string): boolean {
-        if(uploaded === undefined){
-            console.log("uploaded string is undefined");
-        } else{
-
-            console.log(uploaded);
-            let ageMultiplicator = 1;
-            let age = 0;
-            let isOld = false;
-            if ((uploaded.includes("month") || uploaded.includes("months"))){
-                ageMultiplicator = 30;
-            } else{
-                ageMultiplicator = 1;
-            }
-
-            console.log("Age Multiplikator");
-            console.log(ageMultiplicator);
-    
-            if (uploaded.includes("Yesterday")){
-                age = 1;
-            } else if (uploaded.includes("Today")){
-                age = 0;
-            } else if (uploaded.split(" ")[0] == "a") {
-                age = ageMultiplicator;
-            } else {
-                age = ageMultiplicator * Number(uploaded.split(" ")[0]);
-            }
-    
-            console.log("Age");
-            console.log(age);
-            console.log("DecomposeTime");
-            console.log(configService.getConfig().videoDecomposeTime);
-            if (age > configService.getConfig().videoDecomposeTime){
-                isOld = true;
-            }
-            console.log(isOld);
-            return isOld;
+    isVideoOld(pubdate : Date): boolean {
+        let isOld = false;
+        if (pubdate === undefined){
+            console.log("pubdate is undefined");
+            return false;
         }
+        const today = new Date();
+        console.log(pubdate);
+        
+        if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime){
+            isOld = true;
+        }
+        console.log(isOld);
+        return isOld;
     }
+
+  
 
     private processRequestVideos(response: Video[]): void {
         response.forEach((responseItem) => {

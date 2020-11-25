@@ -8,7 +8,7 @@ export default class Video {
     thumbLarge: string;
     duration: string;
     uploaded: string;
-    pubDate: string;
+    pubDate: Date;
     clicks: string;
 
     seen = false;
@@ -24,7 +24,7 @@ export default class Video {
         thumbLarge?: string,
         duration?: string,
         uploaded?: string,
-        pubDate?: string,
+        pubDate?: Date,
         clicks?: string,
         seen?: boolean,
         removed?: boolean,
@@ -47,7 +47,7 @@ export default class Video {
             this.uploaded = "" !== info.uploaded ? info.uploaded : this.uploaded;
         }
         if (Object.prototype.hasOwnProperty.call(info, "pubDate")) {
-            this.pubDate = "" !== info.pubDate ? info.pubDate : this.pubDate;
+            this.pubDate = null !== info.pubDate ? info.pubDate : this.pubDate;
         }
         if (Object.prototype.hasOwnProperty.call(info, "clicks")) {
             this.clicks = "" !== info.clicks ? info.clicks : this.clicks;

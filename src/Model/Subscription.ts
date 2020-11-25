@@ -21,7 +21,7 @@ export default class Subscription {
             thumbLarge?: string,
             duration?: string,
             uploaded?: string,
-            pubDate?: string,
+            pubDate?: Date,
             clicks?: string,
             seen?: boolean,
             removed?: boolean,
