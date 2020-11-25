@@ -6,6 +6,8 @@ import dataService from "../Services/DataService";
 import ytsub from "../ytsub";
 import Component from "./Component";
 import SubComponent from "./SubComponent";
+import queueService from "../Services/QueueService";
+import pageService from "../Services/PageService";
 
 export default class SubListComponent extends Component {
     private hideEmptySubsCb: JQuery;
@@ -16,6 +18,11 @@ export default class SubListComponent extends Component {
     constructor() {
         super($("<div/>", {"id": "ytbsp-subsWrapper"}));
         const strip = $("<div/>", {"id": "ytbsp-subsMenuStrip"});
+        strip.append($("<button/>", {
+            "id": "ytbsp-startQueue",
+            "class": "ytbsp-func",
+            "html": "Start watching"
+        }).click(() => this.startQueue()));
         strip.append($("<button/>", {
             "id": "ytbsp-removeAllVideos",
             "class": "ytbsp-func",
@@ -50,6 +57,17 @@ export default class SubListComponent extends Component {
         this.subComponents.forEach(subComp => {
             subComp.subRemoveAllVideos();
         });
+    }
+
+    startQueue(): void {
+        if (queueService.getStartVideoId() == null){
+            alert("Queue is empty, let me choose a video for you!");
+            //get rolled boy!
+            pageService.openVideoWithSPF("dQw4w9WgXcQ");
+            return;
+        }
+        pageService.openVideoWithSPF(queueService.getStartVideoId());
+        queueService.resetStartVideoId();
     }
 
     resetAllVideos(): void {

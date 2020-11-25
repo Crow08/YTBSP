@@ -100,6 +100,38 @@ interface YTApp {
                 webPageType: string
             }
         }
+    } | { args: (Element|{
+            commandMetadata:{webCommandMetadata:{url:string,sendPost:boolean}},
+            signalServiceEndpoint:{
+                signal:string,
+                actions:
+                    {
+                        addToPlaylistCommand:{
+                            openMiniplayer:boolean,
+                            videoId: string,
+                            listType:string,
+                            onCreateListCommand:{
+                                commandMetadata:{
+                                    webCommandMetadata:{
+                                        url:string,
+                                        sendPost:boolean,
+                                        apiUrl:string
+                                    }
+                                },
+                                createPlaylistServiceEndpoint:{
+                                    videoIds:string[],
+                                    params: string
+                                }
+                            },
+                            videoIds:string[]
+                        }
+                    }[]
+            }
+        })[],
+        actionName: string,
+        disableBroadcast: boolean,
+        optionalAction: boolean,
+        returnValue: any[]
     }) => void;
 }
 
@@ -150,6 +182,12 @@ class PageService {
                 callback();
             });
             this.onDocumentReadyCallbackList = [];
+            const newDiv = document.createElement("div");
+            newDiv.style.display = "none";
+            newDiv.innerHTML += (`<ytd-menu-service-item-renderer class="style-scope ytd-menu-popup-renderer" role="menuitem" use-icons="" tabindex="-1" aria-selected="false">
+            <paper-item class="style-scope ytd-menu-service-item-renderer" role="option" tabindex="0" aria-disabled="false">
+            </ytd-menu-service-item-renderer>`);
+            document.body.appendChild(newDiv);
         });
 
         window.addEventListener("scroll", throttleTime(() => this.handleViewChange()), false);
@@ -257,7 +295,48 @@ class PageService {
         }, 200);
     }
 
-    openVideoWithSPF(id: string) {
+    addToQueue(id: string): void {
+        const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
+        const queueEventArg = {
+            "commandMetadata":{"webCommandMetadata":{"url":"/service_ajax","sendPost":true}},
+            "signalServiceEndpoint":{
+                "signal":"CLIENT_SIGNAL",
+                "actions":[
+                    {
+                        "addToPlaylistCommand":{
+                            "openMiniplayer":true,
+                            "videoId": id,
+                            "listType":"PLAYLIST_EDIT_LIST_TYPE_QUEUE",
+                            "onCreateListCommand":{
+                                "commandMetadata":{
+                                    "webCommandMetadata":{
+                                        "url":"/service_ajax",
+                                        "sendPost":true,
+                                        "apiUrl":"/youtubei/v1/playlist/create"
+                                    }
+                                },
+                                "createPlaylistServiceEndpoint":{
+                                    "videoIds":[id],
+                                    "params": "CAQ%3D"
+                                }
+                            },
+                            "videoIds":[id]
+                        }
+                    }
+                ]
+            }
+        };
+        const QueueEventRequest = {
+            args: [document.querySelector("ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer"),queueEventArg],
+            actionName: "yt-service-request",
+            disableBroadcast: false,
+            optionalAction: false,
+            returnValue: []
+        };
+        ytdApp["fire"]("yt-action", QueueEventRequest);
+    }
+
+    openVideoWithSPF(id: string): void {
         // Using a native YT event to mimic a native navigation.
         const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
         ytdApp["fire"]("yt-navigate", {
