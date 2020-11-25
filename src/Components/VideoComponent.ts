@@ -1,5 +1,4 @@
 import moment from "moment";
-import { isPropertyName } from "typescript";
 import ytdl from "ytdl-core";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
@@ -38,7 +37,7 @@ export default class VideoComponent extends Component {
         });
         this.clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
         this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
-        this.addToQueueItem = $("<p/>", {
+        this.addToQueueItem = $("<span/>", {
             "class": "ytbsp-seenMarker",
             "html": "add to queue"
         });

@@ -61,7 +61,9 @@ export default class SubListComponent extends Component {
 
     startQueue(): void {
         if (queueService.getStartVideoId() == null){
-            alert("Queue is empty, you need to add videos first, duh!");
+            alert("Queue is empty, let me choose a video for you!");
+            //get rolled boy!
+            pageService.openVideoWithSPF("dQw4w9WgXcQ");
             return;
         }
         pageService.openVideoWithSPF(queueService.getStartVideoId());
