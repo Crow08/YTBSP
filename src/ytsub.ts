@@ -28,20 +28,34 @@ export default async (): Promise<Subscription[]> => {
 };
 
 function getConfigurationJson(body: string): any {
-    let jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
-    jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
+    let jsonString = "";
+    if(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1){
+        jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
+        jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
+    }else{
+        jsonString = body.substring(body.search("window\\.ytplayer=\\{\\};\nytcfg\\.set") + 30);
+        jsonString = jsonString.substring(0, jsonString.search("\\;var setMessage=function\\(msg\\)"));
+    }
+
     jsonString = jsonString.trim();
-    while (jsonString[jsonString.length - 1] !== "}") {
+    while (jsonString.length > 0 && jsonString[jsonString.length - 1] !== "}") {
         jsonString = jsonString.substring(0, jsonString.length - 1);
     }
     return JSON.parse(jsonString);
 }
 
 function getContentJson(body: string): any {
-    let jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
-    jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
+    let jsonString = "";
+    if(body.search("window\\[\"ytInitialData\"\\]") !== -1) {
+        jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
+        jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
+    } else {
+        jsonString = body.substring(body.search("var ytInitialData = ") + 20);
+        jsonString = jsonString.substring(0, jsonString.search(";</script>"));
+    }
+
     jsonString = jsonString.trim();
-    while (jsonString[jsonString.length - 1] !== "}") {
+    while (jsonString.length > 0 && jsonString[jsonString.length - 1] !== "}") {
         jsonString = jsonString.substring(0, jsonString.length - 1);
     }
     return JSON.parse(jsonString);
