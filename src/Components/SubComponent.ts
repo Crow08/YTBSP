@@ -9,7 +9,6 @@ import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import { Loader } from "./ComponentUtils";
 import VideoComponent from "./VideoComponent";
-import { getVideoID } from "ytdl-core";
 
 export default class SubComponent extends Component {
     channelId: string;

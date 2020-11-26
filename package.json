@@ -30,7 +30,8 @@
         "ts-loader": "^8.0.11",
         "typescript": "^3.9.7",
         "webpack": "^4.44.2",
-        "webpack-cli": "^3.3.12"
+        "webpack-cli": "^3.3.12",
+        "miniget": "^4.1.0"
     },
     "devDependencies": {
         "@typescript-eslint/eslint-plugin": "^3.10.1",

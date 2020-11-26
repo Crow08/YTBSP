@@ -136,31 +136,35 @@ function convertToVideos(items: any[]): Video[] {
         vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
         vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
         // Try to get upload information from accessibility data.
-        extractUploadInformation(videoItem, vid);
+        const uploadInfo = extractUploadInformation(videoItem);
+        vid.uploaded = uploadInfo.uploaded;
+        vid.pubDate = uploadInfo.pubDate;
         videos.push(vid);
     });
 
     return videos;
 }
 
-function extractUploadInformation(videoItem, vid: Video) {
+function extractUploadInformation(videoItem): {"uploaded": string, "pubDate": Date} {
+    const result = {"uploaded": "unknown", "pubDate": null};
     const author = videoItem["shortBylineText"]["runs"][0]["text"];
     const accessibilityData = (videoItem["title"]["accessibility"]["accessibilityData"]["label"] as string)
-        .substring(vid.title.length)
+        .substring(videoItem["title"]["runs"][0]["text"].length)
         .replace(author, "");
     const uploadedRegex = /(([0-9]+ (year(s)?|month(s)?|week(s)?|day(s)?|hour(s)?|minute(s)?|second(s)?))|([0-9]+ (Jahr(en)?|Monat(en)?|Woche(n)?|Tag(e)?|Stunde(n)?|Minute(n)?|Sekunde(n)?)))/g;
     const numberRegex = /\d+/g;
     if (typeof accessibilityData !== "undefined") {
         const accessibilityParts = uploadedRegex.exec(accessibilityData);
         if (accessibilityParts && accessibilityParts.length !== 0) {
-            vid.uploaded = accessibilityParts[0];
-            const numberParts = numberRegex.exec(vid.uploaded);
-            const unit = getTimeUnit(vid.uploaded);
+            result.uploaded = accessibilityParts[0];
+            const numberParts = numberRegex.exec(result.uploaded);
+            const unit = getTimeUnit(result.uploaded);
             if (unit && numberParts && numberParts.length !== 0) {
-                vid.pubDate = moment().subtract(numberParts[0],).toDate();
+                result.pubDate = moment().subtract(numberParts[0], unit).toDate();
             }
         }
     }
+    return result;
 }
 
 function getTimeUnit(time: string): unitOfTime.DurationConstructor {
