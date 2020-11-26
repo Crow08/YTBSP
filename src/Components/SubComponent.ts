@@ -206,7 +206,7 @@ export default class SubComponent extends Component {
         }
         const today = new Date();
         console.log(pubdate);
-        
+
         if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime){
             isOld = true;
         }
@@ -214,20 +214,13 @@ export default class SubComponent extends Component {
         return isOld;
     }
 
-  
-
     private processRequestVideos(response: Video[]): void {
         response.forEach((responseItem) => {
             dataService.upsertVideo(responseItem.id, ((currentVideo) => {
                 if ("undefined" === typeof currentVideo) {
                     currentVideo = new Video(responseItem.id);
                 }
-                currentVideo.updateVideo({
-                    title: responseItem.title,
-                    duration: responseItem.duration,
-                    thumb: `https://i.ytimg.com/vi/${responseItem.id}/mqdefault.jpg`,
-                    thumbLarge: `https://i.ytimg.com/vi/${responseItem.id}/maxresdefault.jpg`
-                });
+                currentVideo.updateVideo(responseItem);
                 return currentVideo;
             }), true, this.channelId);
         });
