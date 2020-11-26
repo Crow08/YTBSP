@@ -156,7 +156,7 @@ export default class SubComponent extends Component {
                     }
                     visibleItemIndex++;
                 }
-            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
+            } else if (video.title !== undefined && (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate)))) {
                 // Create new component for video.
                 const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
