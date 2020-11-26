@@ -9,6 +9,7 @@ import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import { Loader } from "./ComponentUtils";
 import VideoComponent from "./VideoComponent";
+import { getVideoID } from "ytdl-core";
 
 export default class SubComponent extends Component {
     channelId: string;
@@ -139,7 +140,7 @@ export default class SubComponent extends Component {
             // if the element is already in the list.
             if (-1 !== oldIndex) {
                 // If that video is removed search for it and remove it when found.
-                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen)) {
+                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen) || (configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
                     this.videoComponents[oldIndex].component.remove();
                     this.videoComponents.splice(oldIndex, 1);
                 } else {
@@ -156,7 +157,7 @@ export default class SubComponent extends Component {
                     }
                     visibleItemIndex++;
                 }
-            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen)) {
+            } else if (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
                 // Create new component for video.
                 const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
@@ -190,11 +191,30 @@ export default class SubComponent extends Component {
         if (this.videoComponents.length === 0 && configService.getConfig().hideEmptySubs) {
             this.component.hide();
             pageService.triggerViewChange();
-        } else {
+        } else{
             this.component.show();
             this.updateVisibility();
         }
     }
+
+    //calulate how old the video is and if its too old
+    isVideoOld(pubdate : Date): boolean {
+        let isOld = false;
+        if (pubdate === undefined){
+            console.log("pubdate is undefined");
+            return false;
+        }
+        const today = new Date();
+        console.log(pubdate);
+        
+        if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime){
+            isOld = true;
+        }
+        console.log(isOld);
+        return isOld;
+    }
+
+  
 
     private processRequestVideos(response: Video[]): void {
         response.forEach((responseItem) => {

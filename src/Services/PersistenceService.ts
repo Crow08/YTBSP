@@ -119,6 +119,7 @@ class PersistenceService {
             localStorage.removeItem("YTBSP_VideoInfo");
             localStorage.removeItem("YTBSP_useRemoteData");
             localStorage.removeItem("YTBSP_hideSeenVideos");
+            localStorage.removeItem("YTBSP_hideOlderVideos");
             localStorage.removeItem("YTBSP_hideEmptySubs");
             localStorage.removeItem("YTBSP_maxSimSubLoad");
             localStorage.removeItem("YTBSP_maxVideosPerRow");
@@ -139,6 +140,7 @@ class PersistenceService {
             const config = new Configuration();
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "useRemoteData");
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerRow");
@@ -150,6 +152,7 @@ class PersistenceService {
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
             resolve(config);
         }));
     }
@@ -164,6 +167,7 @@ class PersistenceService {
         return new Promise(((resolve) => {
             localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
             localStorage.setItem("YTBSP_hideSeenVideos", config.hideSeenVideos ? "1" : "0");
+            localStorage.setItem("YTBSP_hideOlderVideos", config.hideOlderVideos ? "1" : "0");
             localStorage.setItem("YTBSP_hideEmptySubs", config.hideEmptySubs ? "1" : "0");
             localStorage.setItem("YTBSP_maxSimSubLoad", config.maxSimSubLoad.toString());
             localStorage.setItem("YTBSP_maxVideosPerRow", config.maxVideosPerRow.toString());
@@ -174,6 +178,7 @@ class PersistenceService {
             localStorage.setItem("YTBSP_playerQuality", config.playerQuality.toString());
             localStorage.setItem("YTBSP_timeToMarkAsSeen", config.timeToMarkAsSeen.toString());
             localStorage.setItem("YTBSP_screenThreshold", config.screenThreshold.toString());
+            localStorage.setItem("YTBSP_videoDecomposeTime", config.videoDecomposeTime.toString());
             localStorage.setItem("YTBSP_autoPauseVideo", config.autoPauseVideo ? "1" : "0");
             resolve();
         }));

@@ -11,6 +11,7 @@ import pageService from "../Services/PageService";
 
 export default class SubListComponent extends Component {
     private hideEmptySubsCb: JQuery;
+    private hideOlderVideosCb: JQuery;
     private hideSeenVideosCb: JQuery;
     private subList: JQuery;
     private subComponents: SubComponent[] = [];
@@ -38,6 +39,11 @@ export default class SubListComponent extends Component {
         strip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func"})
             .append(this.hideSeenVideosCb)
             .append("Hide seen videos"));
+        this.hideOlderVideosCb = $("<input/>", {"id": "ytbsp-hideOlderVideosCb", "type": "checkbox"})
+            .change(() => configService.updateConfig({hideOlderVideos: this.hideOlderVideosCb.prop("checked") as boolean}));
+        strip.append($("<label/>", {"for": "ytbsp-hideOlderVideosCb", "class": "ytbsp-func"})
+            .append(this.hideOlderVideosCb)
+            .append("Hide older videos"));
         this.hideEmptySubsCb = $("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox"})
             .change(() => configService.updateConfig({hideEmptySubs: this.hideEmptySubsCb.prop("checked") as boolean}));
         strip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func"})
@@ -106,5 +112,6 @@ export default class SubListComponent extends Component {
         this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
         this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
         this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
+        this.hideOlderVideosCb.prop("checked", config.hideOlderVideos);
     }
 }

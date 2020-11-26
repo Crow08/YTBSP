@@ -12,6 +12,7 @@ export default class SettingsModalComponent extends Component {
 
     private hideEmptySubsSlider: Slider;
     private hideSeenVideosSlider: Slider;
+    private hideOlderVideosSlider: Slider;
     private useRemoteDataSlider: Slider;
     private autoPauseVideoSlider: Slider;
     private playerQualitySelect: JQuery;
@@ -24,6 +25,7 @@ export default class SettingsModalComponent extends Component {
     private enlargeFactorNativeInput: JQuery;
     private screenThresholdInput: JQuery;
     private deleteUserDataButton: JQuery;
+    private videoDecomposeTimeInput: JQuery;
 
     constructor(modal: ModalComponent) {
         super($("<div/>"));
@@ -31,6 +33,7 @@ export default class SettingsModalComponent extends Component {
 
         this.hideEmptySubsSlider = getSlider("ytbsp-settings-hideEmptySubs", configService.getConfig().hideEmptySubs);
         this.hideSeenVideosSlider = getSlider("ytbsp-settings-hideSeenVideos", configService.getConfig().hideSeenVideos);
+        this.hideOlderVideosSlider = getSlider("ytbsp-settings-hideOlderVideos", configService.getConfig().hideOlderVideos);
         this.useRemoteDataSlider = getSlider("ytbsp-settings-useRemoteData", configService.getConfig().useRemoteData);
         this.autoPauseVideoSlider = getSlider("ytbsp-settings-autoPauseVideo", configService.getConfig().autoPauseVideo);
         this.playerQualitySelect = this.getQualitySelect();
@@ -95,6 +98,12 @@ export default class SettingsModalComponent extends Component {
             "css": {"background-color": "#bb3333", "border-radius": "2px"},
             "on": {"click": () => this.deleteUserData()}
         });
+        this.videoDecomposeTimeInput = $("<input>", {
+            "type": "number",
+            "min": "0",
+            "id": "ytbsp-settings-videoDecomposeTime",
+            "value": configService.getConfig().videoDecomposeTime
+        });
         this.component.append($("<h1/>", {"html": "Settings"}));
         this.component.append(this.buildSettingsTable());
         this.component.append(this.buildBottomControls());
@@ -110,10 +119,12 @@ export default class SettingsModalComponent extends Component {
             enlargeFactor: this.enlargeFactorInput.val(),
             enlargeFactorNative: this.enlargeFactorNativeInput.val(),
             timeToMarkAsSeen: this.timeToMarkAsSeenInput.val(),
+            videoDecomposeTime: this.videoDecomposeTimeInput.val(),
             screenThreshold: this.screenThresholdInput.val(),
             playerQuality: this.playerQualitySelect.val(),
             autoPauseVideo: this.autoPauseVideoSlider.getValue(),
             hideSeenVideos: this.hideSeenVideosSlider.getValue(),
+            hideOlderVideos: this.hideOlderVideosSlider.getValue(),
             hideEmptySubs: this.hideEmptySubsSlider.getValue()
         });
         this.modal.closeModal();
@@ -141,6 +152,11 @@ export default class SettingsModalComponent extends Component {
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide seen videos"}))
             .append($("<td>").append(this.hideSeenVideosSlider.component))
+            .append($("<td>"))
+        );
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Hide older videos"}))
+            .append($("<td>").append(this.hideOlderVideosSlider.component))
             .append($("<td>"))
         );
         settingsTable.append($("<tr>")
@@ -177,6 +193,11 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Watch time to mark video as seen"}))
             .append($("<td>").append(this.timeToMarkAsSeenInput).append(" s"))
             .append($("<td>", {"html": "Default: 10"}))
+        );
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Hide Videos Older than - Time"}))
+            .append($("<td>").append(this.videoDecomposeTimeInput).append(" days"))
+            .append($("<td>", {"html": "Default: 30"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Delay for thumbnail enlarge"}))
