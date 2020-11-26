@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import MINIGET from "miniget";
+import moment, { unitOfTime } from "moment";
 import * as querystring from "querystring";
 import Video from "./Model/Video";
 
-export default async (plistID: string, options: {limit: number}): Promise<Video[]> => {
+export default async (plistID: string, options: { limit: number }): Promise<Video[]> => {
     const body = getPlaylistPageBody(plistID);
 
     const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
@@ -30,10 +31,10 @@ export default async (plistID: string, options: {limit: number}): Promise<Video[
 
 function getConfigurationJson(body: string): any {
     let jsonString = "";
-    if(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1){
+    if (body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1) {
         jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
         jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
-    }else{
+    } else {
         jsonString = body.substring(body.search("window\\.ytplayer=\\{\\};\nytcfg\\.set") + 30);
         jsonString = jsonString.substring(0, jsonString.search("\\;var setMessage=function\\(msg\\)"));
     }
@@ -47,7 +48,7 @@ function getConfigurationJson(body: string): any {
 
 function getContentJson(body: string): any {
     let jsonString = "";
-    if(body.search("window\\[\"ytInitialData\"\\]") !== -1) {
+    if (body.search("window\\[\"ytInitialData\"\\]") !== -1) {
         jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
         jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
     } else {
@@ -121,8 +122,8 @@ function convertToVideos(items: any[]): Video[] {
     const videos: Video[] = [];
     items.forEach(item => {
         const videoItem = item["playlistVideoRenderer"];
-        if(typeof videoItem === "undefined") {
-            if(typeof item["continuationItemRenderer"] !== "undefined") {
+        if (typeof videoItem === "undefined") {
+            if (typeof item["continuationItemRenderer"] !== "undefined") {
                 return;
             } else {
                 console.error(`unknown Error:\n${JSON.stringify(item)}`);
@@ -134,11 +135,49 @@ function convertToVideos(items: any[]): Video[] {
         vid.duration = videoItem["lengthText"]["simpleText"];
         vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
         vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
-        // vid.pubDate;
-        // vid.clicks;
-        // vid.uploaded;
-
+        // Try to get upload information from accessibility data.
+        extractUploadInformation(videoItem, vid);
         videos.push(vid);
     });
+
     return videos;
+}
+
+function extractUploadInformation(videoItem, vid: Video) {
+    const author = videoItem["shortBylineText"]["runs"][0]["text"];
+    const accessibilityData = (videoItem["title"]["accessibility"]["accessibilityData"]["label"] as string)
+        .substring(vid.title.length)
+        .replace(author, "");
+    const uploadedRegex = /(([0-9]+ (year(s)?|month(s)?|week(s)?|day(s)?|hour(s)?|minute(s)?|second(s)?))|([0-9]+ (Jahr(en)?|Monat(en)?|Woche(n)?|Tag(e)?|Stunde(n)?|Minute(n)?|Sekunde(n)?)))/g;
+    const numberRegex = /\d+/g;
+    if (typeof accessibilityData !== "undefined") {
+        const accessibilityParts = uploadedRegex.exec(accessibilityData);
+        if (accessibilityParts && accessibilityParts.length !== 0) {
+            vid.uploaded = accessibilityParts[0];
+            const numberParts = numberRegex.exec(vid.uploaded);
+            const unit = getTimeUnit(vid.uploaded);
+            if (unit && numberParts && numberParts.length !== 0) {
+                vid.pubDate = moment().subtract(numberParts[0],).toDate();
+            }
+        }
+    }
+}
+
+function getTimeUnit(time: string): unitOfTime.DurationConstructor {
+    if (time.includes("year") || time.includes("Jahr")) {
+        return "y";
+    } else if (time.includes("month") || time.includes("Monat")) {
+        return "M";
+    } else if (time.includes("week") || time.includes("Woche")) {
+        return "w";
+    } else if (time.includes("day") || time.includes("Tag")) {
+        return "d";
+    } else if (time.includes("hour") || time.includes("Stunde")) {
+        return "h";
+    } else if (time.includes("minute") || time.includes("Minute")) {
+        return "m";
+    } else if (time.includes("second") || time.includes("Sekunde")) {
+        return "s";
+    }
+    return null;
 }

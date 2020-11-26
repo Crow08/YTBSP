@@ -1,5 +1,3 @@
-import moment from "moment";
-import ytdl from "ytdl-core";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
@@ -19,7 +17,6 @@ export default class VideoComponent extends Component {
     private titleItem: JQuery;
     private clipItem: JQuery;
     private enlargeTimeout: Timeout = null;
-    private clicksItem: JQuery;
     private uploadItem: JQuery;
 
     constructor(video: Video) {
@@ -35,8 +32,7 @@ export default class VideoComponent extends Component {
             "title": video.title,
             "html": video.title
         });
-        this.clicksItem = $("<p/>", {"class": "ytbsp-views", "html": video.clicks});
-        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": video.uploaded});
+        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": `Uploaded ${video.uploaded} ago`});
         this.addToQueueItem = $("<span/>", {
             "class": "ytbsp-seenMarker",
             "html": "add to queue"
@@ -61,7 +57,6 @@ export default class VideoComponent extends Component {
             .append(this.thumbItem)
             .append(durationItem));
         this.component.append(this.titleItem);
-        this.component.append(this.clicksItem);
         this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
         this.component.append($("<span/>", {"class" : "ytbsp-spacer", "html": " | "}));
@@ -75,7 +70,7 @@ export default class VideoComponent extends Component {
                 return video;
             });
         });
-        
+
         //this adds clicked video to a magical invisible youtube playlist
         this.addToQueueItem.click(() => {
             pageService.addToQueue(video.id);
@@ -92,7 +87,6 @@ export default class VideoComponent extends Component {
         const src = this.thumbItem.attr("src");
         if (this.isInView() && ("undefined" === typeof src || "" === src)) {
             this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumb);
-            this.getAdditionalVideoInfos();
         }
     }
 
@@ -106,57 +100,6 @@ export default class VideoComponent extends Component {
     update(): void {
         const video = dataService.getVideo(this.videoId);
         this.updateSeenButton(video);
-        this.updateClicks(video);
-        this.updateUploaded(video);
-    }
-
-    private getAdditionalVideoInfos(): void {
-        ytdl.getBasicInfo(this.videoId).then(info => {
-            const updateInfo = {};
-            console.log(info.published);
-            updateInfo["pubDate"] = new Date(info.published);
-            const uploaded = moment(info.videoDetails.uploadDate);
-            if (moment().add(-2, "day").isBefore(uploaded)) {
-                updateInfo["uploaded"] = uploaded.calendar().split(" at")[0];
-            } else {
-                updateInfo["uploaded"] = uploaded.fromNow();
-            }
-
-            const viewCount = parseInt(info.videoDetails.viewCount, 10);
-            if (1000000 < viewCount) {
-                updateInfo["clicks"] = `${Math.round(viewCount / 1000000 * 10) / 10}M views`; // Rounded million views.
-            } else if (10000 < viewCount) {
-                updateInfo["clicks"] = `${Math.round(viewCount / 1000)}K views`; // Rounded thousand views.
-            } else {
-                updateInfo["clicks"] = `${viewCount} views`; // Exact view count under thousand.
-            }
-
-            const thumbnails = info.videoDetails.thumbnail.thumbnails;
-            const isMedResAvailable = "undefined" !== typeof thumbnails.find(value => value.url.includes("mqdefault"));
-            const isMaxResAvailable = "undefined" !== typeof thumbnails.find(value => value.url.includes("maxresdefault"));
-            if (!isMedResAvailable) {
-                const medThumbnail = thumbnails.reduce((carry, current) => current.width < carry.width && current.width > 160 ? current : carry);
-                updateInfo["thumb"] = medThumbnail.url;
-            }
-            if (!isMaxResAvailable) {
-                const maxThumbnail = thumbnails.reduce((carry, current) => current.width > carry.width ? current : carry);
-                updateInfo["thumbLarge"] = maxThumbnail.url;
-            }
-
-            dataService.upsertVideo(this.videoId, (video) => {
-                video.updateVideo(updateInfo);
-                return video;
-            }, true, info.videoDetails.channelId);
-            this.update();
-        }).catch((e) => console.error(e));
-    }
-
-    private updateClicks(video: Video): void {
-        this.clicksItem.html(video.clicks);
-    }
-
-    private updateUploaded(video: Video): void {
-        this.uploadItem.html(video.uploaded);
     }
 
     private updateSeenButton(video: Video): void {
