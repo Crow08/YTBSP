@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import https from "https";
 import MINIGET from "miniget";
-import * as querystring from "querystring";
+import crypto from "crypto";
 import Subscription from "./Model/Subscription";
 
 export default async (): Promise<Subscription[]> => {
@@ -12,14 +13,14 @@ export default async (): Promise<Subscription[]> => {
 
     let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
 
-    const continuations = contentJson["continuations"];
-    if (continuations) {
-        for (const continuationObject of continuations) {
-            const continuation = continuationObject["nextContinuationData"]["continuation"];
-            const clickTrackingParams = continuationObject["nextContinuationData"]["clickTrackingParams"];
-            const spfBody = getSPFSubContinuationBody(cfgJson, continuation, clickTrackingParams);
-            const spfJson = JSON.parse(await spfBody);
-            const spfItems = spfJson[1]["response"]["continuationContents"]["sectionListContinuation"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+    if(contentJson["contents"].length > 1){
+        const continuation = contentJson["contents"][1]["continuationItemRenderer"];
+        if (continuation) {
+            const continuationToken = continuation["continuationEndpoint"]["continuationCommand"]["token"];
+            const clickTrackingParams = continuation["continuationEndpoint"]["clickTrackingParams"];
+            const spfBody = getSubContinuationBody(cfgJson, continuationToken, clickTrackingParams);
+            const continuationJson = JSON.parse(await spfBody);
+            const spfItems = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
             allItems = allItems.concat(spfItems);
         }
     }
@@ -42,6 +43,11 @@ function getConfigurationJson(body: string): any {
         jsonString = jsonString.substring(0, jsonString.length - 1);
     }
     return JSON.parse(jsonString);
+}
+
+function getAPIKey(body: string) {
+    const part = body.substring(body.search("\"INNERTUBE_API_KEY\":\"") + 21);
+    return part.substring(0, part.search("\""));
 }
 
 function getContentJson(body: string): any {
@@ -69,50 +75,67 @@ async function getSubPageBody(): Promise<string> {
     return await MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", options).text();
 }
 
-async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
-    const headers = getSPFHeader(cfgJson);
-    const options = {headers};
-    const params = querystring.stringify({
-        "ctoken": continuation,
-        "continuation": continuation,
-        "itct": clickTrackingParams
-    });
-
-    const stream = MINIGET("https://www.youtube.com/browse_ajax?" + params, options);
-    // TODO: "redirect" and "error" are both workarounds for the anti bot captcha redirect. you will be redirected but
-    //  the redirect fails because of cors problems.
-    stream.on("redirect", (url) => {
-        console.error("redirect: " + url);
-        window.open(url);
-    });
-    stream.on("error", (err) => {
-        console.error(err);
-        window.open("https://www.youtube.com/browse_ajax?" + params);
-    });
-    return await stream.text();
-}
-
-function getSPFHeader(cfgJson) {
+async function getSubContinuationBody(cfgJson: any, continuationToken: string, clickTrackingParams: string): Promise<string> {
+    const user = cfgJson["DELEGATED_SESSION_ID"];
+    const key = cfgJson["INNERTUBE_API_KEY"];
     const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
     const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
-    const device = cfgJson["DEVICE"];
-    const pageCl = cfgJson["PAGE_CL"];
-    const pageLabel = cfgJson["PAGE_BUILD_LABEL"];
-    const variantsChecksum = cfgJson["VARIANTS_CHECKSUM"];
-    const idToken = cfgJson["ID_TOKEN"];
+    const options = {
+        headers: getPOSTHeader(cfgJson),
+        hostname: "www.youtube.com",
+        path: `/youtubei/v1/browse?key=${key as string}`,
+        method: "POST"
+    };
+    const payload = JSON.stringify({
+        "context": {
+            "client": {
+                "clientName": clientName,
+                "clientVersion": clientVersion
+            },
+            "user": {
+                "onBehalfOfUser": user
+            },
+            "clickTracking": {
+                "clickTrackingParams": clickTrackingParams
+            }
+        },
+        "continuation": continuationToken,
+    });
+    const requestPromise = new Promise<string> ((resolve, reject) => {
+        let responseData = "";
+        const req = https.request(options, res => {
+            res.on("data", chunk => {
+                responseData += chunk;
+            });
+            res.on("end", () => {
+                resolve(responseData);
+            });
+        });
+        req.on("error", error => {
+            console.error(error);
+            reject(error);
+        });
+        req.write(payload);
+        req.end();
+    });
+    return await requestPromise;
+}
+
+function getPOSTHeader(cfgJson) {
+    const time = Date.now();
+    const cookiePart = document.cookie.substring(document.cookie.search("__Secure-3PAPISID=") + 18);
+    const sessionId = cookiePart.substring(0, cookiePart.search(";"));
+    const hash = crypto.createHash("sha1");
+    const rawAuth = `${time} ${sessionId} https://www.youtube.com`;
+    const hashedAuth = hash.update(rawAuth, "utf8").digest("hex");
+
+    const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
+    const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
     return {
-        "X-SPF-Previous": "https://www.youtube.com/feed/channels",
-        "X-SPF-Referer": "https://www.youtube.com/feed/channels",
-        "X-YouTube-Time-Zone": "Europe/Berlin",
-        "X-YouTube-Utc-Offset": "120",
-        "X-YouTube-Ad-Signals": "",
-        "X-YouTube-Client-Name": clientName,
-        "X-YouTube-Client-Version": clientVersion,
-        "X-YouTube-Device": device,
-        "X-YouTube-Page-CL": pageCl,
-        "X-YouTube-Page-Label": pageLabel,
-        "X-YouTube-Variants-Checksum": variantsChecksum,
-        "X-Youtube-Identity-Token": idToken
+        "authorization": `SAPISIDHASH ${time}_${hashedAuth}`,//"SAPISIDHASH {Timestamp}_{Hash{{Timestamp} {SessionID} {Domain}}}",
+        "x-youtube-client-name": clientName,
+        "x-youtube-client-version": clientVersion,
+        "origin": "https://www.youtube.com"
     };
 }
 
