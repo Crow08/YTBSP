@@ -92,12 +92,15 @@ const throttleTime = (func: () => void) => {
 interface YTApp {
     fire: (key: string, data: {
         endpoint?: {
+            "commandMetadata": {
+                "webCommandMetadata": {
+                    "url": string,
+                    "webPageType": string,
+                    "rootVe": number
+                }
+            },
             watchEndpoint: {
                 videoId: string
-            },
-            webNavigationEndpointData: {
-                url: string,
-                webPageType: string
             }
         }
     } | { args: (Element|{
@@ -341,12 +344,15 @@ class PageService {
         const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
         ytdApp["fire"]("yt-navigate", {
             "endpoint": {
+                "commandMetadata": {
+                    "webCommandMetadata": {
+                        "url": `/watch?v=${id}`,
+                        "webPageType": "WEB_PAGE_TYPE_WATCH",
+                        "rootVe": 3832
+                    }
+                },
                 "watchEndpoint": {
                     "videoId": id
-                },
-                "webNavigationEndpointData": {
-                    "url": `/watch?v=${id}`,
-                    "webPageType": "WATCH"
                 }
             }
         });
