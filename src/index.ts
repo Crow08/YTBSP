@@ -7,41 +7,42 @@ import pageService, { PageState } from "./Services/PageService";
 import persistenceService from "./Services/PersistenceService";
 
 console.log("script start");
+setTimeout( () => {
+    pageService.updateNativeStyleRuleModifications(PageState.LOADING);
+    const ytbspComponent = new YTBSPComponent();
 
-pageService.updateNativeStyleRuleModifications(PageState.LOADING);
-const ytbspComponent = new YTBSPComponent();
-
-persistenceService.loadConfig(false).then((config) => {
-    configService.setConfig(config);
-    if (config.useRemoteData) {
-        persistenceService.loadConfig(true).then((remoteConfig) => {
-            configService.setConfig(remoteConfig);
+    persistenceService.loadConfig(false).then((config) => {
+        configService.setConfig(config);
+        if (config.useRemoteData) {
+            persistenceService.loadConfig(true).then((remoteConfig) => {
+                configService.setConfig(remoteConfig);
+            }).catch(e => console.error(e));
+        }
+        persistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
+            subs.forEach((subDTO) => {
+                const sub = new Subscription();
+                sub.updateSubscription(subDTO);
+                dataService.upsertSubscription(sub.channelId, () => sub);
+            });
+            atScriptDataLoaded();
         }).catch(e => console.error(e));
-    }
-    persistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
-        subs.forEach((subDTO) => {
-            const sub = new Subscription();
-            sub.updateSubscription(subDTO);
-            dataService.upsertSubscription(sub.channelId, () => sub);
-        });
-        atScriptDataLoaded();
+        pageService.addThumbnailEnlargeCss();
     }).catch(e => console.error(e));
-    pageService.addThumbnailEnlargeCss();
-}).catch(e => console.error(e));
 
-pageService.addDocumentReadyListener(() => {
-    console.log("document ready");
-    pageService.injectYTBSP(ytbspComponent);
-    pageService.startPageObserver();
-    markAsSeenService.checkPage();
+    pageService.addDocumentReadyListener(() => {
+        console.log("document ready");
+        pageService.injectYTBSP(ytbspComponent);
+        pageService.startPageObserver();
+        markAsSeenService.checkPage();
 
-    pageService.updateNativeStyleRuleModifications();
-    pageService.addPageChangeListener(() => {
         pageService.updateNativeStyleRuleModifications();
+        pageService.addPageChangeListener(() => {
+            pageService.updateNativeStyleRuleModifications();
+        });
     });
-});
 
-const atScriptDataLoaded = () => {
-    console.log("script data loaded");
-    ytbspComponent.startLoading();
-};
+    const atScriptDataLoaded = () => {
+        console.log("script data loaded");
+        ytbspComponent.startLoading();
+    };
+}, 0);
