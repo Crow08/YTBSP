@@ -118,7 +118,13 @@ export default class VideoComponent extends Component {
             return;
         }
         pageService.openVideoWithSPF(this.videoId);
-        playerService.togglePictureInPicturePlayer(false);
+
+        function closeMiniplayer() {
+            playerService.togglePictureInPicturePlayer(false);
+            document.removeEventListener("yt-player-updated", closeMiniplayer);
+        }
+
+        document.addEventListener("yt-player-updated", closeMiniplayer);
     }
 
     // Enlarge thumbnail and load higher resolution image.

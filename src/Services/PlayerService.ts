@@ -1,9 +1,15 @@
+import $ from "jquery";
 import configService from "./ConfigService";
 import pageService from "./PageService";
 
 // eslint-disable-next-line @typescript-eslint/unbound-method
 const defaultPlay: (() => Promise<void>) = HTMLMediaElement.prototype.play; // Save default play function before replacing it.
 let autoPauseThisVideo: boolean;
+
+interface YTHotKeyManager {
+    toggleMiniplayer_: () => void;
+    isMiniplayerActive_: () => boolean;
+}
 
 const modifiedPlay = function(target: Element): Promise<void> {
     // Need JQuery to be loaded.
@@ -36,7 +42,10 @@ class PlayerService {
     }
 
     togglePictureInPicturePlayer(on: boolean) {
-        pageService.toggleMiniplayer();
+        const manager =pageService.getHotkeyManager[0] as unknown as YTHotKeyManager;
+        if(manager.isMiniplayerActive_() !== on) {
+            manager.toggleMiniplayer_();
+        }
     }
 
     private resetAutoplay() {

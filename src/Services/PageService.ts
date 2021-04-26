@@ -139,10 +139,6 @@ interface YTApp {
     }) => void;
 }
 
-interface YTHotKeyManager {
-    toggleMiniplayer_: () => void;
-}
-
 class PageService {
 
     isDocumentReady = false;
@@ -347,7 +343,7 @@ class PageService {
     openVideoWithSPF(id: string): void {
         // Using a native YT event to mimic a native navigation.
         const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
-        ytdApp["fire"]("yt-navigate", {
+        const data = {
             "endpoint": {
                 "commandMetadata": {
                     "webCommandMetadata": {
@@ -360,15 +356,12 @@ class PageService {
                     "videoId": id
                 }
             }
-        });
+        };
+        ytdApp["fire"]("yt-navigate", data);
     }
 
-    getPlayer(): JQuery {
-        return $(YT_PLAYER);
-    }
-
-    getPlayerControls(): JQuery {
-        return $(YT_PLAYER_CONTROL);
+    getHotkeyManager(): JQuery {
+        return $(YT_HOTKEY_MANAGER);
     }
 
     getChannelId(): string | undefined {
@@ -383,10 +376,6 @@ class PageService {
             callback();
         });
     };
-
-    toggleMiniplayer() : void {
-        ($(YT_HOTKEY_MANAGER)[0] as unknown as YTHotKeyManager).toggleMiniplayer_();
-    }
 }
 
 const pageService = new PageService();
