@@ -6,6 +6,7 @@ import Timeout = NodeJS.Timeout;
 
 // YouTube selectors:
 const YT_APP = "ytd-app";
+const YT_HOTKEY_MANAGER = "ytd-app > yt-hotkey-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
@@ -136,6 +137,10 @@ interface YTApp {
         optionalAction: boolean,
         returnValue: any[]
     }) => void;
+}
+
+interface YTHotKeyManager {
+    toggleMiniplayer_: () => void;
 }
 
 class PageService {
@@ -378,6 +383,10 @@ class PageService {
             callback();
         });
     };
+
+    toggleMiniplayer() : void {
+        ($(YT_HOTKEY_MANAGER)[0] as unknown as YTHotKeyManager).toggleMiniplayer_();
+    }
 }
 
 const pageService = new PageService();
