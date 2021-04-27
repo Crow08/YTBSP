@@ -42,7 +42,7 @@ class PlayerService {
     }
 
     togglePictureInPicturePlayer(on: boolean) {
-        const manager =pageService.getHotkeyManager[0] as unknown as YTHotKeyManager;
+        const manager = pageService.getHotkeyManager()[0] as unknown as YTHotKeyManager;
         if(manager.isMiniplayerActive_() !== on) {
             manager.toggleMiniplayer_();
         }
