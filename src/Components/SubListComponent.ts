@@ -69,10 +69,10 @@ export default class SubListComponent extends Component {
         if (queueService.getStartVideoId() == null){
             alert("Queue is empty, let me choose a video for you!");
             //get rolled boy!
-            pageService.openVideoWithSPF("dQw4w9WgXcQ");
+            pageService.navigateToVideo("dQw4w9WgXcQ");
             return;
         }
-        pageService.openVideoWithSPF(queueService.getStartVideoId());
+        pageService.navigateToVideo(queueService.getStartVideoId());
         queueService.resetStartVideoId();
     }
 

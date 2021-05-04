@@ -7,6 +7,7 @@ import Timeout = NodeJS.Timeout;
 // YouTube selectors:
 const YT_APP = "ytd-app";
 const YT_HOTKEY_MANAGER = "ytd-app > yt-hotkey-manager";
+const YT_NAVIGATION_MANAGER = "ytd-app > yt-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
@@ -340,24 +341,19 @@ class PageService {
         ytdApp["fire"]("yt-action", QueueEventRequest);
     }
 
-    openVideoWithSPF(id: string): void {
-        // Using a native YT event to mimic a native navigation.
-        const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
-        const data = {
-            "endpoint": {
-                "commandMetadata": {
-                    "webCommandMetadata": {
-                        "url": `/watch?v=${id}`,
-                        "webPageType": "WEB_PAGE_TYPE_WATCH",
-                        "rootVe": 3832
-                    }
-                },
-                "watchEndpoint": {
-                    "videoId": id
+    navigateToVideo(id: string): void {
+        $(YT_NAVIGATION_MANAGER)[0]["navigate"]({
+            "commandMetadata": {
+                "webCommandMetadata": {
+                    "url": `/watch?v=${id}`,
+                    "webPageType": "WEB_PAGE_TYPE_WATCH",
+                    "rootVe": 3832
                 }
+            },
+            "watchEndpoint": {
+                "videoId": id
             }
-        };
-        ytdApp["fire"]("yt-navigate", data);
+        }, false);
     }
 
     getHotkeyManager(): JQuery {

@@ -117,7 +117,7 @@ export default class VideoComponent extends Component {
         if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
             return;
         }
-        pageService.openVideoWithSPF(this.videoId);
+        pageService.navigateToVideo(this.videoId);
 
         function closeMiniplayer() {
             playerService.togglePictureInPicturePlayer(false);
