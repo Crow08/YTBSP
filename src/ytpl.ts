@@ -68,7 +68,13 @@ async function getPlaylistPageBody(playlistId: string): Promise<string> {
         "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
     };
     const options = {headers};
-    return await MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
+    const httpRequestResult = MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
+    httpRequestResult.catch(reason => {
+        console.log(reason);
+        // probably a capture to solve -> redirect
+        location.href = `https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`;
+    });
+    return await httpRequestResult;
 }
 
 async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
