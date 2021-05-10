@@ -11,7 +11,8 @@ const YT_NAVIGATION_MANAGER = "ytd-app > yt-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
-const YT_CHANNEL_LINK = "#owner-name > a, #upload-info > #channel-name > #container #text-container > #text > a";
+const YT_CHANNEL_LINK = "#top-row > ytd-video-owner-renderer > #upload-info > #channel-name > #container > #text-container > #text > a";
+
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
 const YT_PLAYER_QUALITY = "yt-player-quality";
