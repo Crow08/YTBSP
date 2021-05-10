@@ -59,7 +59,7 @@ export default class VideoComponent extends Component {
         this.component.append(this.titleItem);
         this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
-        this.component.append($("<span/>", {"class" : "ytbsp-spacer", "html": " | "}));
+        this.component.append($("<span/>", {"class": "ytbsp-spacer", "html": " | "}));
         this.component.append(this.addToQueueItem);
 
         // Register some events from this thumb.
@@ -75,7 +75,7 @@ export default class VideoComponent extends Component {
         this.addToQueueItem.click(() => {
             pageService.addToQueue(video.id);
             queueService.setStartVideoId(video.id);
-            this.addToQueueItem.css("color","green");
+            this.addToQueueItem.css("color", "green");
             this.addToQueueItem.html("ADDED &#10003;");
         });
 
@@ -117,14 +117,17 @@ export default class VideoComponent extends Component {
         if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
             return;
         }
-        pageService.navigateToVideo(this.videoId);
 
-        function closeMiniplayer() {
-            playerService.togglePictureInPicturePlayer(false);
-            document.removeEventListener("yt-player-updated", closeMiniplayer);
+        function closeMiniplayer(e: CustomEvent) {
+            if (e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true) {
+                playerService.togglePictureInPicturePlayer(false);
+                document.removeEventListener("yt-action", closeMiniplayer);
+            }
         }
 
-        document.addEventListener("yt-player-updated", closeMiniplayer);
+        document.addEventListener("yt-action", closeMiniplayer);
+        pageService.navigateToVideo(this.videoId);
+
     }
 
     // Enlarge thumbnail and load higher resolution image.
