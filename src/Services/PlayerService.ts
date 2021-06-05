@@ -7,8 +7,8 @@ const defaultPlay: (() => Promise<void>) = HTMLMediaElement.prototype.play; // S
 let autoPauseThisVideo: boolean;
 
 interface YTHotKeyManager {
-    toggleMiniplayer_: () => void;
-    isMiniplayerActive_: () => boolean;
+    toggleMiniplayer: () => void;
+    isMiniplayerActive: () => boolean;
 }
 
 const modifiedPlay = function(target: Element): Promise<void> {
@@ -43,8 +43,8 @@ class PlayerService {
 
     togglePictureInPicturePlayer(on: boolean) {
         const manager = pageService.getHotkeyManager()[0] as unknown as YTHotKeyManager;
-        if(manager.isMiniplayerActive_() !== on) {
-            manager.toggleMiniplayer_();
+        if(manager.isMiniplayerActive() !== on) {
+            manager.toggleMiniplayer();
         }
     }
 
