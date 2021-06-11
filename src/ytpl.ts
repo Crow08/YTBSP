@@ -145,6 +145,10 @@ function convertToVideos(items: any[]): Video[] {
         const uploadInfo = extractUploadInformation(videoItem);
         vid.uploaded = uploadInfo.uploaded;
         vid.pubDate = uploadInfo.pubDate;
+
+        if(videoItem["upcomingEventData"] && videoItem["upcomingEventData"]["startTime"]) {
+            vid.premiere = new Date(Number(videoItem["upcomingEventData"]["startTime"]) * 1000);
+        }
         videos.push(vid);
     });
 

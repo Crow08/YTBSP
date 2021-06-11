@@ -1,3 +1,4 @@
+import moment from "moment";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
@@ -24,7 +25,7 @@ export default class VideoComponent extends Component {
         this.videoId = video.id;
         this.clipItem = $("<a/>", {"href": `/watch?v=${video.id}`, "class": "ytbsp-clip"});
         this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
-        this.thumbItem = $("<img  src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
+        this.thumbItem = $("<img src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
         const durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
         this.titleItem = $("<a/>", {
             "href": `/watch?v=${video.id}`,
@@ -32,7 +33,8 @@ export default class VideoComponent extends Component {
             "title": video.title,
             "html": video.title
         });
-        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": `Uploaded ${video.uploaded} ago`});
+        const dateHtml = video.premiere ? `Premieres ${moment(video.premiere).calendar() }` : `Uploaded ${video.uploaded} ago`;
+        this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": dateHtml});
         this.addToQueueItem = $("<span/>", {
             "class": "ytbsp-seenMarker",
             "html": "add to queue"
@@ -61,6 +63,9 @@ export default class VideoComponent extends Component {
         this.component.append(this.seenMarkerItem);
         this.component.append($("<span/>", {"class": "ytbsp-spacer", "html": " | "}));
         this.component.append(this.addToQueueItem);
+        if(video.premiere) {
+            this.component.addClass("ytbsp-premiere");
+        }
 
         // Register some events from this thumb.
         this.seenMarkerItem.click(() => this.toggleSeen());

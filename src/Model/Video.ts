@@ -10,6 +10,7 @@ export default class Video {
     uploaded: string;
     pubDate: Date;
     clicks: string;
+    premiere: Date;
 
     seen = false;
     removed = false;
@@ -28,6 +29,7 @@ export default class Video {
         clicks?: string,
         seen?: boolean,
         removed?: boolean,
+        premiere?: Date;
         [x: string]: any
     }): void {
         // Set given information.
@@ -57,6 +59,9 @@ export default class Video {
         }
         if (Object.prototype.hasOwnProperty.call(info, "removed")) {
             this.removed = false !== info.removed ? info.removed : this.removed;
+        }
+        if (Object.prototype.hasOwnProperty.call(info, "premiere")) {
+            this.premiere = null !== info.premiere ? info.premiere : this.premiere;
         }
     }
 
