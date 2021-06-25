@@ -50,6 +50,12 @@ export default class YTBSPComponent extends Component {
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
 
+        pageService.addPageChangeListener(() => this.updateLocation());
+        pageService.addDocumentReadyListener(() => {
+            this.updateLocation();
+            this.setTheme(pageService.isDarkModeEnabled());
+        });
+
         pageService.addToggleFullscreenListener((isFullscreen) => {
             if (isFullscreen) {
                 this.component.hide();
@@ -71,34 +77,39 @@ export default class YTBSPComponent extends Component {
         playerService.togglePictureInPicturePlayer(!this.isNative);
     }
 
-    showNative(): void {
-        pageService.showNative();
-        this.subList.component.hide();
-        this.isNative = true;
-        this.toggleSlider.setValue(this.isNative);
-        if (this.toggleGuide) {
-            pageService.toggleGuide();
+    showNative(retry = 8): void {
+        if(this.subList) {
+            console.log("SHOWNATIVE");
+            pageService.showNative();
+            this.subList.component.hide();
+            this.isNative = true;
+            this.toggleSlider.setValue(this.isNative);
+            if (this.toggleGuide && retry == 8) {
+                pageService.toggleGuide();
+            }
+        } else if(retry > 0){
+            setTimeout(() => this.showNative(--retry), 250);
         }
     }
 
-    hideNative(): void {
-        pageService.hideNative();
-        this.subList.component.show();
-        this.isNative = false;
-        this.toggleSlider.setValue(this.isNative);
-        if (this.toggleGuide) {
-            pageService.toggleGuide();
+    hideNative(retry = 8): void {
+        if(this.subList) {
+            console.log("HIDENATIVE");
+            pageService.hideNative();
+            this.subList.component.show();
+            this.isNative = false;
+            this.toggleSlider.setValue(this.isNative);
+            if (this.toggleGuide && retry == 8) {
+                pageService.toggleGuide();
+            }
+        } else if(retry > 0){
+            setTimeout(() => this.showNative(--retry), 250);
         }
     }
 
     startLoading(): void {
         this.subList = new SubListComponent();
         this.component.append(this.subList.component);
-        pageService.addPageChangeListener(() => this.updateLocation());
-        pageService.addDocumentReadyListener(() => {
-            this.updateLocation();
-            this.setTheme(pageService.isDarkModeEnabled());
-        });
     }
 
     private updateLocation(): void {
