@@ -50,12 +50,6 @@ export default class YTBSPComponent extends Component {
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
 
-        pageService.addPageChangeListener(() => this.updateLocation());
-        pageService.addDocumentReadyListener(() => {
-            this.updateLocation();
-            this.setTheme(pageService.isDarkModeEnabled());
-        });
-
         pageService.addToggleFullscreenListener((isFullscreen) => {
             if (isFullscreen) {
                 this.component.hide();
@@ -100,6 +94,11 @@ export default class YTBSPComponent extends Component {
     startLoading(): void {
         this.subList = new SubListComponent();
         this.component.append(this.subList.component);
+        pageService.addPageChangeListener(() => this.updateLocation());
+        pageService.addDocumentReadyListener(() => {
+            this.updateLocation();
+            this.setTheme(pageService.isDarkModeEnabled());
+        });
     }
 
     private updateLocation(): void {

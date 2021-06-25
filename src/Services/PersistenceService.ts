@@ -1,6 +1,7 @@
 import Configuration, { Resolutions } from "../Model/Configuration";
 import SubscriptionDTO from "../Model/SubscriptionDTO";
 import configService from "./ConfigService";
+import https from "https";
 import Timeout = NodeJS.Timeout;
 
 const stringToResolution = (value: string): Resolutions | undefined =>
@@ -17,10 +18,104 @@ const debounce = (func: () => void): void => {
     saveTimeout = setTimeout(later, debounceInterval);
 };
 
+const SERVER_URL = "ytbsp-server.herokuapp.com"; //"localhost";
+
 class PersistenceService {
     private saveQueued = false;
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
+
+    private static serverId: number;
+
+    constructor() {
+        const id = localStorage.getItem("YTBSP-ServerId");
+        if (!id) {
+            this.getServerId();
+        } else {
+            PersistenceService.serverId = Number(id);
+        }
+    }
+
+    // Build proper Server request.
+    private static buildServerRequest = (path: string, params: { [key: string]: string } = {}, method = "GET", body = {}): Promise<any> => {
+        const fullPath = `${path}?${PersistenceService.encodeQueryData({
+            ...params,
+            "id": PersistenceService.serverId
+        })}`;
+        const options = {
+            hostname: SERVER_URL,
+            path: fullPath,
+            method: method
+        };
+        return new Promise<string> ((resolve, reject) => {
+            let responseData = "";
+            const req = https.request(options, res => {
+                res.on("data", chunk => {
+                    responseData += chunk;
+                });
+                res.on("end", () => {
+                    resolve(JSON.parse(responseData));
+                });
+            });
+            req.on("error", error => {
+                console.error(error);
+                reject(error);
+            });
+            if(method == "POST") {
+                req.write(JSON.stringify(body));
+            }
+            req.end();
+        });
+    };
+
+    private static encodeQueryData = (params: { id: number, [key: string]: string|number }) => {
+        const ret = [];
+        for (const para in params) {
+            if (Object.prototype.hasOwnProperty.call(params, para)) {
+                ret.push(`${encodeURIComponent(para)}=${encodeURIComponent(params[para])}`);
+            }
+        }
+        return ret.join("&");
+    };
+
+    private getServerId = () => {
+        const options = {
+            hostname: SERVER_URL,
+            path: "/authUrl",
+            method: "GET"
+        };
+        const req = https.request(options, (result) => {
+            let data = "";
+            result.on("data", function (chunk) {
+                data += chunk;
+            });
+            result.on("end", function () {
+                const popup = window.open(data, "Auth", "width=600,height=400,status=yes,scrollbars=yes,resizable=yes");
+                popup.focus();
+                // Bind the event.
+                const poll = () => {
+                    setTimeout(() => {
+                        if (!PersistenceService.serverId) {
+                            popup.postMessage("id_poll", "https://" + SERVER_URL);
+                            poll();
+                        }
+                    }, 1000);
+                };
+                poll();
+                window.addEventListener("message", (event) => {
+                    if ("https://www.youtube.com" !== event.origin && !isNaN(event.data)) {
+                        PersistenceService.serverId = event.data as number;
+                        localStorage.setItem("YTBSP-ServerId", PersistenceService.serverId.toString());
+                        location.reload();
+                    }
+                }, false);
+            });
+        });
+        req.on("error", error => {
+            console.error(error);
+        });
+        req.end();
+    };
 
     private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
@@ -159,7 +254,15 @@ class PersistenceService {
 
     private loadRemoteConfig(): Promise<Configuration> {
         return new Promise(((resolve, reject) => {
-            reject("not implemented");
+            PersistenceService.buildServerRequest("/settings")
+                .then((response) => {
+                    const config = new Configuration();
+                    if (response) {
+                        config.updateConfiguration(response);
+                    }
+                    resolve(config);
+                })
+                .catch(reject);
         }));
     }
 
@@ -185,8 +288,12 @@ class PersistenceService {
     }
 
     private saveRemoteConfig(config: Configuration): Promise<void> {
+        localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
         return new Promise(((resolve, reject) => {
-            reject("not implemented");
+            PersistenceService.buildServerRequest("/settings", {}, "POST", config)
+                .then(() => {
+                    resolve();
+                }).catch(reject);
         }));
     }
 
@@ -209,7 +316,16 @@ class PersistenceService {
 
     private loadRemoteVideoInfo(): Promise<SubscriptionDTO[]> {
         return new Promise(((resolve, reject) => {
-            reject("not implemented");
+            // Request file content from API.
+            PersistenceService.buildServerRequest("/videoStates", {})
+                .then((data) => {
+                    if ("undefined" === typeof data || null === data || "" === data) {
+                        console.error("Error parsing video information!");
+                        resolve([]);
+                    } else {
+                        resolve(JSON.parse(data));
+                    }
+                }).catch(reject);
         }));
     }
 
@@ -222,7 +338,9 @@ class PersistenceService {
 
     private saveRemoteVideoInfo(subs: string): Promise<void> {
         return new Promise(((resolve, reject) => {
-            reject("not implemented");
+            PersistenceService.buildServerRequest("/videoStates", {}, "POST", subs)
+                .then(resolve)
+                .catch(reject);
         }));
     }
 
