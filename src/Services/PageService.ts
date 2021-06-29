@@ -23,7 +23,7 @@ const YT_FEED_FILTER = "#chips > ytd-feed-filter-chip-bar-renderer";
 
 // Style rules depending on the loaded native page.
 const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
-const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -10px; background: transparent; }
+const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -2px; background: transparent; }
     ${YT_GUIDE} { z-index: 3 !important;}
     ${YT_FEED_FILTER} { top: 78px !important; }`;
 const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: 0px; }
@@ -245,7 +245,7 @@ class PageService {
         if (hideNative) {
             const css = document.createElement("style");
             css.id = "ytbsp-hideNative-css";
-            css.innerHTML = YT_START_PAGE_BODY + "{display: none}";
+            css.innerHTML = YT_START_PAGE_BODY + "{display: none!important;}";
             document.head.appendChild(css);
         }
         // TODO: Workaround: After a switch back to the native page thumbnails won't load.
