@@ -103,7 +103,7 @@ export default class YTBSPComponent extends Component {
                 pageService.toggleGuide();
             }
         } else if(retry > 0){
-            setTimeout(() => this.showNative(--retry), 250);
+            setTimeout(() => this.hideNative(--retry), 250);
         }
     }
 

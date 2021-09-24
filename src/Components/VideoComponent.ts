@@ -123,14 +123,17 @@ export default class VideoComponent extends Component {
             return;
         }
 
-        function closeMiniplayer(e: CustomEvent) {
-            if (e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true) {
+        function onYTAction(e: CustomEvent) {
+            if ((e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true)||
+                (e.detail["actionName"] === "yt-deactivate-miniplayer-action")) {
                 playerService.togglePictureInPicturePlayer(false);
-                document.removeEventListener("yt-action", closeMiniplayer);
+                document.removeEventListener("yt-action", onYTAction);
+                window.scrollTo(0, 0);
             }
+
         }
 
-        document.addEventListener("yt-action", closeMiniplayer);
+        document.addEventListener("yt-action", onYTAction);
         pageService.navigateToVideo(this.videoId);
 
     }
