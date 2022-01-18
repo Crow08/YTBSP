@@ -144,10 +144,7 @@ class PersistenceService {
         }
     }
 
-    public loadConfig(remote?: boolean): Promise<Configuration> {
-        if ("undefined" === typeof remote) {
-            remote = configService.getConfig().useRemoteData;
-        }
+    public loadConfig(remote: boolean): Promise<Configuration> {
         if (remote) {
             return this.loadRemoteConfig();
         }
@@ -234,21 +231,31 @@ class PersistenceService {
         return new Promise(((resolve) => {
             const config = new Configuration();
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "useRemoteData");
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerRow");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerSub");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeDelay");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactor");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactorNative");
-            PersistenceService.applyResolutionPropertyFromLocalStorage(config, "playerQuality");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
-            PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
-            resolve(config);
+
+            if (config.useRemoteData) {
+                persistenceService.loadConfig(true).then((remoteConfig) => {
+                    resolve(remoteConfig);
+                }).catch(e => {
+                    console.error(e);
+                    resolve(config);
+                });
+            } else {
+                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
+                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
+                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerRow");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerSub");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeDelay");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactor");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactorNative");
+                PersistenceService.applyResolutionPropertyFromLocalStorage(config, "playerQuality");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
+                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
+                PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
+                resolve(config);
+            }
         }));
     }
 

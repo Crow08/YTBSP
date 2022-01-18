@@ -9,15 +9,29 @@ import persistenceService from "./Services/PersistenceService";
 console.log("script start");
 setTimeout( () => {
     pageService.updateNativeStyleRuleModifications(PageState.LOADING);
+
     const ytbspComponent = new YTBSPComponent();
+
+    const atScriptDataLoaded = () => {
+        console.log("script data loaded");
+        ytbspComponent.startLoading();
+    };
+    const atDocumentReady = () =>{
+        console.log("document ready");
+        pageService.injectYTBSP(ytbspComponent);
+        pageService.startPageObserver();
+        markAsSeenService.checkPage();
+
+        pageService.updateNativeStyleRuleModifications();
+        pageService.addPageChangeListener(() => {
+            pageService.updateNativeStyleRuleModifications();
+        });
+    };
+
+    pageService.addDocumentReadyListener(atDocumentReady);
 
     persistenceService.loadConfig(false).then((config) => {
         configService.setConfig(config);
-        if (config.useRemoteData) {
-            persistenceService.loadConfig(true).then((remoteConfig) => {
-                configService.setConfig(remoteConfig);
-            }).catch(e => console.error(e));
-        }
         persistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
             subs.forEach((subDTO) => {
                 const sub = new Subscription();
@@ -29,20 +43,5 @@ setTimeout( () => {
         pageService.addThumbnailEnlargeCss();
     }).catch(e => console.error(e));
 
-    pageService.addDocumentReadyListener(() => {
-        console.log("document ready");
-        pageService.injectYTBSP(ytbspComponent);
-        pageService.startPageObserver();
-        markAsSeenService.checkPage();
 
-        pageService.updateNativeStyleRuleModifications();
-        pageService.addPageChangeListener(() => {
-            pageService.updateNativeStyleRuleModifications();
-        });
-    });
-
-    const atScriptDataLoaded = () => {
-        console.log("script data loaded");
-        ytbspComponent.startLoading();
-    };
 }, 0);

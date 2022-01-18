@@ -94,6 +94,7 @@ export default class YTBSPComponent extends Component {
 
     hideNative(retry = 8): void {
         if(this.subList) {
+            console.trace();
             console.log("HIDENATIVE");
             pageService.hideNative();
             this.subList.component.show();
