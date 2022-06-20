@@ -7,11 +7,12 @@ import Timeout = NodeJS.Timeout;
 // YouTube selectors:
 const YT_APP = "ytd-app";
 const YT_HOTKEY_MANAGER = "ytd-app > yt-hotkey-manager";
-const YT_NAVIGATION_MANAGER = "ytd-app > yt-navigation-manager";
+const YT_NAVIGATION_MANAGER = "ytd-app > ytd-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
 const YT_CHANNEL_LINK = "#top-row > ytd-video-owner-renderer > #upload-info > #channel-name > #container > #text-container > #text > a";
+const YT_CHANNEL_LINK_ALT = "#movie_player > div.ytp-ce-element.ytp-ce-channel.ytp-ce-channel-this.ytp-ce-bottom-right-quad.ytp-ce-size-640 > div.ytp-ce-expanding-overlay > div.ytp-ce-expanding-overlay-content > div > div > a";
 
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
@@ -362,8 +363,17 @@ class PageService {
     }
 
     getChannelId(): string | undefined {
-        if (0 !== $(YT_CHANNEL_LINK).length) {
-            return /\/channel\/([^&]*)/u.exec($(YT_CHANNEL_LINK).attr("href"))[1];
+        let channelId = this.getChannelIdFromLink(YT_CHANNEL_LINK);
+        if (channelId == undefined) {
+            channelId = this.getChannelIdFromLink(YT_CHANNEL_LINK_ALT);
+        }
+        return channelId;
+    }
+
+    private getChannelIdFromLink(elementSelector): string | undefined{
+        if (0 !== $(elementSelector).length) {
+            const result = /\/channel\/([^&]*)/u.exec($(elementSelector).attr("href"));
+            return result != null ? result[1] : undefined;
         }
         return undefined;
     }

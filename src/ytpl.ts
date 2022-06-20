@@ -138,7 +138,7 @@ function convertToVideos(items: any[]): Video[] {
         }
         const vid = new Video(videoItem["videoId"]);
         vid.title = videoItem["title"]["runs"][0]["text"];
-        vid.duration = videoItem["lengthText"]["simpleText"];
+        vid.duration = videoItem["lengthText"] ? videoItem["lengthText"]["simpleText"] : "streaming";
         vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
         vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
         // Try to get upload information from accessibility data.
