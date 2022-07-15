@@ -7,7 +7,7 @@ import Timeout = NodeJS.Timeout;
 // YouTube selectors:
 const YT_APP = "ytd-app";
 const YT_HOTKEY_MANAGER = "ytd-app > yt-hotkey-manager";
-const YT_NAVIGATION_MANAGER = "ytd-app > ytd-navigation-manager";
+//const YT_NAVIGATION_MANAGER = "ytd-app > ytd-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
@@ -16,17 +16,14 @@ const YT_CHANNEL_LINK_ALT = "#movie_player > div.ytp-ce-element.ytp-ce-channel.y
 
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
-const YT_PLAYER_QUALITY = "yt-player-quality";
 const YT_PLAYER = "#movie_player > div.html5-video-container > video";
 const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
 const YT_VIDEO_STREAM = ".video-stream";
-const YT_FEED_FILTER = "#chips > ytd-feed-filter-chip-bar-renderer";
 
 // Style rules depending on the loaded native page.
 const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
 const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -2px; background: transparent; }
-    ${YT_GUIDE} { z-index: 3 !important;}
-    ${YT_FEED_FILTER} { top: 78px !important; }`;
+    ${YT_GUIDE} { z-index: 3 !important;}`;
 const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: 0px; }
     ${YT_GUIDE} { z-index: 3 !important; width: var(--app-drawer-width, 256px); }`;
 const bodyStyleSearch = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
@@ -344,7 +341,7 @@ class PageService {
     }
 
     navigateToVideo(id: string): void {
-        $(YT_NAVIGATION_MANAGER)[0]["navigate"]({
+        const endpointData = {
             "commandMetadata": {
                 "webCommandMetadata": {
                     "url": `/watch?v=${id}`,
@@ -355,7 +352,9 @@ class PageService {
             "watchEndpoint": {
                 "videoId": id
             }
-        }, false);
+        };
+        //$(YT_NAVIGATION_MANAGER)[0]["navigate"](endpointData, false);
+        $(YT_APP)[0]["fire"]("yt-navigate", {"endpoint": endpointData});
     }
 
     getHotkeyManager(): JQuery {
