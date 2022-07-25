@@ -33,7 +33,7 @@ export default class VideoComponent extends Component {
             "title": video.title,
             "html": video.title
         });
-        const dateHtml = video.premiere ? `Premieres ${moment(video.premiere).calendar() }` : `Uploaded ${video.uploaded} ago`;
+        const dateHtml = video.premiere ? `Premieres ${moment(video.premiere).calendar()}` : `Uploaded ${video.uploaded} ago`;
         this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": dateHtml});
         this.addToQueueItem = $("<span/>", {
             "class": "ytbsp-seenMarker",
@@ -51,7 +51,9 @@ export default class VideoComponent extends Component {
 
         setTimeout(() => {
             // TODO: Workaround, because when executed synchronous time will not be displayed.
-            durationItem.html(video.duration);
+            durationItem.find(".ytd-thumbnail-overlay-time-status-renderer")
+                .not("span").prop("hidden", true);
+            durationItem.find("span").html(video.duration);
         }, 100);
 
         this.component.append(this.clipItem
@@ -63,7 +65,7 @@ export default class VideoComponent extends Component {
         this.component.append(this.seenMarkerItem);
         this.component.append($("<span/>", {"class": "ytbsp-spacer", "html": " | "}));
         this.component.append(this.addToQueueItem);
-        if(video.premiere) {
+        if (video.premiere) {
             this.component.addClass("ytbsp-premiere");
         }
 
@@ -124,7 +126,7 @@ export default class VideoComponent extends Component {
         }
 
         function onYTAction(e: CustomEvent) {
-            if ((e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true)||
+            if ((e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true) ||
                 (e.detail["actionName"] === "yt-deactivate-miniplayer-action")) {
                 playerService.togglePictureInPicturePlayer(false);
                 document.removeEventListener("yt-action", onYTAction);
