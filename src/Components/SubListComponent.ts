@@ -109,7 +109,7 @@ export default class SubListComponent extends Component {
     }
 
     private onUpdateConfig(config: Configuration): void {
-        this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
+        //this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
         this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
         this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
         this.hideOlderVideosCb.prop("checked", config.hideOlderVideos);
