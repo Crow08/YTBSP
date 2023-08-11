@@ -51,8 +51,8 @@ export default class VideoComponent extends Component {
 
         setTimeout(() => {
             // TODO: Workaround, because when executed synchronous time will not be displayed.
-            durationItem.find(".ytd-thumbnail-overlay-time-status-renderer")
-                .not("span").prop("hidden", true);
+            durationItem.find(".ytd-thumbnail-overlay-time-status-renderer > yt-icon")
+                .prop("hidden", true);
             durationItem.find("span").html(video.duration);
         }, 100);
 
