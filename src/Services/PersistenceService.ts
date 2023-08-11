@@ -144,6 +144,13 @@ class PersistenceService {
         }
     }
 
+    private static applyObjectPropertyFromLocalStorage(config: Configuration, key: string) {
+        const property = localStorage.getItem(`YTBSP_${key}`);
+        if (property !== null) {
+            config[key] = JSON.parse(property) as unknown;
+        }
+    }
+
     public loadConfig(remote: boolean): Promise<Configuration> {
         if (remote) {
             return this.loadRemoteConfig();
@@ -223,6 +230,7 @@ class PersistenceService {
             localStorage.removeItem("YTBSP_timeToMarkAsSeen");
             localStorage.removeItem("YTBSP_screenThreshold");
             localStorage.removeItem("YTBSP_autoPauseVideo");
+            localStorage.removeItem("YTBSP_hideShorts");
             resolve();
         });
     }
@@ -253,6 +261,7 @@ class PersistenceService {
                 PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
                 PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
                 PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
+                PersistenceService.applyObjectPropertyFromLocalStorage(config, "hideShorts");
                 PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
                 resolve(config);
             }
@@ -290,6 +299,7 @@ class PersistenceService {
             localStorage.setItem("YTBSP_screenThreshold", config.screenThreshold.toString());
             localStorage.setItem("YTBSP_videoDecomposeTime", config.videoDecomposeTime.toString());
             localStorage.setItem("YTBSP_autoPauseVideo", config.autoPauseVideo ? "1" : "0");
+            localStorage.setItem("YTBSP_hideShorts", JSON.stringify(config.hideShorts));
             resolve();
         }));
     }

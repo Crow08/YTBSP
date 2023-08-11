@@ -27,7 +27,8 @@ export default class Configuration {
     hideSeenVideos = false;             // DEFAULT: false.
     hideEmptySubs = true;               // DEFAULT: true.
     hideOlderVideos = false;            // DEFAULT: false.
-    videoDecomposeTime = 30;             // DEFAULT: 30 days.
+    videoDecomposeTime = 30;            // DEFAULT: 30 days.
+    hideShorts: {[x: string]: boolean} = {};                    // Default: none
 
     updateConfiguration(info: {
         useRemoteData?: boolean,
@@ -46,6 +47,7 @@ export default class Configuration {
         hideOlderVideos?: boolean,
         hideEmptySubs?: boolean,
         videoDecomposeTime?: number,
+        hideShorts?: {[x: string]: boolean},
         [x: string]: any
 
     }): void {
@@ -97,6 +99,9 @@ export default class Configuration {
         if (Object.prototype.hasOwnProperty.call(info, "videoDecomposeTime")) {
             this.videoDecomposeTime = info.videoDecomposeTime;
         }
+        if (Object.prototype.hasOwnProperty.call(info, "hideShorts")) {
+            this.hideShorts = info.hideShorts;
+        }
     }
 
     equals(config: Configuration): boolean {
@@ -115,7 +120,8 @@ export default class Configuration {
             this.hideSeenVideos === config.hideSeenVideos &&
             this.hideOlderVideos === config.hideOlderVideos &&
             this.videoDecomposeTime === config.videoDecomposeTime &&
-            this.hideEmptySubs === config.hideEmptySubs;
+            this.hideEmptySubs === config.hideEmptySubs &&
+            this.hideShorts == config.hideShorts;
 
     }
 }

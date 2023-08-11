@@ -24,9 +24,14 @@ export default class SubComponent extends Component {
         this.channelId = sub.channelId;
         const menuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
         this.expandButton = $("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"}).click(() => {
+            console.log($(this).prop("checked"));
             this.subShowMore();
         });
         menuStrip.append($("<div/>", {"css": {"float": "right"}})
+            .append($("<label/>", {"for": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "html": "Hide Shorts:"}))
+            .append($("<input/>", {"id": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "type": "checkbox"}).click(() => {
+                this.toggleHideShorts();
+            }))
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos", "html": "Remove all"}).click(() => {
                 this.subRemoveAllVideos();
             }))
@@ -139,7 +144,7 @@ export default class SubComponent extends Component {
             // if the element is already in the list.
             if (-1 !== oldIndex) {
                 // If that video is removed search for it and remove it when found.
-                if (video.removed || (configService.getConfig().hideSeenVideos && video.seen) || (configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate))) {
+                if (video.removed || this.isVideoHidden(video)) {
                     this.videoComponents[oldIndex].component.remove();
                     this.videoComponents.splice(oldIndex, 1);
                 } else {
@@ -156,7 +161,7 @@ export default class SubComponent extends Component {
                     }
                     visibleItemIndex++;
                 }
-            } else if (video.title !== undefined && (!video.removed && !(configService.getConfig().hideSeenVideos && video.seen) && !(configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate)))) {
+            } else if (video.title !== undefined && (!video.removed && !this.isVideoHidden(video))) {
                 // Create new component for video.
                 const newVidComp = new VideoComponent(video);
                 this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
@@ -185,6 +190,13 @@ export default class SubComponent extends Component {
         this.loader.hideLoader();
     }
 
+    private isVideoHidden(video: Video) {
+        const hideSeen = configService.getConfig().hideSeenVideos && video.seen;
+        const hideOld = configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
+        const hideShorts = configService.getConfig().hideShorts[this.channelId] && video.duration.startsWith("0");
+        return hideSeen || hideOld || hideShorts;
+    }
+
     // Hides subscription if needed.
     private updateHiddenState(): void {
         if (this.videoComponents.length === 0 && configService.getConfig().hideEmptySubs) {
@@ -204,12 +216,10 @@ export default class SubComponent extends Component {
             return false;
         }
         const today = new Date();
-        console.log(pubdate);
 
         if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime){
             isOld = true;
         }
-        console.log(isOld);
         return isOld;
     }
 
@@ -231,5 +241,11 @@ export default class SubComponent extends Component {
                 element.updateVisibility();
             });
         }
+    }
+
+    private toggleHideShorts() {
+        const hideShorts = configService.getConfig().hideShorts;
+        hideShorts[this.channelId] = !hideShorts[this.channelId];
+        configService.updateConfig({hideShorts: hideShorts});
     }
 }
