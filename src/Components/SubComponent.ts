@@ -244,7 +244,7 @@ export default class SubComponent extends Component {
     }
 
     private toggleHideShorts() {
-        const hideShorts = configService.getConfig().hideShorts;
+        const hideShorts = { ...configService.getConfig().hideShorts};
         hideShorts[this.channelId] = !hideShorts[this.channelId];
         configService.updateConfig({hideShorts: hideShorts});
     }
