@@ -1,7 +1,5 @@
 import Configuration, { Resolutions } from "../Model/Configuration";
 import SubscriptionDTO from "../Model/SubscriptionDTO";
-import configService from "./ConfigService";
-import https from "https";
 import Timeout = NodeJS.Timeout;
 
 const stringToResolution = (value: string): Resolutions | undefined =>
@@ -18,104 +16,11 @@ const debounce = (func: () => void): void => {
     saveTimeout = setTimeout(later, debounceInterval);
 };
 
-const SERVER_URL = "ytbsp-server.herokuapp.com"; //"localhost";
-
 class PersistenceService {
     private saveQueued = false;
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
 
-    private static serverId: number;
-
-    constructor() {
-        const id = localStorage.getItem("YTBSP-ServerId");
-        if (!id) {
-            this.getServerId();
-        } else {
-            PersistenceService.serverId = Number(id);
-        }
-    }
-
-    // Build proper Server request.
-    private static buildServerRequest = (path: string, params: { [key: string]: string } = {}, method = "GET", body = {}): Promise<any> => {
-        const fullPath = `${path}?${PersistenceService.encodeQueryData({
-            ...params,
-            "id": PersistenceService.serverId
-        })}`;
-        const options = {
-            hostname: SERVER_URL,
-            path: fullPath,
-            method: method
-        };
-        return new Promise<string> ((resolve, reject) => {
-            let responseData = "";
-            const req = https.request(options, res => {
-                res.on("data", chunk => {
-                    responseData += chunk;
-                });
-                res.on("end", () => {
-                    resolve(JSON.parse(responseData));
-                });
-            });
-            req.on("error", error => {
-                console.error(error);
-                reject(error);
-            });
-            if(method == "POST") {
-                req.write(JSON.stringify(body));
-            }
-            req.end();
-        });
-    };
-
-    private static encodeQueryData = (params: { id: number, [key: string]: string|number }) => {
-        const ret = [];
-        for (const para in params) {
-            if (Object.prototype.hasOwnProperty.call(params, para)) {
-                ret.push(`${encodeURIComponent(para)}=${encodeURIComponent(params[para])}`);
-            }
-        }
-        return ret.join("&");
-    };
-
-    private getServerId = () => {
-        const options = {
-            hostname: SERVER_URL,
-            path: "/authUrl",
-            method: "GET"
-        };
-        const req = https.request(options, (result) => {
-            let data = "";
-            result.on("data", function (chunk) {
-                data += chunk;
-            });
-            result.on("end", function () {
-                const popup = window.open(data, "Auth", "width=600,height=400,status=yes,scrollbars=yes,resizable=yes");
-                popup.focus();
-                // Bind the event.
-                const poll = () => {
-                    setTimeout(() => {
-                        if (!PersistenceService.serverId) {
-                            popup.postMessage("id_poll", "https://" + SERVER_URL);
-                            poll();
-                        }
-                    }, 1000);
-                };
-                poll();
-                window.addEventListener("message", (event) => {
-                    if ("https://www.youtube.com" !== event.origin && !isNaN(event.data)) {
-                        PersistenceService.serverId = event.data as number;
-                        localStorage.setItem("YTBSP-ServerId", PersistenceService.serverId.toString());
-                        location.reload();
-                    }
-                }, false);
-            });
-        });
-        req.on("error", error => {
-            console.error(error);
-        });
-        req.end();
-    };
 
     private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
@@ -151,38 +56,20 @@ class PersistenceService {
         }
     }
 
-    public loadConfig(remote: boolean): Promise<Configuration> {
-        if (remote) {
-            return this.loadRemoteConfig();
-        }
+    public loadConfig(): Promise<Configuration> {
         return this.loadLocalConfig();
     }
 
-    public saveConfing(config: Configuration, remote?: boolean): Promise<void> {
-        if ("undefined" === typeof remote) {
-            remote = configService.getConfig().useRemoteData;
-        }
-        if (remote) {
-            return this.saveRemoteConfig(config);
-        }
+    public saveConfing(config: Configuration): Promise<void> {
         return this.saveLocalConfig(config);
     }
 
-    public loadVideoInfo(remote?: boolean): Promise<SubscriptionDTO[]> {
-        if ("undefined" === typeof remote) {
-            remote = configService.getConfig().useRemoteData;
-        }
-        console.log("LOAD");
-        if (remote) {
-            return this.loadRemoteVideoInfo();
-        }
+    public loadVideoInfo(): Promise<SubscriptionDTO[]> {
         return this.loadLocalVideoInfo();
     }
 
-    public saveVideoInfo(subs: string, remote?: boolean): void {
-        if ("undefined" === typeof remote) {
-            remote = configService.getConfig().useRemoteData;
-        }
+    public saveVideoInfo(subs: string): void {
+
         if (!this.saveQueued) {
             this.saveQueued = true;
             this.onNotifySave("start");
@@ -191,15 +78,6 @@ class PersistenceService {
         debounce((): void => {
             console.log("SAVE");
             this.saveQueued = false;
-            if (remote) {
-                this.saveRemoteVideoInfo(subs)
-                    .then(() => this.onNotifySave("end"))
-                    .catch((error) => {
-                        console.error(error);
-                        this.onNotifySave("end");
-                    });
-                return;
-            }
             this.saveLocalVideoInfo(subs)
                 .then(() => this.onNotifySave("end"))
                 .catch((error) => {
@@ -216,7 +94,6 @@ class PersistenceService {
     deleteUserData(): Promise<void> {
         return new Promise((resolve) => {
             localStorage.removeItem("YTBSP_VideoInfo");
-            localStorage.removeItem("YTBSP_useRemoteData");
             localStorage.removeItem("YTBSP_hideSeenVideos");
             localStorage.removeItem("YTBSP_hideOlderVideos");
             localStorage.removeItem("YTBSP_hideEmptySubs");
@@ -238,53 +115,28 @@ class PersistenceService {
     private loadLocalConfig(): Promise<Configuration> {
         return new Promise(((resolve) => {
             const config = new Configuration();
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "useRemoteData");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerRow");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerSub");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeDelay");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactor");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactorNative");
+            PersistenceService.applyResolutionPropertyFromLocalStorage(config, "playerQuality");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
+            PersistenceService.applyObjectPropertyFromLocalStorage(config, "hideShorts");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
+            resolve(config);
 
-            if (config.useRemoteData) {
-                persistenceService.loadConfig(true).then((remoteConfig) => {
-                    resolve(remoteConfig);
-                }).catch(e => {
-                    console.error(e);
-                    resolve(config);
-                });
-            } else {
-                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
-                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
-                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerRow");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerSub");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeDelay");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactor");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactorNative");
-                PersistenceService.applyResolutionPropertyFromLocalStorage(config, "playerQuality");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "screenThreshold");
-                PersistenceService.applyBooleanPropertyFromLocalStorage(config, "autoPauseVideo");
-                PersistenceService.applyObjectPropertyFromLocalStorage(config, "hideShorts");
-                PersistenceService.applyNumberPropertyFromLocalStorage(config, "videoDecomposeTime");
-                resolve(config);
-            }
-        }));
-    }
-
-    private loadRemoteConfig(): Promise<Configuration> {
-        return new Promise(((resolve, reject) => {
-            PersistenceService.buildServerRequest("/settings")
-                .then((response) => {
-                    const config = new Configuration();
-                    if (response) {
-                        config.updateConfiguration(response);
-                    }
-                    resolve(config);
-                })
-                .catch(reject);
         }));
     }
 
     private saveLocalConfig(config: Configuration): Promise<void> {
         return new Promise(((resolve) => {
-            localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
             localStorage.setItem("YTBSP_hideSeenVideos", config.hideSeenVideos ? "1" : "0");
             localStorage.setItem("YTBSP_hideOlderVideos", config.hideOlderVideos ? "1" : "0");
             localStorage.setItem("YTBSP_hideEmptySubs", config.hideEmptySubs ? "1" : "0");
@@ -301,16 +153,6 @@ class PersistenceService {
             localStorage.setItem("YTBSP_autoPauseVideo", config.autoPauseVideo ? "1" : "0");
             localStorage.setItem("YTBSP_hideShorts", JSON.stringify(config.hideShorts));
             resolve();
-        }));
-    }
-
-    private saveRemoteConfig(config: Configuration): Promise<void> {
-        localStorage.setItem("YTBSP_useRemoteData", config.useRemoteData ? "1" : "0");
-        return new Promise(((resolve, reject) => {
-            PersistenceService.buildServerRequest("/settings", {}, "POST", config)
-                .then(() => {
-                    resolve();
-                }).catch(reject);
         }));
     }
 
@@ -331,33 +173,10 @@ class PersistenceService {
         }));
     }
 
-    private loadRemoteVideoInfo(): Promise<SubscriptionDTO[]> {
-        return new Promise(((resolve, reject) => {
-            // Request file content from API.
-            PersistenceService.buildServerRequest("/videoStates", {})
-                .then((data) => {
-                    if ("undefined" === typeof data || null === data || "" === data) {
-                        console.error("Error parsing video information!");
-                        resolve([]);
-                    } else {
-                        resolve(JSON.parse(data));
-                    }
-                }).catch(reject);
-        }));
-    }
-
     private saveLocalVideoInfo(subs: string): Promise<void> {
         return new Promise(((resolve) => {
             localStorage.setItem("YTBSP_VideoInfo", subs);
             resolve();
-        }));
-    }
-
-    private saveRemoteVideoInfo(subs: string): Promise<void> {
-        return new Promise(((resolve, reject) => {
-            PersistenceService.buildServerRequest("/videoStates", {}, "POST", subs)
-                .then(resolve)
-                .catch(reject);
         }));
     }
 

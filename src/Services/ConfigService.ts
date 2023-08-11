@@ -37,7 +37,7 @@ class ConfigService {
         this.onChangeCallbackList.forEach(callback => {
             callback(this.configuration);
         });
-        persistenceService.saveConfing(this.configuration, this.configuration.useRemoteData)
+        persistenceService.saveConfing(this.configuration)
             .catch((error) => console.error(error));
     }
 }

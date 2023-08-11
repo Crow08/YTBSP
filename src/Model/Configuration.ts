@@ -12,7 +12,6 @@ export enum Resolutions {
 }
 
 export default class Configuration {
-    useRemoteData = false;              // DEFAULT: false (using Cloud as remote storage).
     maxSimSubLoad = 10;                 // DEFAULT: 10 (Range: 1 - 50) (higher numbers result into slower loading of single items but overall faster loading).
     maxVideosPerRow = 9;                // DEFAULT: 9.
     maxVideosPerSub = 36;               // DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVideosPerRow).
@@ -31,7 +30,6 @@ export default class Configuration {
     hideShorts: {[x: string]: boolean} = {};                    // Default: none
 
     updateConfiguration(info: {
-        useRemoteData?: boolean,
         maxSimSubLoad?: number,
         maxVideosPerRow?: number,
         maxVideosPerSub?: number,
@@ -51,9 +49,6 @@ export default class Configuration {
         [x: string]: any
 
     }): void {
-        if (Object.prototype.hasOwnProperty.call(info, "useRemoteData")) {
-            this.useRemoteData = info.useRemoteData;
-        }
         if (Object.prototype.hasOwnProperty.call(info, "maxSimSubLoad")) {
             this.maxSimSubLoad = info.maxSimSubLoad;
         }
@@ -105,8 +100,7 @@ export default class Configuration {
     }
 
     equals(config: Configuration): boolean {
-        return this.useRemoteData === config.useRemoteData &&
-            this.maxSimSubLoad === config.maxSimSubLoad &&
+        return this.maxSimSubLoad === config.maxSimSubLoad &&
             this.maxVideosPerRow === config.maxVideosPerRow &&
             this.maxVideosPerSub === config.maxVideosPerSub &&
             this.enlargeDelay === config.enlargeDelay &&

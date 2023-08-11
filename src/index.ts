@@ -30,9 +30,9 @@ setTimeout( () => {
 
     pageService.addDocumentReadyListener(atDocumentReady);
 
-    persistenceService.loadConfig(false).then((config) => {
+    persistenceService.loadConfig().then((config) => {
         configService.setConfig(config);
-        persistenceService.loadVideoInfo(config.useRemoteData).then((subs) => {
+        persistenceService.loadVideoInfo().then((subs) => {
             subs.forEach((subDTO) => {
                 const sub = new Subscription();
                 sub.updateSubscription(subDTO);

@@ -13,7 +13,6 @@ export default class SettingsModalComponent extends Component {
     private hideEmptySubsSlider: Slider;
     private hideSeenVideosSlider: Slider;
     private hideOlderVideosSlider: Slider;
-    private useRemoteDataSlider: Slider;
     private autoPauseVideoSlider: Slider;
     private playerQualitySelect: JQuery;
     private maxSimSubLoadInput: JQuery;
@@ -34,7 +33,6 @@ export default class SettingsModalComponent extends Component {
         this.hideEmptySubsSlider = getSlider("ytbsp-settings-hideEmptySubs", configService.getConfig().hideEmptySubs);
         this.hideSeenVideosSlider = getSlider("ytbsp-settings-hideSeenVideos", configService.getConfig().hideSeenVideos);
         this.hideOlderVideosSlider = getSlider("ytbsp-settings-hideOlderVideos", configService.getConfig().hideOlderVideos);
-        this.useRemoteDataSlider = getSlider("ytbsp-settings-useRemoteData", configService.getConfig().useRemoteData);
         this.autoPauseVideoSlider = getSlider("ytbsp-settings-autoPauseVideo", configService.getConfig().autoPauseVideo);
         this.playerQualitySelect = this.getQualitySelect();
         this.maxSimSubLoadInput = $("<input>", {
@@ -111,7 +109,6 @@ export default class SettingsModalComponent extends Component {
 
     private saveSettings(): void {
         configService.updateConfig({
-            useRemoteData: this.useRemoteDataSlider.getValue(),
             maxSimSubLoad: this.maxSimSubLoadInput.val(),
             maxVideosPerRow: this.maxVideosPerRowInput.val(),
             maxVideosPerSub: this.maxVideosPerSubInput.val(),
@@ -158,11 +155,6 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Hide older videos"}))
             .append($("<td>").append(this.hideOlderVideosSlider.component))
             .append($("<td>"))
-        );
-        settingsTable.append($("<tr>")
-            .append($("<td>", {"html": "Use cloud storage"}))
-            .append($("<td>").append(this.useRemoteDataSlider.component))
-            .append($("<td>", {"html": "Allows synchronization between browsers. May result in slower loading times."}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Auto pause videos"}))
