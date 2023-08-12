@@ -24,7 +24,6 @@ export default class SubComponent extends Component {
         this.channelId = sub.channelId;
         const menuStrip = $("<div/>", {"class": "ytbsp-subMenuStrip"});
         this.expandButton = $("<button/>", {"class": "ytbsp-func ytbsp-subShowMore", "html": "Show more"}).click(() => {
-            console.log($(this).prop("checked"));
             this.subShowMore();
         });
         menuStrip.append($("<div/>", {"css": {"float": "right"}})
@@ -58,8 +57,7 @@ export default class SubComponent extends Component {
             dataService.addSubscriptionChangeListener(sub.channelId, () => this.updateVideoList());
             pageService.addViewChangeListener(() => this.updateVisibility());
         }).catch((error) => {
-            console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`);
-            console.error(error);
+            console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`, error);
         });
 
     }
@@ -212,7 +210,6 @@ export default class SubComponent extends Component {
     isVideoOld(pubdate : Date): boolean {
         let isOld = false;
         if (pubdate === undefined){
-            console.log("pubdate is undefined");
             return false;
         }
         const today = new Date();

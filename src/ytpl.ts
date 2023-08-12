@@ -69,8 +69,8 @@ async function getPlaylistPageBody(playlistId: string): Promise<string> {
     };
     const options = {headers};
     const httpRequestResult = MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
-    httpRequestResult.catch(reason => {
-        console.log(reason);
+    httpRequestResult.catch(error => {
+        console.error(error);
         // probably a capture to solve -> redirect
         location.href = `https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`;
     });

@@ -79,7 +79,6 @@ export default class YTBSPComponent extends Component {
 
     showNative(retry = 8): void {
         if(this.subList) {
-            console.log("SHOWNATIVE");
             pageService.showNative();
             this.subList.component.hide();
             this.isNative = true;
@@ -94,8 +93,6 @@ export default class YTBSPComponent extends Component {
 
     hideNative(retry = 8): void {
         if(this.subList) {
-            console.trace();
-            console.log("HIDENATIVE");
             pageService.hideNative();
             this.subList.component.show();
             this.isNative = false;
