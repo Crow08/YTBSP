@@ -340,6 +340,8 @@ class PageService {
         ytdApp["fire"]("yt-action", QueueEventRequest);
     }
 
+    navigateInterval: Timeout = null;
+
     navigateToVideo(id: string): void {
         const endpointData = {
             "commandMetadata": {
@@ -350,11 +352,32 @@ class PageService {
                 }
             },
             "watchEndpoint": {
-                "videoId": id
+                "videoId": id,
+                "nofollow": true
             }
         };
-        //$(YT_NAVIGATION_MANAGER)[0]["navigate"](endpointData, false);
-        $(YT_APP)[0]["fire"]("yt-navigate", {"endpoint": endpointData});
+
+        // TODO: retry is a workaround for navigation where only the player updates and the pages
+        //       stays on another videos information.
+        const tryNavigate = () => {
+            const videoIdRegex = /v=([^&]{11})/u.exec(location.href);
+            const videoId = videoIdRegex ? videoIdRegex[1] : null;
+            if(videoId != id) {
+                $(YT_APP)[0]["handleNavigate"]({
+                    "command": endpointData,
+                    "type": 0
+                });
+            } else {
+                if(this.navigateInterval) {
+                    clearInterval(this.navigateInterval);
+                    this.navigateInterval = null;
+                }
+            }
+        };
+        if(this.navigateInterval) {
+            clearInterval(this.navigateInterval);
+        }
+        this.navigateInterval = setInterval( tryNavigate, 500);
     }
 
     getHotkeyManager(): JQuery {
