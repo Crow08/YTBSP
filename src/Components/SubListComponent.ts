@@ -1,5 +1,4 @@
 import $ from "jquery";
-import Configuration from "../Model/Configuration";
 import Subscription from "../Model/Subscription";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";

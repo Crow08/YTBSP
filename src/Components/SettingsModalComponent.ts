@@ -151,17 +151,22 @@ export default class SettingsModalComponent extends Component {
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide empty subs"}))
             .append($("<td>").append(this.hideEmptySubsSlider.component))
-            .append($("<td>"))
+            .append($("<td>", {"html": "Hide subscription without any Videos that are either removed or hidden.)"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide seen videos"}))
             .append($("<td>").append(this.hideSeenVideosSlider.component))
-            .append($("<td>"))
+            .append($("<td>", {"html": "Hide videos that hav been marked seen.)"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide older videos"}))
             .append($("<td>").append(this.hideOlderVideosSlider.component))
-            .append($("<td>"))
+            .append($("<td>", {"html": "Hide videos that are older than the specified time.)"}))
+        );
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Hide Videos Older than - Time"}))
+            .append($("<td>").append(this.videoDecomposeTimeInput).append(" days"))
+            .append($("<td>", {"html": "Default: 30"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Auto pause videos"}))
@@ -171,7 +176,7 @@ export default class SettingsModalComponent extends Component {
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Player Quality"}))
             .append($("<td>").append(this.playerQualitySelect))
-            .append($("<td>", {"html": "Open Videos in a paused state. (Does not effect playlists.)"}))
+            .append($("<td>", {"html": "Tries to set the player quality to the selected option."}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Max number of subscriptions loading simultaneously"}))
@@ -194,11 +199,6 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Default: 10"}))
         );
         settingsTable.append($("<tr>")
-            .append($("<td>", {"html": "Hide Videos Older than - Time"}))
-            .append($("<td>").append(this.videoDecomposeTimeInput).append(" days"))
-            .append($("<td>", {"html": "Default: 30"}))
-        );
-        settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Delay for thumbnail enlarge"}))
             .append($("<td>").append(this.enlargeDelayInput).append(" ms"))
             .append($("<td>", {"html": "Default: 500"}))
@@ -211,20 +211,23 @@ export default class SettingsModalComponent extends Component {
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Factor to enlarge native thumbnail by"}))
             .append($("<td>").append(this.enlargeFactorNativeInput))
-            .append($("<td>", {"html": "Default: 2.0 | 1 : disable thumbnail enlarge"}))
+            .append($("<td>", {"html": "Default: 2.0 | 1 : disable thumbnail enlarge<br/>(thumbnails outside the YTBSP list.)"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Threshold to preload thumbnails"}))
             .append($("<td>").append(this.screenThresholdInput).append(" px"))
-            .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
+            .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."}))
+        );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Video data"}))
             .append($("<td>").append(this.backupButton))
-            .append($("<td>", {"html": "Can be use to transfer all seen and removal information of videos between PCs or browsers."})));
+            .append($("<td>", {"html": "Can be use to transfer all seen and removal information of videos between PCs or browsers."}))
+        );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "User data"}))
             .append($("<td>").append(this.deleteUserDataButton))
-            .append($("<td>", {"html": "Be careful, this can not be undone!"})));
+            .append($("<td>", {"html": "Be careful, this can not be undone!"}))
+        );
         return settingsTable;
     }
 
