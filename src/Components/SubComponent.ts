@@ -40,7 +40,12 @@ export default class SubComponent extends Component {
                 dataService.reorderSubscriptions(this.channelId, SortPosition.BOTTOM);
             }))
             .append($("<label/>", {"for": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "html": "Hide Shorts:"}))
-            .append($("<input/>", {"id": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "type": "checkbox"}).click(() => {
+            .append($("<input/>", {
+                "id": "ytbsp_shoShorts_" + this.channelId,
+                "class": "ytbsp-func ytbsp-showShorts",
+                "type": "checkbox",
+                "checked": configService.getConfig().hideShorts[this.channelId]
+            }).click(() => {
                 this.toggleHideShorts();
             }))
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subRemoveAllVideos", "html": "Remove all"}).click(() => {
