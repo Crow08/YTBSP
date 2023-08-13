@@ -1,11 +1,17 @@
+import Configuration from "../Model/Configuration";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import persistenceService from "./PersistenceService";
+
+export enum SortPosition {
+    TOP, BOTTOM, UP, DOWN
+}
 
 class DataService {
     private subscriptions: Subscription[] = [];
 
     private onSubscriptionChangeCallbackList: { [channelId: string]: (() => void)[] } = {};
+    private onReorderCallbackList: ((subs: Subscription[]) => void)[] = [];
 
     getSubscription(id: string): Subscription | undefined {
         return this.subscriptions.find(curSub => curSub.channelId === id);
@@ -86,6 +92,25 @@ class DataService {
             });
         }
         persistenceService.saveVideoInfo(this.exportVideoData());
+    }
+
+    getSubscriptions(): Subscription[] {
+        return this.subscriptions;
+    }
+
+    reorderSubscriptions(channelId: string, position: SortPosition) {
+        const oldIndex = this.subscriptions.findIndex(sub => sub.channelId == channelId);
+        const movingSub = this.subscriptions.splice(oldIndex, 1)[0];
+        const newIndex = position == SortPosition.TOP ? 0 :
+            position == SortPosition.BOTTOM ? this.subscriptions.length :
+                position == SortPosition.UP ? oldIndex - 1 :
+                    oldIndex + 1;
+        this.subscriptions.splice(newIndex, 0, movingSub);
+        this.onReorderCallbackList.forEach(callback => callback(this.subscriptions));
+    }
+
+    addReorderListener(callback: (subs: Subscription[]) => void) {
+        this.onReorderCallbackList.push(callback);
     }
 }
 

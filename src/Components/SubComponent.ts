@@ -1,10 +1,10 @@
 import $ from "jquery";
-import ytpl from "../ytpl";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
-import dataService from "../Services/DataService";
+import dataService, { SortPosition } from "../Services/DataService";
 import pageService from "../Services/PageService";
+import ytpl from "../ytpl";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import { Loader } from "./ComponentUtils";
@@ -27,6 +27,18 @@ export default class SubComponent extends Component {
             this.subShowMore();
         });
         menuStrip.append($("<div/>", {"css": {"float": "right"}})
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn ytbsp-suborderTop", "html": "⭱"}).click(() => {
+                dataService.reorderSubscriptions(this.channelId, SortPosition.TOP);
+            }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderTop", "html": "⭡"}).click(() => {
+                dataService.reorderSubscriptions(this.channelId, SortPosition.UP);
+            }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom", "html": "⭣"}).click(() => {
+                dataService.reorderSubscriptions(this.channelId, SortPosition.DOWN);
+            }))
+            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom", "html": "⭳"}).click(() => {
+                dataService.reorderSubscriptions(this.channelId, SortPosition.BOTTOM);
+            }))
             .append($("<label/>", {"for": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "html": "Hide Shorts:"}))
             .append($("<input/>", {"id": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "type": "checkbox"}).click(() => {
                 this.toggleHideShorts();

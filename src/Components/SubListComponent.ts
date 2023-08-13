@@ -14,7 +14,9 @@ export default class SubListComponent extends Component {
     private hideOlderVideosCb: JQuery;
     private hideSeenVideosCb: JQuery;
     private subList: JQuery;
+    private toggleSortBtn: JQuery;
     private subComponents: SubComponent[] = [];
+    private sortMode = false;
 
     constructor() {
         super($("<div/>", {"id": "ytbsp-subsWrapper"}));
@@ -49,6 +51,10 @@ export default class SubListComponent extends Component {
         strip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func"})
             .append(this.hideEmptySubsCb)
             .append("Hide empty subs"));
+        this.toggleSortBtn = $("<button/>", {"id": "ytbsp-toggleSortMode", "class": "ytbsp-func", "html": "Sort subs"}).click(() => {
+            this.toggleSortMode();
+        });
+        strip.append(this.toggleSortBtn);
         this.component.append(strip);
         this.subList = $("<ul/>", {"id": "ytbsp-subsList"});
         this.component.append(this.subList);
@@ -57,6 +63,7 @@ export default class SubListComponent extends Component {
 
         this.onUpdateConfig(configService.getConfig());
         configService.addChangeListener((config) => this.onUpdateConfig(config));
+        dataService.addReorderListener((subs) => this.updateSubOrder(subs));
     }
 
     removeAllVideos(): void {
@@ -91,13 +98,22 @@ export default class SubListComponent extends Component {
         return Promise.all<void>(subPromiseList);
     }
 
-    private initSubs(subs: Subscription[]): void {
-        subs.forEach(sub => {
-            const cachedSub = dataService.getSubscription(sub.channelId);
-            if ("undefined" !== typeof cachedSub) {
-                sub.updateSubscription(cachedSub);
+    private initSubs(newSubs: Subscription[]): void {
+        const cachedSubs = dataService.getSubscriptions();
+        cachedSubs.forEach(cachedSub => {
+            const subIndex = newSubs.findIndex(sub => sub.channelId == cachedSub.channelId);
+            const newSub = newSubs[subIndex];
+            if("undefined" === typeof newSub) {
+                //no longer subscribed
+                return;
             }
-            this.setupNewSubscription(sub);
+            newSub.updateSubscription(cachedSub);
+            this.setupNewSubscription(newSub);
+            newSubs.splice(subIndex,1);
+        });
+        // Only subs without cache left here:
+        newSubs.forEach(newSub => {
+            this.setupNewSubscription(newSub);
         });
     }
 
@@ -109,9 +125,32 @@ export default class SubListComponent extends Component {
     }
 
     private onUpdateConfig(config: Configuration): void {
-        //this.subList.css("min-width", `${config.maxVideosPerRow * 168}px`);
         this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
         this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
         this.hideOlderVideosCb.prop("checked", config.hideOlderVideos);
+    }
+
+    private updateSubOrder(subs: Subscription[]) {
+        subs.forEach(sub => {
+            const subComponent = this.subComponents.find(subComponent => subComponent.channelId == sub.channelId);
+            if ("undefined" !== typeof subComponent) {
+                subComponent.component.detach();
+                this.subList.append(subComponent.component);
+            }
+        });
+    }
+
+    storedHideEmptySubs = false;
+
+    private toggleSortMode() {
+        if(!this.sortMode) {
+            this.storedHideEmptySubs = configService.getConfig().hideEmptySubs;
+            configService.updateConfig({hideEmptySubs: false});
+            this.subList.addClass("ytbsp-sortMode");
+        } else {
+            configService.updateConfig({hideEmptySubs: this.storedHideEmptySubs});
+            this.subList.removeClass("ytbsp-sortMode");
+        }
+        this.sortMode = !this.sortMode;
     }
 }
