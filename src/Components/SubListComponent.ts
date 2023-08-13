@@ -10,9 +10,7 @@ import queueService from "../Services/QueueService";
 import pageService from "../Services/PageService";
 
 export default class SubListComponent extends Component {
-    private hideEmptySubsCb: JQuery;
-    private hideOlderVideosCb: JQuery;
-    private hideSeenVideosCb: JQuery;
+
     private subList: JQuery;
     private toggleSortBtn: JQuery;
     private subComponents: SubComponent[] = [];
@@ -36,21 +34,6 @@ export default class SubListComponent extends Component {
             "class": "ytbsp-func",
             "html": "Reset all videos"
         }).click(() => this.resetAllVideos()));
-        this.hideSeenVideosCb = $("<input/>", {"id": "ytbsp-hideSeenVideosCb", "type": "checkbox"})
-            .change(() => configService.updateConfig({hideSeenVideos: this.hideSeenVideosCb.prop("checked") as boolean}));
-        strip.append($("<label/>", {"for": "ytbsp-hideSeenVideosCb", "class": "ytbsp-func"})
-            .append(this.hideSeenVideosCb)
-            .append("Hide seen videos"));
-        this.hideOlderVideosCb = $("<input/>", {"id": "ytbsp-hideOlderVideosCb", "type": "checkbox"})
-            .change(() => configService.updateConfig({hideOlderVideos: this.hideOlderVideosCb.prop("checked") as boolean}));
-        strip.append($("<label/>", {"for": "ytbsp-hideOlderVideosCb", "class": "ytbsp-func"})
-            .append(this.hideOlderVideosCb)
-            .append("Hide older videos"));
-        this.hideEmptySubsCb = $("<input/>", {"id": "ytbsp-hideEmptySubsCb", "type": "checkbox"})
-            .change(() => configService.updateConfig({hideEmptySubs: this.hideEmptySubsCb.prop("checked") as boolean}));
-        strip.append($("<label/>", {"for": "ytbsp-hideEmptySubsCb", "class": "ytbsp-func"})
-            .append(this.hideEmptySubsCb)
-            .append("Hide empty subs"));
         this.toggleSortBtn = $("<button/>", {"id": "ytbsp-toggleSortMode", "class": "ytbsp-func", "html": "Sort subs"}).click(() => {
             this.toggleSortMode();
         });
@@ -61,8 +44,6 @@ export default class SubListComponent extends Component {
 
         ytsub().then((subs) => this.initSubs(subs)).catch((err) => console.error(err));
 
-        this.onUpdateConfig(configService.getConfig());
-        configService.addChangeListener((config) => this.onUpdateConfig(config));
         dataService.addReorderListener((subs) => this.updateSubOrder(subs));
     }
 
@@ -122,12 +103,6 @@ export default class SubListComponent extends Component {
         const subComp = new SubComponent(sub);
         this.subComponents.push(subComp);
         this.subList.append(subComp.component);
-    }
-
-    private onUpdateConfig(config: Configuration): void {
-        this.hideEmptySubsCb.prop("checked", config.hideEmptySubs);
-        this.hideSeenVideosCb.prop("checked", config.hideSeenVideos);
-        this.hideOlderVideosCb.prop("checked", config.hideOlderVideos);
     }
 
     private updateSubOrder(subs: Subscription[]) {
