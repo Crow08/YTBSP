@@ -2,7 +2,6 @@ import $ from "jquery";
 import pageService from "../Services/PageService";
 import persistenceService from "../Services/PersistenceService";
 import playerService from "../Services/PlayerService";
-import BackupModalComponent from "./BackupModalComponent";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
 import ModalComponent from "./ModalComponent";
@@ -39,13 +38,6 @@ export default class YTBSPComponent extends Component {
             "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}
         });
         fixedBar.append(settingsButton);
-        const backupButton = $("<button/>", {
-            "id": "ytbsp-backup",
-            "class": "ytbsp-func ytbsp-hideWhenNative",
-            "html": "Backup",
-            "on": {"click": () => this.modal.openModal(new BackupModalComponent(this.modal))}
-        });
-        fixedBar.append(backupButton);
         this.component.append(fixedBar);
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
@@ -78,7 +70,7 @@ export default class YTBSPComponent extends Component {
     }
 
     showNative(retry = 8): void {
-        if(this.subList) {
+        if (this.subList) {
             pageService.showNative();
             this.subList.component.hide();
             this.isNative = true;
@@ -86,13 +78,13 @@ export default class YTBSPComponent extends Component {
             if (this.toggleGuide && retry == 8) {
                 pageService.toggleGuide();
             }
-        } else if(retry > 0){
+        } else if (retry > 0) {
             setTimeout(() => this.showNative(--retry), 250);
         }
     }
 
     hideNative(retry = 8): void {
-        if(this.subList) {
+        if (this.subList) {
             pageService.hideNative();
             this.subList.component.show();
             this.isNative = false;
@@ -100,7 +92,7 @@ export default class YTBSPComponent extends Component {
             if (this.toggleGuide && retry == 8) {
                 pageService.toggleGuide();
             }
-        } else if(retry > 0){
+        } else if (retry > 0) {
             setTimeout(() => this.hideNative(--retry), 250);
         }
     }

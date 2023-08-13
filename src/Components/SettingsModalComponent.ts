@@ -2,6 +2,7 @@ import $ from "jquery";
 import { Resolutions } from "../Model/Configuration";
 import configService from "../Services/ConfigService";
 import persistenceService from "../Services/PersistenceService";
+import BackupModalComponent from "./BackupModalComponent";
 import Component from "./Component";
 import { getSlider, Slider } from "./ComponentUtils";
 import ModalComponent from "./ModalComponent";
@@ -24,6 +25,7 @@ export default class SettingsModalComponent extends Component {
     private enlargeFactorNativeInput: JQuery;
     private screenThresholdInput: JQuery;
     private deleteUserDataButton: JQuery;
+    private backupButton: JQuery;
     private videoDecomposeTimeInput: JQuery;
 
     constructor(modal: ModalComponent) {
@@ -88,7 +90,12 @@ export default class SettingsModalComponent extends Component {
             "id": "ytbsp-settings-screenThreshold",
             "value": configService.getConfig().screenThreshold
         });
-
+        this.backupButton = $("<button/>", {
+            "id": "ytbsp-backupBtn",
+            "class": "ytbsp-func",
+            "html": "Import/Export video information",
+            "on": {"click": () => this.modal.openModal(new BackupModalComponent(this.modal))}
+        });
         this.deleteUserDataButton = $("<input/>", {
             "type": "button",
             "class": "ytbsp-func",
@@ -210,6 +217,10 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Threshold to preload thumbnails"}))
             .append($("<td>").append(this.screenThresholdInput).append(" px"))
             .append($("<td>", {"html": "Default: 500 | Higher threshold results in slower loading and more network traffic. Lower threshold may cause thumbnails to not show up immediately."})));
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Video data"}))
+            .append($("<td>").append(this.backupButton))
+            .append($("<td>", {"html": "Can be use to transfer all seen and removal information of videos between PCs or browsers."})));
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "User data"}))
             .append($("<td>").append(this.deleteUserDataButton))
