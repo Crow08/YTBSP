@@ -33,7 +33,7 @@ export default class SubListComponent extends Component {
             "class": "ytbsp-func",
             "html": "Reset all videos"
         }).click(() => this.resetAllVideos()));
-        this.toggleSortBtn = $("<button/>", {"id": "ytbsp-toggleSortMode", "class": "ytbsp-func", "html": "Sort subs"}).click(() => {
+        this.toggleSortBtn = $("<button/>", {"id": "ytbsp-toggleSortMode", "class": "ytbsp-func", "html": "Sort subscriptions"}).click(() => {
             this.toggleSortMode();
         });
         strip.append(this.toggleSortBtn);
@@ -121,9 +121,11 @@ export default class SubListComponent extends Component {
             this.storedHideEmptySubs = configService.getConfig().hideEmptySubs;
             configService.updateConfig({hideEmptySubs: false});
             this.subList.addClass("ytbsp-sortMode");
+            this.toggleSortBtn.html("Finish sorting subscriptions");
         } else {
             configService.updateConfig({hideEmptySubs: this.storedHideEmptySubs});
             this.subList.removeClass("ytbsp-sortMode");
+            this.toggleSortBtn.html("Sort subscriptions");
         }
         this.sortMode = !this.sortMode;
     }
