@@ -49,12 +49,6 @@ export default class SubComponent extends Component {
             .append($("<button/>", {"class": "ytbsp-func ytbsp-subResetAllVideos", "html": "Reset all"}).click(() => {
                 this.subResetAllVideos();
             }))
-            .append($("<button/>", {
-                "class": "ytbsp-func ytbsp-subSeenAllVideos",
-                "html": "Mark all as seen"
-            }).click(() => {
-                this.subSeenAllVideos();
-            }))
             .append(this.expandButton));
         this.loader = ComponentUtils.getLoader(`loader_${sub.channelId}`);
         menuStrip.append(this.loader.component);
@@ -97,13 +91,6 @@ export default class SubComponent extends Component {
         dataService.updateSubVideos(this.channelId, (video) => {
             video.seen = false;
             video.removed = false;
-        });
-    }
-
-    // Function to see all.
-    subSeenAllVideos(): void {
-        dataService.updateSubVideos(this.channelId, (video) => {
-            video.seen = true;
         });
     }
 
