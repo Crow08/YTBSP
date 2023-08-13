@@ -14,13 +14,14 @@ export default async (): Promise<Subscription[]> => {
     let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
 
     if(contentJson["contents"].length > 1){
-        const continuation = contentJson["contents"][1]["continuationItemRenderer"];
-        if (continuation) {
-            const continuationToken = continuation["continuationEndpoint"]["continuationCommand"]["token"];
-            const clickTrackingParams = continuation["continuationEndpoint"]["clickTrackingParams"];
+        let continuation = contentJson["contents"][1];
+        while (continuation) {
+            const continuationToken = continuation["continuationItemRenderer"]["continuationEndpoint"]["continuationCommand"]["token"];
+            const clickTrackingParams = continuation["continuationItemRenderer"]["continuationEndpoint"]["clickTrackingParams"];
             const spfBody = getSubContinuationBody(cfgJson, continuationToken, clickTrackingParams);
             const continuationJson = JSON.parse(await spfBody);
             const spfItems = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+            continuation = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][1];
             allItems = allItems.concat(spfItems);
         }
     }

@@ -8,11 +8,15 @@ import Video from "./Model/Video";
 export default async (plistID: string, options: { limit: number }): Promise<Video[]> => {
     const body = getPlaylistPageBody(plistID);
 
-    const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
+    let contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
     const cfgJson = getConfigurationJson(await body);
-
     let allItems: any[];
-    allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["playlistVideoListRenderer"]["contents"];
+    if("undefined" !== typeof contentJson["sectionListRenderer"]) {
+        contentJson = contentJson["sectionListRenderer"];
+        allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["playlistVideoListRenderer"]["contents"];
+    } else {
+        console.error("Unknown Subscription Format!");
+    }
 
     const continuations = contentJson["continuations"];
     if (continuations) {
