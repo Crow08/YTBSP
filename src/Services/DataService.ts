@@ -106,6 +106,7 @@ class DataService {
                 position == SortPosition.UP ? oldIndex - 1 :
                     oldIndex + 1;
         this.subscriptions.splice(newIndex, 0, movingSub);
+        persistenceService.saveVideoInfo(this.exportVideoData());
         this.onReorderCallbackList.forEach(callback => callback(this.subscriptions));
     }
 
