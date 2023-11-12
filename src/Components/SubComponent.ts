@@ -195,7 +195,7 @@ export default class SubComponent extends Component {
     private isVideoHidden(video: Video) {
         const hideSeen = configService.getConfig().hideSeenVideos && video.seen;
         const hideOld = configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
-        const hideShorts = configService.getConfig().hideShorts[this.channelId] && video.duration.startsWith("0");
+        const hideShorts = configService.getConfig().hideShorts[this.channelId] && (video.duration.startsWith("0") || video.duration == ("1:00") || video.duration == ("1:01"));
         return hideSeen || hideOld || hideShorts;
     }
 
