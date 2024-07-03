@@ -18,6 +18,7 @@ export default class SubComponent extends Component {
 
     private isExpanded: boolean;
     private expandButton: JQuery;
+    private videosInitialized: boolean = false;
 
     constructor(sub: Subscription) {
         super($("<li/>", {"class": "ytbsp-subscription"}));
@@ -63,14 +64,6 @@ export default class SubComponent extends Component {
         this.component.append(this.videoList);
 
         this.updateHiddenState();
-        this.reloadSubVideos().then(() => {
-            configService.addChangeListener(() => this.updateVideoList());
-            dataService.addSubscriptionChangeListener(sub.channelId, () => this.updateVideoList());
-            pageService.addViewChangeListener(() => this.updateVisibility());
-        }).catch((error) => {
-            console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`, error);
-        });
-
     }
 
     private static moveVideoComponent(arr: VideoComponent[], oldIndex: number, newIndex: number): VideoComponent[] {
@@ -112,6 +105,9 @@ export default class SubComponent extends Component {
 
     // Fetches and rebuilds subscription row based on updated videos.
     reloadSubVideos(): Promise<void> {
+        if(!this.videosInitialized){
+            return this.initVideos();
+        }
         this.loader.showLoader();
         return new Promise<void>((resolve, reject) => {
             ytpl(dataService.getSubscription(this.channelId).playlistId, {
@@ -122,6 +118,17 @@ export default class SubComponent extends Component {
                     this.updateVideoList();
                     resolve();
                 }).catch(reject);
+        });
+    }
+
+    initVideos(): Promise<void> {
+        this.videosInitialized = true;
+        return this.reloadSubVideos().then(() => {
+            configService.addChangeListener(() => this.updateVideoList());
+            dataService.addSubscriptionChangeListener(this.channelId, () => this.updateVideoList());
+            pageService.addViewChangeListener(() => this.updateVisibility());
+        }).catch((error) => {
+            console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`, error);
         });
     }
 

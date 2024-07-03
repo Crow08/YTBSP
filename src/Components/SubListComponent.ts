@@ -1,4 +1,4 @@
-import $ from "jquery";
+import $, { error } from "jquery";
 import Subscription from "../Model/Subscription";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
@@ -73,7 +73,7 @@ export default class SubListComponent extends Component {
         const subPromiseList = [];
 
         this.subComponents.forEach((comp) => {
-            subPromiseList.push(comp.reloadSubVideos());
+            subPromiseList.push(this.registerVideoLoadingJob(comp));
         });
         return Promise.all<void>(subPromiseList);
     }
@@ -102,6 +102,7 @@ export default class SubListComponent extends Component {
         const subComp = new SubComponent(sub);
         this.subComponents.push(subComp);
         this.subList.append(subComp.component);
+        void this.registerVideoLoadingJob(subComp);
     }
 
     private updateSubOrder(subs: Subscription[]) {
@@ -128,5 +129,40 @@ export default class SubListComponent extends Component {
             this.toggleSortBtn.html("Sort subscriptions");
         }
         this.sortMode = !this.sortMode;
+    }
+
+    videoLoadingExecutions = 0;
+    videoLoadingQueue: SubComponent[] = [];
+
+    /**
+     * This will load Videos for a SubComponent with a limit on simulators requests.
+     * A maximum of Config.maxSimSubLoad requests will be executed simultaneously.
+     * The returned Promise of this function does not indicate if the queued SubComponent is loaded but rather
+     * if the process of this request is still ongoing.
+     * If a request is queued this functions Promise will immediately resolve, but the earlier requests that caused
+     * the queueing will finish the job and resolve afterward.
+     *
+     * @param subComp SubComponent to load Videos for.
+     */
+    private registerVideoLoadingJob(subComp: SubComponent): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            if(this.videoLoadingExecutions < configService.getConfig().maxSimSubLoad){
+                const loadingProcess = subComp.reloadSubVideos();
+                ++this.videoLoadingExecutions;
+                loadingProcess.then(() => {
+                    --this.videoLoadingExecutions;
+                    if(this.videoLoadingQueue.length > 0) {
+                        const subComponent = this.videoLoadingQueue.shift();
+                        this.registerVideoLoadingJob(subComponent).then(resolve).catch(reject);
+                    } else {
+                        resolve();
+                    }
+                }).catch(err => console.error(err));
+            } else {
+                this.videoLoadingQueue.push(subComp);
+                resolve();
+            }
+        });
+
     }
 }
