@@ -69,11 +69,21 @@ function getContentJson(body: string): any {
 }
 
 async function getSubPageBody(): Promise<string> {
-    const headers = {
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-    };
-    const options = {headers};
-    return await MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", options).text();
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const headers = {
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
+            };
+            const options = {headers};
+            const httpRequestResult = MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", options).text();
+            httpRequestResult.catch(error => {
+                console.error(error);
+                // probably a capture to solve -> redirect
+                location.href = "https://www.youtube.com/feed/channels?disable_polymer=true&hl=en";
+            });
+            httpRequestResult.then(resolve).catch(reject);
+        },0);
+    });
 }
 
 async function getSubContinuationBody(cfgJson: any, continuationToken: string, clickTrackingParams: string): Promise<string> {

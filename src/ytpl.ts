@@ -68,20 +68,24 @@ function getContentJson(body: string): any {
 }
 
 async function getPlaylistPageBody(playlistId: string): Promise<string> {
-    const headers = {
-        "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-    };
-    const options = {headers};
-    const httpRequestResult = MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
-    httpRequestResult.catch(error => {
-        console.error(error);
-        // probably a capture to solve -> redirect
-        location.href = `https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`;
+    return new Promise((resolve, reject) => {
+        setTimeout(() => {
+            const headers = {
+                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
+            };
+            const options = {headers};
+            const httpRequestResult = MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
+            httpRequestResult.catch(error => {
+                console.error(error);
+                // probably a capture to solve -> redirect
+                location.href = `https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`;
+            });
+            httpRequestResult.then(resolve).catch(reject);
+        },0);
     });
-    return await httpRequestResult;
 }
 
-async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
+/*async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
     const headers = getSPFHeader(cfgJson);
     const options = {headers};
     const params = querystring.stringify({
@@ -102,9 +106,9 @@ async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTra
         window.open("https://www.youtube.com/browse_ajax?" + params);
     });
     return await stream.text();
-}
+}*/
 
-function getSPFHeader(cfgJson) {
+/*function getSPFHeader(cfgJson) {
     const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
     const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
     const device = cfgJson["DEVICE"];
@@ -126,7 +130,7 @@ function getSPFHeader(cfgJson) {
         "X-YouTube-Variants-Checksum": variantsChecksum,
         "X-Youtube-Identity-Token": idToken
     };
-}
+}*/
 
 function convertToVideos(items: any[]): Video[] {
     const videos: Video[] = [];
