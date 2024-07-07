@@ -14,10 +14,17 @@ export default class SubListComponent extends Component {
     private toggleSortBtn: JQuery;
     private subComponents: SubComponent[] = [];
     private sortMode = false;
+    private loadingProgress: JQuery<HTMLElement>;
 
     constructor() {
         super($("<div/>", {"id": "ytbsp-subsWrapper"}));
         const strip = $("<div/>", {"id": "ytbsp-subsMenuStrip"});
+        this.loadingProgress = $("<div/>", {
+            "id": "ytbsp-loadingProgress",
+            "class": "ytbsp-func",
+            "html": "(0/0)"
+        });
+        strip.append(this.loadingProgress);
         strip.append($("<button/>", {
             "id": "ytbsp-startQueue",
             "class": "ytbsp-func",
@@ -71,6 +78,7 @@ export default class SubListComponent extends Component {
 
     updateAllSubs(): Promise<void[]> {
         const subPromiseList = [];
+        this.initializedSubscriptions = 0;
 
         this.subComponents.forEach((comp) => {
             subPromiseList.push(this.registerVideoLoadingJob(comp));
@@ -151,6 +159,7 @@ export default class SubListComponent extends Component {
                 ++this.videoLoadingExecutions;
                 loadingProcess.then(() => {
                     --this.videoLoadingExecutions;
+                    this.updateLoadingProgress();
                     if(this.videoLoadingQueue.length > 0) {
                         const subComponent = this.videoLoadingQueue.shift();
                         this.registerVideoLoadingJob(subComponent).then(resolve).catch(reject);
@@ -163,6 +172,14 @@ export default class SubListComponent extends Component {
                 resolve();
             }
         });
+    }
 
+    initializedSubscriptions = 0;
+    updateLoadingProgress(){
+        ++this.initializedSubscriptions;
+        this.loadingProgress.html(`(${this.initializedSubscriptions}/${this.subComponents.length})`);
+        if(this.initializedSubscriptions == this.subComponents.length){
+            this.loadingProgress.hide();
+        }
     }
 }
