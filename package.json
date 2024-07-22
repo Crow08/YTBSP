@@ -1,10 +1,10 @@
 {
     "name": "ytbsp",
-    "version": "3.0.0",
+    "version": "3.0.2",
     "description": "Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
     "scripts": {
         "lint": "eslint --format unix src/",
-        "build": "webpack --config webpack.config.js"
+        "build": "webpack --config webpack.config.js && node compile-script.js"
     },
     "private": true,
     "repository": {
