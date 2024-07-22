@@ -18,7 +18,7 @@ var mainFile = fs.readFileSync("./dist/main.js", "utf8");
 
 var version = JSON.parse(packageFile)["version"];
 headerFile = headerFile.replace("{VERSION}", version);
-licenseFile = "\n/*\n" + licenseFile + "\n*/\n";
+licenseFile = "/*\n" + licenseFile + "*/\n";
 
 fs.writeFileSync("./dist/ytbsp.meta.js", headerFile, console.error);
 fs.writeFileSync("./dist/ytbsp.user.js", [headerFile, licenseFile, licenseVendorFile, mainFile].join("\n"), console.error);
