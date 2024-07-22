@@ -1,5 +1,5 @@
 // eslint-disable-next-line no-undef
-const webpack = require('webpack')
+const webpack = require('webpack');
 module.exports = {
     resolve: {
         extensions: [".ts", ".tsx", ".js", ".jsx"],
@@ -22,7 +22,7 @@ module.exports = {
         })
 
     ],
-    mode: "development", // TODO: switch to production
+    mode: "production",
     module: {
         rules: [
             {
