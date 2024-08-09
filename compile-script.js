@@ -2,10 +2,10 @@
 const fs = require("fs");
 
 console.log("delete old dist files ...");
-if(fs.existsSync("./dist/ytbsp.meta.js")) {
+if (fs.existsSync("./dist/ytbsp.meta.js")) {
     fs.unlinkSync("./dist/ytbsp.meta.js");
 }
-if(fs.existsSync("./dist/ytbsp.user.js")) {
+if (fs.existsSync("./dist/ytbsp.user.js")) {
     fs.unlinkSync("./dist/ytbsp.user.js");
 }
 
@@ -19,6 +19,11 @@ var mainFile = fs.readFileSync("./dist/main.js", "utf8");
 var version = JSON.parse(packageFile)["version"];
 headerFile = headerFile.replace("{VERSION}", version);
 licenseFile = "/*\n" + licenseFile + "*/\n";
+
+// Workaround for TrustedTypes:
+// replace htmlPrefilter of JQuery
+mainFile = mainFile.replace("htmlPrefilter:function(t){return t}",
+    "htmlPrefilter:function(t){var p=trustedTypes.createPolicy('foo',{createHTML:(input)=>input});return p.createHTML(t);}");
 
 fs.writeFileSync("./dist/ytbsp.meta.js", headerFile, console.error);
 fs.writeFileSync("./dist/ytbsp.user.js", [headerFile, licenseFile, licenseVendorFile, mainFile].join("\n"), console.error);

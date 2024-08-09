@@ -186,12 +186,6 @@ class PageService {
                 callback();
             });
             this.onDocumentReadyCallbackList = [];
-            const newDiv = document.createElement("div");
-            newDiv.style.display = "none";
-            newDiv.innerHTML += (`<ytd-menu-service-item-renderer class="style-scope ytd-menu-popup-renderer" role="menuitem" use-icons="" tabindex="-1" aria-selected="false">
-            <paper-item class="style-scope ytd-menu-service-item-renderer" role="option" tabindex="0" aria-disabled="false">
-            </ytd-menu-service-item-renderer>`);
-            document.body.appendChild(newDiv);
         });
 
         window.addEventListener("scroll", throttleTime(() => this.handleViewChange()), false);
@@ -234,7 +228,7 @@ class PageService {
         $("#ytbsp-yt-css").remove();
         const css = document.createElement("style");
         css.id = "ytbsp-yt-css";
-        css.innerHTML = getStyleRulesForPageState(state ? state : getPageState());
+        $("#ytbsp-yt-css").html(getStyleRulesForPageState(state ? state : getPageState()));
         document.head.appendChild(css);
     }
 
@@ -243,7 +237,7 @@ class PageService {
         if (hideNative) {
             const css = document.createElement("style");
             css.id = "ytbsp-hideNative-css";
-            css.innerHTML = YT_START_PAGE_BODY + "{display: none!important;}";
+            $("ytbsp-hideNative-css").html(YT_START_PAGE_BODY + "{display: none!important;}");
             document.head.appendChild(css);
         }
         // TODO: Workaround: After a switch back to the native page thumbnails won't load.
@@ -262,7 +256,7 @@ class PageService {
         $("#ytbsp-css-thumb").remove();
         const css = document.createElement("style");
         css.id = "ytbsp-css-thumb";
-        css.innerHTML =
+        $("#ytbsp-css-thumb").html(
             `ytd-thumbnail.ytd-grid-video-renderer:hover,
             ytd-thumbnail.ytd-compact-video-renderer:hover {
             transform: scale(${enlargeFactorNative});
@@ -272,7 +266,7 @@ class PageService {
         }
         ytd-thumbnail { padding: ${enlargeFactorNative / 2.0}px }
         #video-title { width: 200px; }
-        #scroll-container.yt-horizontal-list-renderer { overflow: visible; }`;
+        #scroll-container.yt-horizontal-list-renderer { overflow: visible; }`);
         document.head.appendChild(css);
     }
 

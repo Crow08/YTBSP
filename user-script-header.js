@@ -6,7 +6,6 @@
 // @namespace    ytbsp
 // @include      https://youtube.com/*
 // @include      https://www.youtube.com/*
-// @require      https://cdnjs.cloudflare.com/ajax/libs/jquery/4.0.0-beta.2/jquery.min.js
 // @downloadURL  https://raw.githubusercontent.com/Crow08/YTBSP/master/dist/ytbsp.user.js
 // @updateURL    https://raw.githubusercontent.com/Crow08/YTBSP/master/dist/ytbsp.meta.js
 // @grant        none
