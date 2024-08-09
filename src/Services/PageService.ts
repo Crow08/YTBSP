@@ -228,8 +228,8 @@ class PageService {
         $("#ytbsp-yt-css").remove();
         const css = document.createElement("style");
         css.id = "ytbsp-yt-css";
-        $("#ytbsp-yt-css").html(getStyleRulesForPageState(state ? state : getPageState()));
         document.head.appendChild(css);
+        $("#ytbsp-yt-css").html(getStyleRulesForPageState(state ? state : getPageState()));
     }
 
     updateHideNativeStyle(hideNative: boolean) {
@@ -237,8 +237,8 @@ class PageService {
         if (hideNative) {
             const css = document.createElement("style");
             css.id = "ytbsp-hideNative-css";
-            $("ytbsp-hideNative-css").html(YT_START_PAGE_BODY + "{display: none!important;}");
             document.head.appendChild(css);
+            $("#ytbsp-hideNative-css").html(YT_START_PAGE_BODY + "{display: none!important;}");
         }
         // TODO: Workaround: After a switch back to the native page thumbnails won't load.
         setTimeout(() => {
@@ -256,6 +256,7 @@ class PageService {
         $("#ytbsp-css-thumb").remove();
         const css = document.createElement("style");
         css.id = "ytbsp-css-thumb";
+        document.head.appendChild(css);
         $("#ytbsp-css-thumb").html(
             `ytd-thumbnail.ytd-grid-video-renderer:hover,
             ytd-thumbnail.ytd-compact-video-renderer:hover {
@@ -267,7 +268,6 @@ class PageService {
         ytd-thumbnail { padding: ${enlargeFactorNative / 2.0}px }
         #video-title { width: 200px; }
         #scroll-container.yt-horizontal-list-renderer { overflow: visible; }`);
-        document.head.appendChild(css);
     }
 
     isDarkModeEnabled(): boolean {
