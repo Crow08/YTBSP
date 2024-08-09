@@ -1,6 +1,6 @@
 {
     "name": "ytbsp",
-    "version": "3.0.3",
+    "version": "3.0.4",
     "description": "Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
     "scripts": {
         "lint": "eslint --format unix src/",
@@ -20,7 +20,7 @@
     "homepage": "https://github.com/Crow08/YTBSP#readme",
     "dependencies": {
         "css-loader": "^7.1.2",
-        "jquery": "^3.7.1",
+        "jquery": "^4.0.0-beta.2",
         "less": "^4.2.0",
         "less-loader": "^12.2.0",
         "miniget": "^4.2.3",
