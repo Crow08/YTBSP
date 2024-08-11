@@ -186,10 +186,25 @@ class PageService {
                 callback();
             });
             this.onDocumentReadyCallbackList = [];
+            this.installDummyPopup();
         });
 
         window.addEventListener("scroll", throttleTime(() => this.handleViewChange()), false);
         window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
+    }
+
+    /**
+     * Installs a YouTube class popup HML element to use as a dummy reference when
+     * executing events on the YouTube App class (#YT_APP)
+     */
+    private installDummyPopup() {
+        const dummyContainer = document.createElement("div");
+        dummyContainer.style.display = "none";
+        dummyContainer.id = "ytbsp-popup-menu-dummy";
+        document.body.appendChild(dummyContainer);
+        $("#ytbsp-popup-menu-dummy").html(`<ytd-menu-service-item-renderer class="style-scope ytd-menu-popup-renderer" role="menuitem" use-icons="" tabindex="-1" aria-selected="false">
+            <paper-item class="style-scope ytd-menu-service-item-renderer" role="option" tabindex="0" aria-disabled="false">
+            </ytd-menu-service-item-renderer>`);
     }
 
     startPageObserver() {
