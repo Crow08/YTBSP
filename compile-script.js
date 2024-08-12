@@ -23,7 +23,7 @@ licenseFile = "/*\n" + licenseFile + "*/\n";
 // Workaround for TrustedTypes:
 // replace htmlPrefilter of JQuery
 mainFile = mainFile.replace("htmlPrefilter:function(t){return t}",
-    "htmlPrefilter:function(t){var p=trustedTypes.createPolicy('foo',{createHTML:(input)=>input});return p.createHTML(t);}");
+    "htmlPrefilter:function(t){if(typeof trustedTypes === 'undefined' || trustedTypes === null){return t;}var p=trustedTypes.createPolicy('foo',{createHTML:(input)=>input});return p.createHTML(t);}");
 
 fs.writeFileSync("./dist/ytbsp.meta.js", headerFile, console.error);
 fs.writeFileSync("./dist/ytbsp.user.js", [headerFile, licenseFile, licenseVendorFile, mainFile].join("\n"), console.error);
