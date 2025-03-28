@@ -1,15 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unsafe-member-access */
 /* eslint-disable @typescript-eslint/no-unsafe-assignment */
-import MINIGET from "miniget";
+import https from "https";
 import moment, { unitOfTime } from "moment";
-import * as querystring from "querystring";
 import Video from "./Model/Video";
 
-export default async (plistID: string, options: { limit: number }): Promise<Video[]> => {
-    const body = getPlaylistPageBody(plistID);
-
-    let contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
-    const cfgJson = getConfigurationJson(await body);
+export default async (plistID: string, options: { limit: number; hideShorts: boolean }): Promise<Video[]> => {
+    const body = getPlaylistPageBody(plistID, options.hideShorts);
+    let contentJson = JSON.parse(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
     let allItems: any[];
     if("undefined" !== typeof contentJson["sectionListRenderer"]) {
         contentJson = contentJson["sectionListRenderer"];
@@ -18,119 +15,46 @@ export default async (plistID: string, options: { limit: number }): Promise<Vide
         console.error("Unknown Subscription Format!");
     }
 
-    const continuations = contentJson["continuations"];
-    if (continuations) {
-        /*for (const continuationObject of continuations) {
-            const continuation = continuationObject["nextContinuationData"]["continuation"];
-            const clickTrackingParams = continuationObject["nextContinuationData"]["clickTrackingParams"];
-            const spfBody = getSPFSubContinuationBody(cfgJson, continuation, clickTrackingParams);
-            const spfJson = JSON.parse(await spfBody);
-            const spfItems = spfJson[1]["response"]["continuationContents"]["sectionListContinuation"]["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
-            allItems = allItems.concat(spfItems);
-        }*/
-    }
-
     return convertToVideos(allItems);
 };
 
-function getConfigurationJson(body: string): any {
-    let jsonString = "";
-    if (body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1) {
-        jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
-        jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
-    } else {
-        jsonString = body.substring(body.search("window\\.ytplayer=\\{\\};\nytcfg\\.set") + 30);
-        jsonString = jsonString.substring(0, jsonString.search("\\;var setMessage=function\\(msg\\)"));
-    }
 
-    jsonString = jsonString.trim();
-    while (jsonString.length > 0 && jsonString[jsonString.length - 1] !== "}") {
-        jsonString = jsonString.substring(0, jsonString.length - 1);
-    }
-    return JSON.parse(jsonString);
-}
-
-function getContentJson(body: string): any {
-    let jsonString = "";
-    if (body.search("window\\[\"ytInitialData\"\\]") !== -1) {
-        jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
-        jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
-    } else {
-        jsonString = body.substring(body.search("var ytInitialData = ") + 20);
-        jsonString = jsonString.substring(0, jsonString.search(";</script>"));
-    }
-
-    jsonString = jsonString.trim();
-    while (jsonString.length > 0 && jsonString[jsonString.length - 1] !== "}") {
-        jsonString = jsonString.substring(0, jsonString.length - 1);
-    }
-    return JSON.parse(jsonString);
-}
-
-async function getPlaylistPageBody(playlistId: string): Promise<string> {
+async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Promise<string> {
     return new Promise((resolve, reject) => {
         setTimeout(() => {
-            const headers = {
-                "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
+            const options = {
+                hostname: "www.youtube.com",
+                path: "/youtubei/v1/browse",
+                method: "POST"
             };
-            const options = {headers};
-            const httpRequestResult = MINIGET(`https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`, options).text();
-            httpRequestResult.catch(error => {
-                console.error(error);
-                // probably a capture to solve -> redirect
-                location.href = `https://www.youtube.com/playlist?list=${playlistId}&disable_polymer=true&hl=en`;
+            const payload = JSON.stringify({
+                "context": {
+                    "client": {
+                        "clientName": "WEB",
+                        "clientVersion": "2.20250328.01.00"
+                    }
+                },
+                "browseId": `VL${playlistId}`,
+                "params": hideShorts ? "wgYCEAE%3D" : "" // exclude for shorts / only shorts: "params": "wgYCGAE%3D"
             });
-            httpRequestResult.then(resolve).catch(reject);
+            let responseData = "";
+            const req = https.request(options, res => {
+                res.on("data", chunk => {
+                    responseData += chunk;
+                });
+                res.on("end", () => {
+                    resolve(responseData);
+                });
+            });
+            req.on("error", error => {
+                console.error(error);
+                reject(error);
+            });
+            req.write(payload);
+            req.end();
         },0);
     });
 }
-
-/*async function getSPFSubContinuationBody(cfgJson, continuation: string, clickTrackingParams: string): Promise<string> {
-    const headers = getSPFHeader(cfgJson);
-    const options = {headers};
-    const params = querystring.stringify({
-        "ctoken": continuation,
-        "continuation": continuation,
-        "itct": clickTrackingParams
-    });
-
-    const stream = MINIGET("https://www.youtube.com/browse_ajax?" + params, options);
-    // TODO: "redirect" and "error" are both workarounds for the anti bot captcha redirect. you will be redirected but
-    //  the redirect fails because of cors problems.
-    stream.on("redirect", (url) => {
-        console.error("redirect: " + url);
-        window.open(url);
-    });
-    stream.on("error", (err) => {
-        console.error(err);
-        window.open("https://www.youtube.com/browse_ajax?" + params);
-    });
-    return await stream.text();
-}*/
-
-/*function getSPFHeader(cfgJson) {
-    const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
-    const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
-    const device = cfgJson["DEVICE"];
-    const pageCl = cfgJson["PAGE_CL"];
-    const pageLabel = cfgJson["PAGE_BUILD_LABEL"];
-    const variantsChecksum = cfgJson["VARIANTS_CHECKSUM"];
-    const idToken = cfgJson["ID_TOKEN"];
-    return {
-        "X-SPF-Previous": "https://www.youtube.com/feed/channels",
-        "X-SPF-Referer": "https://www.youtube.com/feed/channels",
-        "X-YouTube-Time-Zone": "Europe/Berlin",
-        "X-YouTube-Utc-Offset": "120",
-        "X-YouTube-Ad-Signals": "",
-        "X-YouTube-Client-Name": clientName,
-        "X-YouTube-Client-Version": clientVersion,
-        "X-YouTube-Device": device,
-        "X-YouTube-Page-CL": pageCl,
-        "X-YouTube-Page-Label": pageLabel,
-        "X-YouTube-Variants-Checksum": variantsChecksum,
-        "X-Youtube-Identity-Token": idToken
-    };
-}*/
 
 function convertToVideos(items: any[]): Video[] {
     const videos: Video[] = [];

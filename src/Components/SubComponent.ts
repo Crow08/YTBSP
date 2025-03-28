@@ -109,9 +109,11 @@ export default class SubComponent extends Component {
             return this.initVideos();
         }
         this.loader.showLoader();
+        const hideShorts = { ...configService.getConfig().hideShorts};
         return new Promise<void>((resolve, reject) => {
             ytpl(dataService.getSubscription(this.channelId).playlistId, {
-                limit: configService.getConfig().maxVideosPerSub
+                limit: configService.getConfig().maxVideosPerSub,
+                hideShorts: hideShorts[this.channelId]
             })
                 .then((response) => {
                     this.processRequestVideos(response);
@@ -202,8 +204,7 @@ export default class SubComponent extends Component {
     private isVideoHidden(video: Video) {
         const hideSeen = configService.getConfig().hideSeenVideos && video.seen;
         const hideOld = configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
-        const hideShorts = configService.getConfig().hideShorts[this.channelId] && (video.duration.startsWith("0") || video.duration == ("1:00") || video.duration == ("1:01"));
-        return hideSeen || hideOld || hideShorts;
+        return hideSeen || hideOld;
     }
 
     // Hides subscription if needed.
@@ -232,6 +233,18 @@ export default class SubComponent extends Component {
     }
 
     private processRequestVideos(response: Video[]): void {
+
+        // Find removed videos:
+        dataService.getVideos(this.channelId).forEach((oldVideo) => {
+            const foundIndex = response.findIndex((vid) => vid.id === oldVideo.id);
+            if (foundIndex === -1) {
+                dataService.upsertVideo(oldVideo.id, video => {
+                    video.removed = true;
+                    return video;
+                });
+            }
+        });
+
         response.forEach((responseItem) => {
             dataService.upsertVideo(responseItem.id, ((currentVideo) => {
                 if ("undefined" === typeof currentVideo) {
@@ -255,5 +268,6 @@ export default class SubComponent extends Component {
         const hideShorts = { ...configService.getConfig().hideShorts};
         hideShorts[this.channelId] = !hideShorts[this.channelId];
         configService.updateConfig({hideShorts: hideShorts});
+        this.reloadSubVideos().catch(console.error);
     }
 }

@@ -55,6 +55,14 @@ class DataService {
         }
     }
 
+    getVideos(id:string): Video[] {
+        const sub = this.getSubscription(id);
+        if ("undefined" === typeof sub) {
+            return [];
+        }
+        return sub.videos;
+    }
+
     updateSubVideos(channelId: string, func: (vid: Video) => void, silent = false): void {
         this.getSubscription(channelId).videos.forEach(video => {
             func(video);
