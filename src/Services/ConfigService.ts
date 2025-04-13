@@ -37,8 +37,7 @@ class ConfigService {
         this.onChangeCallbackList.forEach(callback => {
             callback(this.configuration);
         });
-        persistenceService.saveConfing(this.configuration)
-            .catch((error) => console.error(error));
+        persistenceService.saveConfig(this.configuration);
     }
 }
 

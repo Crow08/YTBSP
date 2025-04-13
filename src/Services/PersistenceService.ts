@@ -5,19 +5,30 @@ import Timeout = NodeJS.Timeout;
 const stringToResolution = (value: string): Resolutions | undefined =>
     Resolutions[Object.keys(Resolutions).filter((k) => Resolutions[k as keyof typeof Resolutions].toString() === value)[0] as keyof typeof Resolutions];
 
-let saveTimeout: Timeout;
-const debounceInterval = 1000;
-const debounce = (func: () => void): void => {
+let saveVideoTimeout: Timeout;
+let saveConfigTimeout: Timeout;
+const debounceInterval = 2000;
+const debounceVideoSave = (func: () => void): void => {
     const later = function() {
-        saveTimeout = null;
+        saveVideoTimeout = null;
         func();
     };
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(later, debounceInterval);
+    clearTimeout(saveVideoTimeout);
+    saveVideoTimeout = setTimeout(later, debounceInterval);
+};
+
+const debounceConfigSave = (func: () => void): void => {
+    const later = function() {
+        saveConfigTimeout = null;
+        func();
+    };
+    clearTimeout(saveConfigTimeout);
+    saveConfigTimeout = setTimeout(later, debounceInterval);
 };
 
 class PersistenceService {
-    private saveQueued = false;
+    private videoSaveQueued = false;
+    private configSaveQueued = false;
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
 
@@ -60,8 +71,17 @@ class PersistenceService {
         return this.loadLocalConfig();
     }
 
-    public saveConfing(config: Configuration): Promise<void> {
-        return this.saveLocalConfig(config);
+    public saveConfig(config: Configuration): void {
+        if (!this.configSaveQueued) {
+            this.configSaveQueued = true;
+        }
+
+        debounceConfigSave((): void => {
+            console.log("SAVE Config");
+            this.configSaveQueued = false;
+            this.saveLocalConfig(config)
+                .catch(console.error);
+        });
     }
 
     public loadVideoInfo(): Promise<SubscriptionDTO[]> {
@@ -70,14 +90,14 @@ class PersistenceService {
 
     public saveVideoInfo(subs: string): void {
 
-        if (!this.saveQueued) {
-            this.saveQueued = true;
+        if (!this.videoSaveQueued) {
+            this.videoSaveQueued = true;
             this.onNotifySave("start");
         }
 
-        debounce((): void => {
+        debounceVideoSave((): void => {
             console.log("SAVE");
-            this.saveQueued = false;
+            this.videoSaveQueued = false;
             this.saveLocalVideoInfo(subs)
                 .then(() => this.onNotifySave("end"))
                 .catch((error) => {

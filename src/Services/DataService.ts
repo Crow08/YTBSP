@@ -1,4 +1,3 @@
-import Configuration from "../Model/Configuration";
 import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import persistenceService from "./PersistenceService";

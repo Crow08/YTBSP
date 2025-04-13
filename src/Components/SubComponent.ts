@@ -20,6 +20,8 @@ export default class SubComponent extends Component {
     private expandButton: JQuery;
     private videosInitialized: boolean = false;
 
+    private removeShorts: boolean = false;
+
     constructor(sub: Subscription) {
         super($("<li/>", {"class": "ytbsp-subscription"}));
         this.channelId = sub.channelId;
@@ -233,18 +235,20 @@ export default class SubComponent extends Component {
     }
 
     private processRequestVideos(response: Video[]): void {
-
-        // Find removed videos:
-        dataService.getVideos(this.channelId).forEach((oldVideo) => {
-            const foundIndex = response.findIndex((vid) => vid.id === oldVideo.id);
-            if (foundIndex === -1) {
-                dataService.upsertVideo(oldVideo.id, video => {
-                    video.removed = true;
-                    return video;
-                });
-            }
-        });
-
+        if(this.removeShorts === true) {
+            this.removeShorts = false;
+            // Find removed shorts videos:
+            dataService.getVideos(this.channelId).forEach((oldVideo) => {
+                const foundIndex = response.findIndex((vid) => vid.id === oldVideo.id);
+                if (foundIndex === -1) {
+                    console.log("found:"+ oldVideo.title);
+                    dataService.upsertVideo(oldVideo.id, video => {
+                        video.removed = true;
+                        return video;
+                    });
+                }
+            });
+        }
         response.forEach((responseItem) => {
             dataService.upsertVideo(responseItem.id, ((currentVideo) => {
                 if ("undefined" === typeof currentVideo) {
@@ -266,8 +270,10 @@ export default class SubComponent extends Component {
 
     private toggleHideShorts() {
         const hideShorts = { ...configService.getConfig().hideShorts};
-        hideShorts[this.channelId] = !hideShorts[this.channelId];
+        const hideShort = hideShorts[this.channelId];
+        hideShorts[this.channelId] = !hideShort;
         configService.updateConfig({hideShorts: hideShorts});
+        this.removeShorts = !hideShort;
         this.reloadSubVideos().catch(console.error);
     }
 }
