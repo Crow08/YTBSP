@@ -7,6 +7,7 @@ import Timeout = NodeJS.Timeout;
 // YouTube selectors:
 const YT_APP = "ytd-app";
 const YT_HOTKEY_MANAGER = "ytd-app > yt-hotkey-manager";
+const YT_HOMEPAGE_SKELETON = "#home-page-skeleton";
 //const YT_NAVIGATION_MANAGER = "ytd-app > ytd-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
@@ -253,7 +254,7 @@ class PageService {
             const css = document.createElement("style");
             css.id = "ytbsp-hideNative-css";
             document.head.appendChild(css);
-            $("#ytbsp-hideNative-css").html(YT_START_PAGE_BODY + "{display: none!important;}");
+            $("#ytbsp-hideNative-css").html(YT_START_PAGE_BODY + "{display: none!important;}" + YT_HOMEPAGE_SKELETON + "{display: none!important;}");
         }
         // TODO: Workaround: After a switch back to the native page thumbnails won't load.
         setTimeout(() => {
