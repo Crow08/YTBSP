@@ -87,22 +87,24 @@ function convertToVideos(items: any[]): Video[] {
     return videos;
 }
 
-function extractUploadInformation(videoItem): {"uploaded": string, "pubDate": Date} {
-    const result = {"uploaded": "unknown", "pubDate": null};
-    const author = videoItem["shortBylineText"]["runs"][0]["text"];
-    const accessibilityData = (videoItem["title"]["accessibility"]["accessibilityData"]["label"] as string)
-        .substring(videoItem["title"]["runs"][0]["text"].length)
-        .replace(author, "");
-    const uploadedRegex = /(([0-9]+ (year(s)?|month(s)?|week(s)?|day(s)?|hour(s)?|minute(s)?|second(s)?))|([0-9]+ (Jahr(en)?|Monat(en)?|Woche(n)?|Tag(e)?|Stunde(n)?|Minute(n)?|Sekunde(n)?)))/g;
+function extractUploadInformation(videoItem): {"uploaded": string, "pubDate": Date|null} {
+    const result:{uploaded: string, pubDate: Date|null} = {"uploaded": "unknown", "pubDate": null};
     const numberRegex = /\d+/g;
-    if (typeof accessibilityData !== "undefined") {
-        const accessibilityParts = uploadedRegex.exec(accessibilityData);
-        if (accessibilityParts && accessibilityParts.length !== 0) {
-            result.uploaded = accessibilityParts[0];
-            const numberParts = numberRegex.exec(result.uploaded);
-            const unit = getTimeUnit(result.uploaded);
-            if (unit && numberParts && numberParts.length !== 0) {
-                result.pubDate = moment().subtract(numberParts[0], unit).toDate();
+    const videoInfo = videoItem["videoInfo"];
+
+    if (typeof videoInfo !== "undefined" && typeof videoInfo["runs"] !== "undefined") {
+        const videoInfoTextRuns = videoInfo["runs"] as {"text": string}[];
+        for (const videoInfoTextRun of videoInfoTextRuns) {
+            if(videoInfoTextRun.text.endsWith("ago")) {
+                const durationAgo = videoInfoTextRun.text.substring(0, videoInfoTextRun.text.length - 4);
+                if (durationAgo) {
+                    result.uploaded = durationAgo;
+                    const numberParts = numberRegex.exec(result.uploaded);
+                    const unit = getTimeUnit(result.uploaded);
+                    if (unit && numberParts && numberParts.length !== 0) {
+                        result.pubDate = moment().subtract(numberParts[0], unit).toDate();
+                    }
+                }
             }
         }
     }
