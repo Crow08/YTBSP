@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         YouTube Better Start Page (YTBSP)
 // @description  Spotlights all subscriptions in an organized fashion on the start page of YouTube.
-// @version      3.0.12
+// @version      3.0.13
 // @author       Crow08, dzre, Nemo64
 // @namespace    ytbsp
 // @include      https://youtube.com/*
