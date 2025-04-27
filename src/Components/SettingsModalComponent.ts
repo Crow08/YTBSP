@@ -134,7 +134,7 @@ export default class SettingsModalComponent extends Component {
         this.modal.closeModal();
         setTimeout(() => {
             location.reload();
-        }, 500);
+        }, 3000);
     }
 
     private deleteUserData(): void {
@@ -142,7 +142,7 @@ export default class SettingsModalComponent extends Component {
             this.modal.closeModal();
             setTimeout(() => {
                 location.reload();
-            }, 500);
+            }, 3000);
         });
     }
 
