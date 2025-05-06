@@ -160,8 +160,8 @@ export default class VideoComponent extends Component {
         const info = $("p", this.component);
         this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumbLarge);
         this.thumbItem.addClass("ytbsp-thumb-large");
-        this.thumbItem.css("width", `${160 * enlargeFactor}px`);
-        this.thumbItem.css("height", `${90 * enlargeFactor}px`);
+        this.thumbItem.css("width", `${160 * enlargeFactor + 1}px`);
+        this.thumbItem.css("height", `${90 * enlargeFactor + 1}px`);
         this.titleItem.addClass("ytbsp-title-large");
         this.titleItem.css("width", `${(160 * enlargeFactor) - 4}px`);
         this.titleItem.css("left", `${-(((160 * enlargeFactor) / 2) - 82)}px`);

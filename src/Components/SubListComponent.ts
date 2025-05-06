@@ -28,19 +28,23 @@ export default class SubListComponent extends Component {
         strip.append($("<button/>", {
             "id": "ytbsp-startQueue",
             "class": "ytbsp-func",
-            "html": "Start watching"
+            "html": this.createChip("Start watching")
         }).click(() => this.startQueue()));
         strip.append($("<button/>", {
             "id": "ytbsp-removeAllVideos",
             "class": "ytbsp-func",
-            "html": "Remove all videos"
+            "html": this.createChip("Remove all videos")
         }).click(() => this.removeAllVideos()));
         strip.append($("<button/>", {
             "id": "ytbsp-resetAllVideos",
             "class": "ytbsp-func",
-            "html": "Reset all videos"
+            "html": this.createChip("Reset all videos")
         }).click(() => this.resetAllVideos()));
-        this.toggleSortBtn = $("<button/>", {"id": "ytbsp-toggleSortMode", "class": "ytbsp-func", "html": "Sort subscriptions"}).click(() => {
+        this.toggleSortBtn = $("<button/>", {
+            "id": "ytbsp-toggleSortMode",
+            "class": "ytbsp-func",
+            "html": this.createChip("Sort subscriptions")
+        }).click(() => {
             this.toggleSortMode();
         });
         strip.append(this.toggleSortBtn);
@@ -181,5 +185,11 @@ export default class SubListComponent extends Component {
         if(this.initializedSubscriptions == this.subComponents.length){
             this.loadingProgress.hide();
         }
+    }
+
+    private createChip(text: string) {
+        return `<div class="ytbsp-chip-btn">
+            ${text}
+            </div>`;
     }
 }

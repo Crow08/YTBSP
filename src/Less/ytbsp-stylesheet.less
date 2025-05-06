@@ -69,31 +69,46 @@ ytd-app[mini-guide-visible] #YTBSP
     display: inline-block;
 }
 
+.ytbsp-chip-btn {
+    background-color: var(--yt-spec-badge-chip-background);
+    color: var(--yt-spec-text-primary);
+    padding: 0 var(--ytd-margin-3x);
+    transition: background-color .5s cubic-bezier(.05,0,0,1);
+    line-height: 32px;
+    border-radius: 8px;
+    font-weight: 500;
+    align-items: center;
+    display: flex;
+}
+
 #ytbsp-fixedBar {
-    background-color: rgba(33, 33, 33, 0.98);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-    position: fixed;
-    width: 100%;
+    position: absolute;
+    top: 30px;
+    left: 185px;
+    align-items: center;
+    display: flex;
     height: 22px;
-    z-index: 2;
+    z-index: 3500;
     margin-left: -240px;
     padding-left: 255px;
 }
 
+#ytbsp-fixedChip {
+    display: flex;
+}
+
 #ytbsp-subsWrapper {
     padding-left: 60px;
-    margin-top: 22px;
+    margin-top: 50px;
     position: absolute;
     width: calc(100% - 308px);
 }
 
 #ytbsp-subsMenuStrip {
     white-space: nowrap;
-    margin-left: 126px;
-    margin-top: -22px;;
+    margin-top: -40px;;
     position: fixed;
-    z-index: 3;
+    z-index: 3000;
 }
 
 #ytbsp-subsList {
@@ -150,7 +165,7 @@ ytd-app[mini-guide-visible] #YTBSP
 
     .ytbsp-title-large {
         position: relative;
-        z-index: 4;
+        z-index: 4000;
         .bg-color-mixin();
         text-align: center;
         border-width: 0px 2px 2px 2px;
@@ -183,7 +198,7 @@ ytd-app[mini-guide-visible] #YTBSP
 }
 
 .ytbsp-clip-large {
-    z-index: 4;
+    z-index: 4000;
     top: -45px;
     margin-bottom: -45px;
     border: none;
@@ -191,7 +206,7 @@ ytd-app[mini-guide-visible] #YTBSP
 
 .ytbsp-x {
     position: absolute;
-    z-index: 2;
+    z-index: 2000;
     top: 2%;
     right: 1%;
     opacity: 0;
@@ -290,7 +305,7 @@ ytd-app[mini-guide-visible] #YTBSP
     cursor: pointer;
     display: inline-block;
     border: none;
-    z-index: 1;
+    z-index: 1000;
     opacity: 0.88;
     background-color: transparent;
     padding: 1px 10px;
@@ -380,10 +395,10 @@ label.ytbsp-func {
 }
 
 .ytbsp-slider {
-    display: inline-block;
+    display: flex;
+    align-items: center;
     padding: 0px 10px;
     width: 30px;
-    vertical-align: middle;
     cursor: pointer;
 }
 
@@ -400,7 +415,8 @@ label.ytbsp-func {
 
 .ytbsp-slider-knob {
     position: relative;
-    top: -3px;
+    display: flex;
+    align-items: center;
     left: -4px;
     height: 16px;
     width: 16px;
@@ -440,7 +456,7 @@ label.ytbsp-func {
     width: 100%;
     height: 100%;
     background-color: rgba(0, 0, 0, .4);
-    z-index: 3;
+    z-index: 3000;
     transition: opacity .2s;
     -webkit-transition: opacity .2s;
     -moz-transition: opacity .2s;

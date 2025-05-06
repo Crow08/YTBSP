@@ -14,7 +14,9 @@ const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
 const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
 const YT_CHANNEL_LINK = "#top-row > ytd-video-owner-renderer > #upload-info > #channel-name > #container > #text-container > #text > a";
 const YT_CHANNEL_LINK_ALT = "#movie_player > div.ytp-ce-element.ytp-ce-channel.ytp-ce-channel-this.ytp-ce-bottom-right-quad.ytp-ce-size-640 > div.ytp-ce-expanding-overlay > div.ytp-ce-expanding-overlay-content > div > div > a";
-
+const YT_HEADER_TRANSPARENCY ="#frosted-glass.with-chipbar.ytd-app.style-scope";
+const YT_SIDEBAR_COLLAPSED = "ytd-mini-guide-renderer.ytd-app";
+const YT_SIDEBAR = "ytd-app[frosted-glass-exp] tp-yt-app-drawer.ytd-app[persistent]";
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
 const YT_PLAYER = "#movie_player > div.html5-video-container > video";
@@ -23,16 +25,18 @@ const YT_VIDEO_STREAM = ".video-stream";
 
 // Style rules depending on the loaded native page.
 const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
-const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: -2px; background: transparent; }
-    ${YT_GUIDE} { z-index: 3 !important;}`;
+const bodyStyleStartPage = `${YT_START_PAGE_BODY} { margin-top: 0px; background: transparent; }
+    ${YT_GUIDE} { z-index: 3000 !important; }
+    ${YT_HEADER_TRANSPARENCY} { z-index: 2000; }
+    ${YT_SIDEBAR}, ${YT_SIDEBAR_COLLAPSED} { top: calc(var(--ytd-masthead-height, var(--ytd-toolbar-height)) + 22px); }`;
 const bodyStyleVideo = `${YT_START_PAGE_BODY} { background: transparent; margin-top: 0px; }
-    ${YT_GUIDE} { z-index: 3 !important; width: var(--app-drawer-width, 256px); }`;
+    ${YT_GUIDE} { z-index: 3000 !important; width: var(--app-drawer-width, 256px); }`;
 const bodyStyleSearch = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -20px; }
-    ${YT_GUIDE} { z-index: 3; !important;}`;
+    ${YT_GUIDE} { z-index: 3000; !important;}`;
 const bodyStyleDefault = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -30px;}
-    ${YT_GUIDE} { z-index: 3; !important;}`;
+    ${YT_GUIDE} { z-index: 3000; !important;}`;
 const bodyStylePlaylist = `${YT_START_PAGE_BODY} { background: transparent; margin-top: -60px; }
-    ${YT_GUIDE} { z-index: 3; !important;}
+    ${YT_GUIDE} { z-index: 3000; !important;}
     ${YT_START_PAGE_BODY} ${YT_PLAYLIST_SIDEBAR} {padding-top: 54px;}`;
 
 export enum PageState {

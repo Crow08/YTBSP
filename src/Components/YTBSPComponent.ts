@@ -25,10 +25,10 @@ export default class YTBSPComponent extends Component {
             this.toggleLoaderRefresh(true);
             this.subList.updateAllSubs().finally(() => this.toggleLoaderRefresh(false));
         });
-        const fixedBar = $("<div/>", {"id": "ytbsp-fixedBar"});
+        const fixedBarChip = $("<div/>", {"id": "ytbsp-fixedChip"});
         this.toggleSlider = ComponentUtils.getSlider("ytbsp-togglePage", this.isNative, () => this.toggleNative());
-        fixedBar.append(this.toggleSlider.component);
-        fixedBar.append($("<div/>", {"id": "ytbsp-loaderSpan"})
+        fixedBarChip.append(this.toggleSlider.component);
+        fixedBarChip.append($("<div/>", {"id": "ytbsp-loaderSpan"})
             .append(this.loader.component)
             .append(this.refresh));
         const settingsButton = $("<button/>", {
@@ -37,7 +37,9 @@ export default class YTBSPComponent extends Component {
             "html": "&#x2699;",
             "on": {"click": () => this.modal.openModal(new SettingsModalComponent(this.modal))}
         });
-        fixedBar.append(settingsButton);
+        fixedBarChip.append(settingsButton);
+        const fixedBar = $("<div/>", {"id": "ytbsp-fixedBar"});
+        fixedBar.append(fixedBarChip);
         this.component.append(fixedBar);
         this.modal = new ModalComponent();
         this.component.append(this.modal.component);
