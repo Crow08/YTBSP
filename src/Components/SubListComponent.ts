@@ -55,6 +55,7 @@ export default class SubListComponent extends Component {
         ytsub().then((subs) => this.initSubs(subs)).catch((err) => console.error(err));
 
         dataService.addReorderListener((subs) => this.updateSubOrder(subs));
+        pageService.addViewChangeListeners(this.component);
     }
 
     removeAllVideos(): void {

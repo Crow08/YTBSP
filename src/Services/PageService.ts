@@ -193,9 +193,6 @@ class PageService {
             this.onDocumentReadyCallbackList = [];
             this.installDummyPopup();
         });
-
-        window.addEventListener("scroll", throttleTime(() => this.handleViewChange()), false);
-        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
     }
 
     /**
@@ -419,6 +416,11 @@ class PageService {
             callback();
         });
     };
+
+    addViewChangeListeners(component: JQuery) {
+        component.on( "scroll", throttleTime(() => this.handleViewChange()));
+        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
+    }
 }
 
 const pageService = new PageService();
