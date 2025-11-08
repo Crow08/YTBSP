@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
 import https from "https";
 import moment, { unitOfTime } from "moment";
 import Video from "./Model/Video";
@@ -8,7 +6,7 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
     const body = getPlaylistPageBody(plistID, options.hideShorts);
     let contentJson = JSON.parse(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
     let allItems: any[];
-    if("undefined" !== typeof contentJson["sectionListRenderer"]) {
+    if ("undefined" !== typeof contentJson["sectionListRenderer"]) {
         contentJson = contentJson["sectionListRenderer"];
         allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["playlistVideoListRenderer"]["contents"];
     } else {
@@ -17,7 +15,6 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
 
     return convertToVideos(allItems);
 };
-
 
 async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Promise<string> {
     return new Promise((resolve, reject) => {
@@ -52,7 +49,7 @@ async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Pro
             });
             req.write(payload);
             req.end();
-        },0);
+        }, 0);
     });
 }
 
@@ -78,7 +75,7 @@ function convertToVideos(items: any[]): Video[] {
         vid.uploaded = uploadInfo.uploaded;
         vid.pubDate = uploadInfo.pubDate;
 
-        if(videoItem["upcomingEventData"] && videoItem["upcomingEventData"]["startTime"]) {
+        if (videoItem["upcomingEventData"] && videoItem["upcomingEventData"]["startTime"]) {
             vid.premiere = new Date(Number(videoItem["upcomingEventData"]["startTime"]) * 1000);
         }
         videos.push(vid);
@@ -87,15 +84,15 @@ function convertToVideos(items: any[]): Video[] {
     return videos;
 }
 
-function extractUploadInformation(videoItem): {"uploaded": string, "pubDate": Date|null} {
-    const result:{uploaded: string, pubDate: Date|null} = {"uploaded": "unknown", "pubDate": null};
+function extractUploadInformation(videoItem): { "uploaded": string, "pubDate": Date | null } {
+    const result: { uploaded: string, pubDate: Date | null } = {"uploaded": "unknown", "pubDate": null};
     const numberRegex = /\d+/g;
     const videoInfo = videoItem["videoInfo"];
 
     if (typeof videoInfo !== "undefined" && typeof videoInfo["runs"] !== "undefined") {
-        const videoInfoTextRuns = videoInfo["runs"] as {"text": string}[];
+        const videoInfoTextRuns = videoInfo["runs"] as { "text": string }[];
         for (const videoInfoTextRun of videoInfoTextRuns) {
-            if(videoInfoTextRun.text.endsWith("ago")) {
+            if (videoInfoTextRun.text.endsWith("ago")) {
                 const durationAgo = videoInfoTextRun.text.substring(0, videoInfoTextRun.text.length - 4);
                 if (durationAgo) {
                     result.uploaded = durationAgo;

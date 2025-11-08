@@ -7,7 +7,7 @@ import pageService, { PageState } from "./Services/PageService";
 import persistenceService from "./Services/PersistenceService";
 
 console.log("script start");
-setTimeout( () => {
+setTimeout(() => {
     pageService.updateNativeStyleRuleModifications(PageState.LOADING);
 
     const ytbspComponent = new YTBSPComponent();
@@ -16,7 +16,7 @@ setTimeout( () => {
         console.log("script data loaded");
         ytbspComponent.startLoading();
     };
-    const atDocumentReady = () =>{
+    const atDocumentReady = () => {
         console.log("document ready");
         pageService.injectYTBSP(ytbspComponent);
         pageService.startPageObserver();
@@ -42,6 +42,5 @@ setTimeout( () => {
         }).catch(e => console.error(e));
         pageService.addThumbnailEnlargeCss();
     }).catch(e => console.error(e));
-
 
 }, 0);

@@ -36,13 +36,23 @@ export default class SubComponent extends Component {
             .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderTop", "html": "⭡"}).click(() => {
                 dataService.reorderSubscriptions(this.channelId, SortPosition.UP);
             }))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom", "html": "⭣"}).click(() => {
+            .append($("<button/>", {
+                "class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom",
+                "html": "⭣"
+            }).click(() => {
                 dataService.reorderSubscriptions(this.channelId, SortPosition.DOWN);
             }))
-            .append($("<button/>", {"class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom", "html": "⭳"}).click(() => {
+            .append($("<button/>", {
+                "class": "ytbsp-func ytbsp-sortBtn  ytbsp-suborderBottom",
+                "html": "⭳"
+            }).click(() => {
                 dataService.reorderSubscriptions(this.channelId, SortPosition.BOTTOM);
             }))
-            .append($("<label/>", {"for": "ytbsp_shoShorts_" + this.channelId, "class": "ytbsp-func ytbsp-showShorts", "html": "Hide Shorts:"}))
+            .append($("<label/>", {
+                "for": "ytbsp_shoShorts_" + this.channelId,
+                "class": "ytbsp-func ytbsp-showShorts",
+                "html": "Hide Shorts:"
+            }))
             .append($("<input/>", {
                 "id": "ytbsp_shoShorts_" + this.channelId,
                 "class": "ytbsp-func ytbsp-showShorts",
@@ -107,11 +117,11 @@ export default class SubComponent extends Component {
 
     // Fetches and rebuilds subscription row based on updated videos.
     reloadSubVideos(): Promise<void> {
-        if(!this.videosInitialized){
+        if (!this.videosInitialized) {
             return this.initVideos();
         }
         this.loader.showLoader();
-        const hideShorts = { ...configService.getConfig().hideShorts};
+        const hideShorts = {...configService.getConfig().hideShorts};
         return new Promise<void>((resolve, reject) => {
             ytpl(dataService.getSubscription(this.channelId).playlistId, {
                 limit: configService.getConfig().maxVideosPerSub,
@@ -203,6 +213,20 @@ export default class SubComponent extends Component {
         this.loader.hideLoader();
     }
 
+    //calulate how old the video is and if its too old
+    isVideoOld(pubdate: Date): boolean {
+        let isOld = false;
+        if (pubdate === undefined) {
+            return false;
+        }
+        const today = new Date();
+
+        if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime) {
+            isOld = true;
+        }
+        return isOld;
+    }
+
     private isVideoHidden(video: Video) {
         const hideSeen = configService.getConfig().hideSeenVideos && video.seen;
         const hideOld = configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
@@ -214,34 +238,20 @@ export default class SubComponent extends Component {
         if (this.videoComponents.length === 0 && configService.getConfig().hideEmptySubs) {
             this.component.hide();
             pageService.triggerViewChange();
-        } else{
+        } else {
             this.component.show();
             this.updateVisibility();
         }
     }
 
-    //calulate how old the video is and if its too old
-    isVideoOld(pubdate : Date): boolean {
-        let isOld = false;
-        if (pubdate === undefined){
-            return false;
-        }
-        const today = new Date();
-
-        if (((today.getTime() - pubdate.getTime()) / (1000 * 3600 * 24)) > configService.getConfig().videoDecomposeTime){
-            isOld = true;
-        }
-        return isOld;
-    }
-
     private processRequestVideos(response: Video[]): void {
-        if(this.removeShorts === true) {
+        if (this.removeShorts === true) {
             this.removeShorts = false;
             // Find removed shorts videos:
             dataService.getVideos(this.channelId).forEach((oldVideo) => {
                 const foundIndex = response.findIndex((vid) => vid.id === oldVideo.id);
                 if (foundIndex === -1) {
-                    console.log("found:"+ oldVideo.title);
+                    console.log("found:" + oldVideo.title);
                     dataService.upsertVideo(oldVideo.id, video => {
                         video.removed = true;
                         return video;
@@ -269,7 +279,7 @@ export default class SubComponent extends Component {
     }
 
     private toggleHideShorts() {
-        const hideShorts = { ...configService.getConfig().hideShorts};
+        const hideShorts = {...configService.getConfig().hideShorts};
         const hideShort = hideShorts[this.channelId];
         hideShorts[this.channelId] = !hideShort;
         configService.updateConfig({hideShorts: hideShorts});

@@ -1,8 +1,6 @@
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment */
+import crypto from "crypto";
 import https from "https";
 import MINIGET from "miniget";
-import crypto from "crypto";
 import Subscription from "./Model/Subscription";
 
 export default async (): Promise<Subscription[]> => {
@@ -13,7 +11,7 @@ export default async (): Promise<Subscription[]> => {
 
     let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
 
-    if(contentJson["contents"].length > 1){
+    if (contentJson["contents"].length > 1) {
         let continuation = contentJson["contents"][1];
         while (continuation) {
             const continuationToken = continuation["continuationItemRenderer"]["continuationEndpoint"]["continuationCommand"]["token"];
@@ -31,10 +29,10 @@ export default async (): Promise<Subscription[]> => {
 
 function getConfigurationJson(body: string): any {
     let jsonString = "";
-    if(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1){
+    if (body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1) {
         jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
         jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
-    }else{
+    } else {
         jsonString = body.substring(body.search("window\\.ytplayer=\\{\\};\nytcfg\\.set") + 30);
         jsonString = jsonString.substring(0, jsonString.search("\\;var setMessage=function\\(msg\\)"));
     }
@@ -46,14 +44,9 @@ function getConfigurationJson(body: string): any {
     return JSON.parse(jsonString);
 }
 
-function getAPIKey(body: string) {
-    const part = body.substring(body.search("\"INNERTUBE_API_KEY\":\"") + 21);
-    return part.substring(0, part.search("\""));
-}
-
 function getContentJson(body: string): any {
     let jsonString = "";
-    if(body.search("window\\[\"ytInitialData\"\\]") !== -1) {
+    if (body.search("window\\[\"ytInitialData\"\\]") !== -1) {
         jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
         jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
     } else {
@@ -82,7 +75,7 @@ async function getSubPageBody(): Promise<string> {
                 location.href = "https://www.youtube.com/feed/channels?disable_polymer=true&hl=en";
             });
             httpRequestResult.then(resolve).catch(reject);
-        },0);
+        }, 0);
     });
 }
 
@@ -112,7 +105,7 @@ async function getSubContinuationBody(cfgJson: any, continuationToken: string, c
         },
         "continuation": continuationToken,
     });
-    const requestPromise = new Promise<string> ((resolve, reject) => {
+    const requestPromise = new Promise<string>((resolve, reject) => {
         let responseData = "";
         const req = https.request(options, res => {
             res.on("data", chunk => {

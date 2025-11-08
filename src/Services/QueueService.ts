@@ -1,15 +1,17 @@
 class QueueService {
-    private startVideoId : string = null;
+    private startVideoId: string = null;
 
-    public getStartVideoId() : string {
+    public getStartVideoId(): string {
         return this.startVideoId;
     }
-    public setStartVideoId(id: string) : void {
-        if (this.startVideoId == null){
+
+    public setStartVideoId(id: string): void {
+        if (this.startVideoId == null) {
             this.startVideoId = id;
         }
     }
-    public resetStartVideoId() : void {
+
+    public resetStartVideoId(): void {
         this.startVideoId = null;
     }
 }

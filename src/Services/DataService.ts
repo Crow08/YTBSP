@@ -54,7 +54,7 @@ class DataService {
         }
     }
 
-    getVideos(id:string): Video[] {
+    getVideos(id: string): Video[] {
         const sub = this.getSubscription(id);
         if ("undefined" === typeof sub) {
             return [];
@@ -82,25 +82,6 @@ class DataService {
         return JSON.stringify(this.subscriptions.map(sub => sub.getDTO()));
     }
 
-    private getSubscriptionForVideo(videoId: string, channelId?: string): Subscription | undefined {
-        let sub: Subscription;
-        if ("undefined" === typeof channelId) {
-            sub = this.subscriptions.find(value => value.videos.findIndex(vid => vid.id === videoId) !== -1);
-        } else {
-            sub = this.getSubscription(channelId);
-        }
-        return sub;
-    }
-
-    private onDataUpdated(channelId: string) {
-        if ("undefined" !== typeof this.onSubscriptionChangeCallbackList[channelId]) {
-            this.onSubscriptionChangeCallbackList[channelId].forEach(callback => {
-                callback();
-            });
-        }
-        persistenceService.saveVideoInfo(this.exportVideoData());
-    }
-
     getSubscriptions(): Subscription[] {
         return this.subscriptions;
     }
@@ -119,6 +100,25 @@ class DataService {
 
     addReorderListener(callback: (subs: Subscription[]) => void) {
         this.onReorderCallbackList.push(callback);
+    }
+
+    private getSubscriptionForVideo(videoId: string, channelId?: string): Subscription | undefined {
+        let sub: Subscription;
+        if ("undefined" === typeof channelId) {
+            sub = this.subscriptions.find(value => value.videos.findIndex(vid => vid.id === videoId) !== -1);
+        } else {
+            sub = this.getSubscription(channelId);
+        }
+        return sub;
+    }
+
+    private onDataUpdated(channelId: string) {
+        if ("undefined" !== typeof this.onSubscriptionChangeCallbackList[channelId]) {
+            this.onSubscriptionChangeCallbackList[channelId].forEach(callback => {
+                callback();
+            });
+        }
+        persistenceService.saveVideoInfo(this.exportVideoData());
     }
 }
 

@@ -1,5 +1,5 @@
-import moment from "moment";
 import $ from "jquery";
+import moment from "moment";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";

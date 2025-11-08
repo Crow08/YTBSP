@@ -1,5 +1,0 @@
-node_modules/
-dist/
-
-# The javascript-based eslint config gets picked up by eslint as lintable but is rejected by typescript as not part of the project. This leads to error messages in IDEs that use linting plugins. So we ignore it.
-.eslintrc.js

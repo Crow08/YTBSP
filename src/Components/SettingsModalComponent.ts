@@ -253,9 +253,8 @@ export default class SettingsModalComponent extends Component {
         try {
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore
-            // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
             versionInformation = GM_info && GM_info.script ? `script version:${GM_info.script.version as string}` : "";
-        } catch (e) {
+        } catch {
             console.info("Tampermonkey variables not available.");
         }
         return versionInformation;

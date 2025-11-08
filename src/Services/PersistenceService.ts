@@ -32,7 +32,6 @@ class PersistenceService {
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
 
-
     private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
         if (property !== null) {
@@ -185,7 +184,7 @@ class PersistenceService {
             if (null !== rawData && "" !== rawData) {
                 try {
                     subs = JSON.parse(rawData) as unknown as SubscriptionDTO[];
-                } catch (e) {
+                } catch {
                     reject("Error parsing cache!");
                 }
             }

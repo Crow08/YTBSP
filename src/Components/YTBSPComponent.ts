@@ -67,7 +67,11 @@ export default class YTBSPComponent extends Component {
     }
 
     toggleNative(): void {
-        this.isNative ? this.hideNative() : this.showNative();
+        if (this.isNative) {
+            this.hideNative();
+        } else {
+            this.showNative();
+        }
         playerService.togglePictureInPicturePlayer(!this.isNative);
     }
 

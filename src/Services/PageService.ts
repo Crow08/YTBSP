@@ -11,17 +11,17 @@ const YT_HOMEPAGE_SKELETON = "#home-page-skeleton";
 //const YT_NAVIGATION_MANAGER = "ytd-app > ytd-navigation-manager";
 const YT_START_PAGE_BODY = "#page-manager.ytd-app, #page-manager.ytd-app.style-scope";
 const YT_PLAYLIST_SIDEBAR = "ytd-playlist-sidebar-renderer";
-const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
+//const YT_VIDEO_TITLE = "#info-contents > ytd-video-primary-info-renderer > div:last-child";
 const YT_CHANNEL_LINK = "#top-row > ytd-video-owner-renderer > #upload-info > #channel-name > #container > #text-container > #text > a";
 const YT_CHANNEL_LINK_ALT = "#movie_player > div.ytp-ce-element.ytp-ce-channel.ytp-ce-channel-this.ytp-ce-bottom-right-quad.ytp-ce-size-640 > div.ytp-ce-expanding-overlay > div.ytp-ce-expanding-overlay-content > div > div > a";
-const YT_HEADER_TRANSPARENCY ="#frosted-glass.with-chipbar.ytd-app.style-scope";
+const YT_HEADER_TRANSPARENCY = "#frosted-glass.with-chipbar.ytd-app.style-scope";
 const YT_SIDEBAR_COLLAPSED = "ytd-mini-guide-renderer.ytd-app";
 const YT_SIDEBAR = "ytd-app[frosted-glass-exp] tp-yt-app-drawer.ytd-app[persistent]";
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
-const YT_PLAYER = "#movie_player > div.html5-video-container > video";
+//const YT_PLAYER = "#movie_player > div.html5-video-container > video";
 const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
-const YT_VIDEO_STREAM = ".video-stream";
+//const YT_VIDEO_STREAM = ".video-stream";
 
 // Style rules depending on the loaded native page.
 const bodyStyleLoading = `${YT_START_PAGE_BODY} { background: transparent; display:none; }`;
@@ -80,8 +80,7 @@ const throttleTime = (func: () => void) => {
     return function() {
         if (timeout) {
             pendingFunc = func;
-        }
-        else {
+        } else {
             func.apply(this);
             pendingFunc = null;
             timeout = setTimeout(
@@ -109,30 +108,31 @@ interface YTApp {
                 videoId: string
             }
         }
-    } | { args: (Element|{
-            commandMetadata:{webCommandMetadata:{url:string,sendPost:boolean}},
-            signalServiceEndpoint:{
-                signal:string,
+    } | {
+        args: (Element | {
+            commandMetadata: { webCommandMetadata: { url: string, sendPost: boolean } },
+            signalServiceEndpoint: {
+                signal: string,
                 actions:
                     {
-                        addToPlaylistCommand:{
-                            openMiniplayer:boolean,
+                        addToPlaylistCommand: {
+                            openMiniplayer: boolean,
                             videoId: string,
-                            listType:string,
-                            onCreateListCommand:{
-                                commandMetadata:{
-                                    webCommandMetadata:{
-                                        url:string,
-                                        sendPost:boolean,
-                                        apiUrl:string
+                            listType: string,
+                            onCreateListCommand: {
+                                commandMetadata: {
+                                    webCommandMetadata: {
+                                        url: string,
+                                        sendPost: boolean,
+                                        apiUrl: string
                                     }
                                 },
-                                createPlaylistServiceEndpoint:{
-                                    videoIds:string[],
+                                createPlaylistServiceEndpoint: {
+                                    videoIds: string[],
                                     params: string
                                 }
                             },
-                            videoIds:string[]
+                            videoIds: string[]
                         }
                     }[]
             }
@@ -147,6 +147,7 @@ interface YTApp {
 class PageService {
 
     isDocumentReady = false;
+    navigateInterval: Timeout = null;
     private observer: MutationObserver;
     private oldHref: string;
     private isFullscreen: boolean;
@@ -193,20 +194,6 @@ class PageService {
             this.onDocumentReadyCallbackList = [];
             this.installDummyPopup();
         });
-    }
-
-    /**
-     * Installs a YouTube class popup HML element to use as a dummy reference when
-     * executing events on the YouTube App class (#YT_APP)
-     */
-    private installDummyPopup() {
-        const dummyContainer = document.createElement("div");
-        dummyContainer.style.display = "none";
-        dummyContainer.id = "ytbsp-popup-menu-dummy";
-        document.body.appendChild(dummyContainer);
-        $("#ytbsp-popup-menu-dummy").html(`<ytd-menu-service-item-renderer class="style-scope ytd-menu-popup-renderer" role="menuitem" use-icons="" tabindex="-1" aria-selected="false">
-            <paper-item class="style-scope ytd-menu-service-item-renderer" role="option" tabindex="0" aria-disabled="false">
-            </ytd-menu-service-item-renderer>`);
     }
 
     startPageObserver() {
@@ -313,36 +300,36 @@ class PageService {
     addToQueue(id: string): void {
         const ytdApp = document.querySelector(YT_APP) as unknown as YTApp;
         const queueEventArg = {
-            "commandMetadata":{"webCommandMetadata":{"url":"/service_ajax","sendPost":true}},
-            "signalServiceEndpoint":{
-                "signal":"CLIENT_SIGNAL",
-                "actions":[
+            "commandMetadata": {"webCommandMetadata": {"url": "/service_ajax", "sendPost": true}},
+            "signalServiceEndpoint": {
+                "signal": "CLIENT_SIGNAL",
+                "actions": [
                     {
-                        "addToPlaylistCommand":{
-                            "openMiniplayer":true,
+                        "addToPlaylistCommand": {
+                            "openMiniplayer": true,
                             "videoId": id,
-                            "listType":"PLAYLIST_EDIT_LIST_TYPE_QUEUE",
-                            "onCreateListCommand":{
-                                "commandMetadata":{
-                                    "webCommandMetadata":{
-                                        "url":"/service_ajax",
-                                        "sendPost":true,
-                                        "apiUrl":"/youtubei/v1/playlist/create"
+                            "listType": "PLAYLIST_EDIT_LIST_TYPE_QUEUE",
+                            "onCreateListCommand": {
+                                "commandMetadata": {
+                                    "webCommandMetadata": {
+                                        "url": "/service_ajax",
+                                        "sendPost": true,
+                                        "apiUrl": "/youtubei/v1/playlist/create"
                                     }
                                 },
-                                "createPlaylistServiceEndpoint":{
-                                    "videoIds":[id],
+                                "createPlaylistServiceEndpoint": {
+                                    "videoIds": [id],
                                     "params": "CAQ%3D"
                                 }
                             },
-                            "videoIds":[id]
+                            "videoIds": [id]
                         }
                     }
                 ]
             }
         };
         const QueueEventRequest = {
-            args: [document.querySelector("ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer"),queueEventArg],
+            args: [document.querySelector("ytd-menu-service-item-renderer.style-scope.ytd-menu-popup-renderer"), queueEventArg],
             actionName: "yt-service-request",
             disableBroadcast: false,
             optionalAction: false,
@@ -350,8 +337,6 @@ class PageService {
         };
         ytdApp["fire"]("yt-action", QueueEventRequest);
     }
-
-    navigateInterval: Timeout = null;
 
     navigateToVideo(id: string): void {
         const endpointData = {
@@ -373,22 +358,22 @@ class PageService {
         const tryNavigate = () => {
             const videoIdRegex = /v=([^&]{11})/u.exec(location.href);
             const videoId = videoIdRegex ? videoIdRegex[1] : null;
-            if(videoId != id) {
+            if (videoId != id) {
                 $(YT_APP)[0]["handleNavigate"]({
                     "command": endpointData,
                     "type": 0
                 });
             } else {
-                if(this.navigateInterval) {
+                if (this.navigateInterval) {
                     clearInterval(this.navigateInterval);
                     this.navigateInterval = null;
                 }
             }
         };
-        if(this.navigateInterval) {
+        if (this.navigateInterval) {
             clearInterval(this.navigateInterval);
         }
-        this.navigateInterval = setInterval( tryNavigate, 500);
+        this.navigateInterval = setInterval(tryNavigate, 500);
     }
 
     getHotkeyManager(): JQuery {
@@ -403,7 +388,26 @@ class PageService {
         return channelId;
     }
 
-    private getChannelIdFromLink(elementSelector): string | undefined{
+    addViewChangeListeners(component: JQuery) {
+        component.on("scroll", throttleTime(() => this.handleViewChange()));
+        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
+    }
+
+    /**
+     * Installs a YouTube class popup HML element to use as a dummy reference when
+     * executing events on the YouTube App class (#YT_APP)
+     */
+    private installDummyPopup() {
+        const dummyContainer = document.createElement("div");
+        dummyContainer.style.display = "none";
+        dummyContainer.id = "ytbsp-popup-menu-dummy";
+        document.body.appendChild(dummyContainer);
+        $("#ytbsp-popup-menu-dummy").html(`<ytd-menu-service-item-renderer class="style-scope ytd-menu-popup-renderer" role="menuitem" use-icons="" tabindex="-1" aria-selected="false">
+            <paper-item class="style-scope ytd-menu-service-item-renderer" role="option" tabindex="0" aria-disabled="false">
+            </ytd-menu-service-item-renderer>`);
+    }
+
+    private getChannelIdFromLink(elementSelector): string | undefined {
         if (0 !== $(elementSelector).length) {
             const result = /\/channel\/([^&]*)/u.exec($(elementSelector).attr("href"));
             return result != null ? result[1] : undefined;
@@ -416,11 +420,6 @@ class PageService {
             callback();
         });
     };
-
-    addViewChangeListeners(component: JQuery) {
-        component.on( "scroll", throttleTime(() => this.handleViewChange()));
-        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
-    }
 }
 
 const pageService = new PageService();

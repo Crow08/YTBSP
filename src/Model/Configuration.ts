@@ -27,7 +27,7 @@ export default class Configuration {
     hideEmptySubs = true;               // DEFAULT: true.
     hideOlderVideos = false;            // DEFAULT: false.
     videoDecomposeTime = 30;            // DEFAULT: 30 days.
-    hideShorts: {[x: string]: boolean} = {};                    // Default: none
+    hideShorts: { [x: string]: boolean } = {};                    // Default: none
 
     updateConfiguration(info: {
         maxSimSubLoad?: number,
@@ -45,7 +45,7 @@ export default class Configuration {
         hideOlderVideos?: boolean,
         hideEmptySubs?: boolean,
         videoDecomposeTime?: number,
-        hideShorts?: {[x: string]: boolean},
+        hideShorts?: { [x: string]: boolean },
         [x: string]: any
 
     }): void {

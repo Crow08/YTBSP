@@ -1,15 +1,19 @@
-import $, { error } from "jquery";
+import $ from "jquery";
 import Subscription from "../Model/Subscription";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
+import pageService from "../Services/PageService";
+import queueService from "../Services/QueueService";
 import ytsub from "../ytsub";
 import Component from "./Component";
 import SubComponent from "./SubComponent";
-import queueService from "../Services/QueueService";
-import pageService from "../Services/PageService";
 
 export default class SubListComponent extends Component {
 
+    storedHideEmptySubs = false;
+    videoLoadingExecutions = 0;
+    videoLoadingQueue: SubComponent[] = [];
+    initializedSubscriptions = 0;
     private subList: JQuery;
     private toggleSortBtn: JQuery;
     private subComponents: SubComponent[] = [];
@@ -65,7 +69,7 @@ export default class SubListComponent extends Component {
     }
 
     startQueue(): void {
-        if (queueService.getStartVideoId() == null){
+        if (queueService.getStartVideoId() == null) {
             alert("Queue is empty, let me choose a video for you!");
             //get rolled boy!
             pageService.navigateToVideo("dQw4w9WgXcQ");
@@ -91,18 +95,26 @@ export default class SubListComponent extends Component {
         return Promise.all<void>(subPromiseList);
     }
 
+    updateLoadingProgress() {
+        ++this.initializedSubscriptions;
+        this.loadingProgress.html(`(${this.initializedSubscriptions}/${this.subComponents.length})`);
+        if (this.initializedSubscriptions == this.subComponents.length) {
+            this.loadingProgress.hide();
+        }
+    }
+
     private initSubs(newSubs: Subscription[]): void {
         const cachedSubs = dataService.getSubscriptions();
         cachedSubs.forEach(cachedSub => {
             const subIndex = newSubs.findIndex(sub => sub.channelId == cachedSub.channelId);
             const newSub = newSubs[subIndex];
-            if("undefined" === typeof newSub) {
+            if ("undefined" === typeof newSub) {
                 //no longer subscribed
                 return;
             }
             newSub.updateSubscription(cachedSub);
             this.setupNewSubscription(newSub);
-            newSubs.splice(subIndex,1);
+            newSubs.splice(subIndex, 1);
         });
         // Only subs without cache left here:
         newSubs.forEach(newSub => {
@@ -128,10 +140,8 @@ export default class SubListComponent extends Component {
         });
     }
 
-    storedHideEmptySubs = false;
-
     private toggleSortMode() {
-        if(!this.sortMode) {
+        if (!this.sortMode) {
             this.storedHideEmptySubs = configService.getConfig().hideEmptySubs;
             configService.updateConfig({hideEmptySubs: false});
             this.subList.addClass("ytbsp-sortMode");
@@ -143,9 +153,6 @@ export default class SubListComponent extends Component {
         }
         this.sortMode = !this.sortMode;
     }
-
-    videoLoadingExecutions = 0;
-    videoLoadingQueue: SubComponent[] = [];
 
     /**
      * This will load Videos for a SubComponent with a limit on simulators requests.
@@ -159,13 +166,13 @@ export default class SubListComponent extends Component {
      */
     private registerVideoLoadingJob(subComp: SubComponent): Promise<void> {
         return new Promise<void>((resolve, reject) => {
-            if(this.videoLoadingExecutions < configService.getConfig().maxSimSubLoad){
+            if (this.videoLoadingExecutions < configService.getConfig().maxSimSubLoad) {
                 const loadingProcess = subComp.reloadSubVideos();
                 ++this.videoLoadingExecutions;
                 loadingProcess.then(() => {
                     --this.videoLoadingExecutions;
                     this.updateLoadingProgress();
-                    if(this.videoLoadingQueue.length > 0) {
+                    if (this.videoLoadingQueue.length > 0) {
                         const subComponent = this.videoLoadingQueue.shift();
                         this.registerVideoLoadingJob(subComponent).then(resolve).catch(reject);
                     } else {
@@ -177,15 +184,6 @@ export default class SubListComponent extends Component {
                 resolve();
             }
         });
-    }
-
-    initializedSubscriptions = 0;
-    updateLoadingProgress(){
-        ++this.initializedSubscriptions;
-        this.loadingProgress.html(`(${this.initializedSubscriptions}/${this.subComponents.length})`);
-        if(this.initializedSubscriptions == this.subComponents.length){
-            this.loadingProgress.hide();
-        }
     }
 
     private createChip(text: string) {
