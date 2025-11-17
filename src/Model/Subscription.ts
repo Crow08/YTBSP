@@ -46,16 +46,29 @@ export default class Subscription {
             this.iconUrl = info.iconUrl ? info.iconUrl : this.iconUrl;
         }
         if (Object.prototype.hasOwnProperty.call(info, "videos")) {
-            info.videos.reverse().forEach(updateInfo => {
-                const currentVideo = this.videos.find(vid => vid.id === updateInfo.id);
-                if ("undefined" !== typeof currentVideo) {
-                    currentVideo.updateVideo(updateInfo);
-                } else {
-                    const newVideo = new Video(updateInfo.id);
-                    newVideo.updateVideo(updateInfo);
-                    this.videos.unshift(newVideo);
+            const existingVideos = new Map(this.videos.map(video => [video.id, video]));
+            const processedIds = new Set<string>();
+            const updatedVideos: Video[] = [];
+
+            info.videos.forEach(updateInfo => {
+                if ("undefined" === typeof updateInfo || "undefined" === typeof updateInfo.id) {
+                    return;
                 }
+                let currentVideo = existingVideos.get(updateInfo.id);
+                if ("undefined" === typeof currentVideo) {
+                    currentVideo = new Video(updateInfo.id);
+                }
+                currentVideo.updateVideo(updateInfo);
+                updatedVideos.push(currentVideo);
+                existingVideos.set(updateInfo.id, currentVideo);
+                processedIds.add(updateInfo.id);
             });
+
+            if (updatedVideos.length > 0) {
+                // Add older videos that were not updated.
+                const remainingVideos = this.videos.filter(video => !processedIds.has(video.id));
+                this.videos = updatedVideos.concat(remainingVideos);
+            }
         }
     }
 
