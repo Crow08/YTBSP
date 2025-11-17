@@ -188,7 +188,6 @@ export default class SubComponent extends Component {
             }
         });
 
-        // Clear existing content and append new fragment (avoids TrustedHTML requirement)
         videoListElement.replaceChildren(fragment);
 
         // Remove any unused components from the map.
@@ -197,6 +196,11 @@ export default class SubComponent extends Component {
 
         this.updateHiddenState();
         this.loader.hideLoader();
+
+        // Initialize duration overlays for all components (needed after DOM reattachment)
+        newVideoComponents.forEach(component => {
+            component.initDurationOverlay();
+        });
     }
 
     //calulate how old the video is and if its too old

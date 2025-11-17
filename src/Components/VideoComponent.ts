@@ -20,6 +20,7 @@ export default class VideoComponent extends Component {
     private clipItem: JQuery;
     private enlargeTimeout: Timeout = null;
     private uploadItem: JQuery;
+    private durationItem: JQuery;
 
     constructor(video: Video) {
         super($("<li/>", {"class": "ytbsp-video-item"}));
@@ -27,7 +28,7 @@ export default class VideoComponent extends Component {
         this.clipItem = $("<a/>", {"href": `/watch?v=${video.id}`, "class": "ytbsp-clip"});
         this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
         this.thumbItem = $("<img src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
-        const durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
+        this.durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
         this.titleItem = $("<a/>", {
             "href": `/watch?v=${video.id}`,
             "class": "ytbsp-title",
@@ -50,17 +51,10 @@ export default class VideoComponent extends Component {
         this.closeItem.mouseover(() => this.abortEnlargeTimeout());
         this.component.mouseleave(() => this.resetThumbnail());
 
-        setTimeout(() => {
-            // TODO: Workaround, because when executed synchronous time will not be displayed.
-            durationItem.find(".ytd-thumbnail-overlay-time-status-renderer > yt-icon")
-                .prop("hidden", true);
-            durationItem.find("span").html(video.duration);
-        }, 100);
 
         this.component.append(this.clipItem
             .append(this.closeItem)
-            .append(this.thumbItem)
-            .append(durationItem));
+            .append(this.thumbItem));
         this.component.append(this.titleItem);
         this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
@@ -197,5 +191,18 @@ export default class VideoComponent extends Component {
     private abortEnlargeTimeout(): void {
         clearTimeout(this.enlargeTimeout);
         this.enlargeTimeout = null;
+    }
+
+    // Initialize duration overlay after component is reattached to DOM
+    initDurationOverlay(): void {
+        const video = dataService.getVideo(this.videoId);
+        this.clipItem.append(this.durationItem);
+        // TODO: Workaround, because when executed synchronous time will not be displayed.
+        setTimeout(() => {
+            this.durationItem.find(".ytd-thumbnail-overlay-time-status-renderer > yt-icon")
+                .prop("hidden", true);
+            this.durationItem.find("span").html(video.duration);
+        }, 100);
+
     }
 }
