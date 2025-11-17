@@ -1,4 +1,3 @@
-import crypto from "crypto";
 import https from "https";
 import MINIGET from "miniget";
 import Subscription from "./Model/Subscription";
@@ -85,7 +84,7 @@ async function getSubContinuationBody(cfgJson: any, continuationToken: string, c
     const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
     const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
     const options = {
-        headers: getPOSTHeader(cfgJson),
+        headers: await getPOSTHeader(cfgJson),
         hostname: "www.youtube.com",
         path: `/youtubei/v1/browse?key=${key as string}`,
         method: "POST"
@@ -125,13 +124,20 @@ async function getSubContinuationBody(cfgJson: any, continuationToken: string, c
     return await requestPromise;
 }
 
-function getPOSTHeader(cfgJson) {
+async function sha1Hash(text: string): Promise<string> {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(text);
+    const hashBuffer = await crypto.subtle.digest("SHA-1", data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+async function getPOSTHeader(cfgJson): Promise<Record<string, string>> {
     const time = Date.now();
     const cookiePart = document.cookie.substring(document.cookie.search("__Secure-3PAPISID=") + 18);
     const sessionId = cookiePart.substring(0, cookiePart.search(";"));
-    const hash = crypto.createHash("sha1");
     const rawAuth = `${time} ${sessionId} https://www.youtube.com`;
-    const hashedAuth = hash.update(rawAuth, "utf8").digest("hex");
+    const hashedAuth = await sha1Hash(rawAuth);
 
     const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
     const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
