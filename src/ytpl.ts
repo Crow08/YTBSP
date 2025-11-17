@@ -1,4 +1,3 @@
-import https from "https";
 import moment, { unitOfTime } from "moment";
 import Video from "./Model/Video";
 
@@ -17,40 +16,27 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
 };
 
 async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Promise<string> {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const options = {
-                hostname: "www.youtube.com",
-                path: "/youtubei/v1/browse",
-                method: "POST"
-            };
-            const payload = JSON.stringify({
-                "context": {
-                    "client": {
-                        "clientName": "WEB",
-                        "clientVersion": "2.20250328.01.00"
-                    }
-                },
-                "browseId": `VL${playlistId}`,
-                "params": hideShorts ? "wgYCEAE%3D" : "" // exclude for shorts / only shorts: "params": "wgYCGAE%3D"
-            });
-            let responseData = "";
-            const req = https.request(options, res => {
-                res.on("data", chunk => {
-                    responseData += chunk;
-                });
-                res.on("end", () => {
-                    resolve(responseData);
-                });
-            });
-            req.on("error", error => {
-                console.error(error);
-                reject(error);
-            });
-            req.write(payload);
-            req.end();
-        }, 0);
+    const payload = {
+        "context": {
+            "client": {
+                "clientName": "WEB",
+                "clientVersion": "2.20250328.01.00"
+            }
+        },
+        "browseId": `VL${playlistId}`,
+        "params": hideShorts ? "wgYCEAE%3D" : "" // exclude for shorts / only shorts: "params": "wgYCGAE%3D"
+    };
+    const response = await fetch("https://www.youtube.com/youtubei/v1/browse", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
     });
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.text();
 }
 
 function convertToVideos(items: any[]): Video[] {

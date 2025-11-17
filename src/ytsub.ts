@@ -1,5 +1,3 @@
-import https from "https";
-import MINIGET from "miniget";
 import Subscription from "./Model/Subscription";
 
 export default async (): Promise<Subscription[]> => {
@@ -61,21 +59,22 @@ function getContentJson(body: string): any {
 }
 
 async function getSubPageBody(): Promise<string> {
-    return new Promise((resolve, reject) => {
-        setTimeout(() => {
-            const headers = {
+    try {
+        const response = await fetch("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", {
+            headers: {
                 "user-agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_13_6) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/79.0.3945.117 Safari/537.36"
-            };
-            const options = {headers};
-            const httpRequestResult = MINIGET("https://www.youtube.com/feed/channels?disable_polymer=true&hl=en", options).text();
-            httpRequestResult.catch(error => {
-                console.error(error);
-                // probably a capture to solve -> redirect
-                location.href = "https://www.youtube.com/feed/channels?disable_polymer=true&hl=en";
-            });
-            httpRequestResult.then(resolve).catch(reject);
-        }, 0);
-    });
+            }
+        });
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.text();
+    } catch (error) {
+        console.error(error);
+        // probably a capture to solve -> redirect
+        location.href = "https://www.youtube.com/feed/channels?disable_polymer=true&hl=en";
+        throw error;
+    }
 }
 
 async function getSubContinuationBody(cfgJson: any, continuationToken: string, clickTrackingParams: string): Promise<string> {
@@ -83,13 +82,7 @@ async function getSubContinuationBody(cfgJson: any, continuationToken: string, c
     const key = cfgJson["INNERTUBE_API_KEY"];
     const clientName = cfgJson["INNERTUBE_CONTEXT_CLIENT_NAME"];
     const clientVersion = cfgJson["INNERTUBE_CONTEXT_CLIENT_VERSION"];
-    const options = {
-        headers: await getPOSTHeader(cfgJson),
-        hostname: "www.youtube.com",
-        path: `/youtubei/v1/browse?key=${key as string}`,
-        method: "POST"
-    };
-    const payload = JSON.stringify({
+    const payload = {
         "context": {
             "client": {
                 "clientName": clientName,
@@ -103,25 +96,20 @@ async function getSubContinuationBody(cfgJson: any, continuationToken: string, c
             }
         },
         "continuation": continuationToken,
+    };
+    const headers = await getPOSTHeader(cfgJson);
+    const response = await fetch(`https://www.youtube.com/youtubei/v1/browse?key=${key as string}`, {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            ...headers
+        },
+        body: JSON.stringify(payload)
     });
-    const requestPromise = new Promise<string>((resolve, reject) => {
-        let responseData = "";
-        const req = https.request(options, res => {
-            res.on("data", chunk => {
-                responseData += chunk;
-            });
-            res.on("end", () => {
-                resolve(responseData);
-            });
-        });
-        req.on("error", error => {
-            console.error(error);
-            reject(error);
-        });
-        req.write(payload);
-        req.end();
-    });
-    return await requestPromise;
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    return await response.text();
 }
 
 async function sha1Hash(text: string): Promise<string> {

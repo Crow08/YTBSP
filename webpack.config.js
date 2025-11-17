@@ -7,23 +7,9 @@ const analyzeBundle = process.env.ANALYZE === 'true';
 
 module.exports = {
     resolve: {
-        extensions: [".ts", ".tsx", ".js", ".jsx"],
-        fallback: {
-            "http": require.resolve("stream-http"),
-            "https": require.resolve("https-browserify"),
-            "vm": require.resolve("vm-browserify"),
-            "buffer": require.resolve("buffer"),
-            "querystring": require.resolve("querystring-es3"),
-            "stream": require.resolve("stream-browserify"),
-            "url": require.resolve("url")
-
-        }
+        extensions: [".ts", ".tsx", ".js", ".jsx"]
     },
     plugins: [
-        new webpack.ProvidePlugin({
-            process: "process/browser",
-            Buffer: ["buffer", "Buffer"]
-        }),
         // Ignore moment.js locale files (saves ~200KB+)
         new webpack.IgnorePlugin({
             resourceRegExp: /^\.\/locale$/,
