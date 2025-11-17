@@ -14,6 +14,7 @@ export default class SubComponent extends Component {
     channelId: string;
     private videoList: JQuery;
     private videoComponents: VideoComponent[] = [];
+    private videoComponentMap: Map<string, VideoComponent> = new Map();
     private loader: Loader;
 
     private isExpanded: boolean;
@@ -151,64 +152,49 @@ export default class SubComponent extends Component {
         this.loader.showLoader();
         let visibleItemIndex = 0;
         const limit = this.isExpanded ? configService.getConfig().maxVideosPerSub : configService.getConfig().maxVideosPerRow;
-        $("br", this.videoList).remove();
-        // Now loop through the videos.
+        const videoListElement = this.videoList.get(0);
+        if (!videoListElement) {
+            this.loader.hideLoader();
+            return;
+        }
+
+        const fragment = document.createDocumentFragment();
+        const newVideoComponents: VideoComponent[] = [];
+
         dataService.getSubscription(this.channelId).videos.forEach((video) => {
-            const oldIndex = this.videoComponents.findIndex((vidComp) => vidComp.videoId === video.id);
-            // if the list is full, return.
             if (visibleItemIndex >= limit) {
-                // if the item is already in the list but exceeds the limit, remove it.
-                if (-1 !== oldIndex) {
-                    this.videoComponents[oldIndex].component.remove();
-                    this.videoComponents.splice(oldIndex, 1);
-                }
                 return;
             }
-            // if the element is already in the list.
-            if (-1 !== oldIndex) {
-                // If that video is removed search for it and remove it when found.
-                if (video.removed || this.isVideoHidden(video)) {
-                    this.videoComponents[oldIndex].component.remove();
-                    this.videoComponents.splice(oldIndex, 1);
-                } else {
-                    this.videoComponents[oldIndex].update();
-                    // if the video position has changed, move it.
-                    if (visibleItemIndex !== oldIndex) {
-                        SubComponent.moveVideoComponent(this.videoComponents, oldIndex, visibleItemIndex);
-                        this.videoComponents[oldIndex].component.remove();
-                        if (visibleItemIndex === 0) {
-                            this.videoList.prepend(this.videoComponents[0].component);
-                        } else {
-                            this.videoComponents[visibleItemIndex - 1].component.after(this.videoComponents[visibleItemIndex].component);
-                        }
-                    }
-                    visibleItemIndex++;
-                }
-            } else if (video.title !== undefined && (!video.removed && !this.isVideoHidden(video))) {
-                // Create new component for video.
-                const newVidComp = new VideoComponent(video);
-                this.videoComponents.splice(visibleItemIndex, 0, newVidComp);
-                // Insert new thumb.
-                if (visibleItemIndex === 0) {
-                    this.videoList.prepend(newVidComp.component);
-                } else {
-                    this.videoComponents[visibleItemIndex - 1].component.after(newVidComp.component);
-                }
-                visibleItemIndex++;
+            if (video.title === undefined || video.removed || this.isVideoHidden(video)) {
+                return;
             }
-            // Add a line break if the maximum number of items per row is exceeded.
-            if (1 < visibleItemIndex && 0 === (visibleItemIndex - 1) % configService.getConfig().maxVideosPerRow) {
-                $("</br>").insertBefore(this.videoComponents[visibleItemIndex - 1].component);
+            let videoComponent = this.videoComponentMap.get(video.id);
+            if ("undefined" === typeof videoComponent) {
+                videoComponent = new VideoComponent(video);
+            } else {
+                videoComponent.update();
             }
-        }, this);
+            const element = videoComponent.component.detach().get(0);
+            if (!element) {
+                return;
+            }
+            fragment.appendChild(element);
+            newVideoComponents.push(videoComponent);
+            visibleItemIndex++;
+            if (visibleItemIndex % configService.getConfig().maxVideosPerRow === 0 && visibleItemIndex !== 0) {
+                const br = document.createElement("br");
+                br.className = "ytbsp-row-break";
+                fragment.appendChild(br);
+            }
+        });
 
-        // Remove excess items.
-        for (let i = visibleItemIndex; i < this.videoComponents.length; ++i) {
-            this.videoComponents[i].component.remove();
-        }
-        this.videoComponents.splice(visibleItemIndex, this.videoComponents.length - visibleItemIndex);
+        // Clear existing content and append new fragment (avoids TrustedHTML requirement)
+        videoListElement.replaceChildren(fragment);
 
-        // Handle visibility.
+        // Remove any unused components from the map.
+        this.videoComponentMap = new Map(newVideoComponents.map(component => [component.videoId, component]));
+        this.videoComponents = newVideoComponents;
+
         this.updateHiddenState();
         this.loader.hideLoader();
     }
