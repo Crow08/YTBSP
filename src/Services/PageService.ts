@@ -149,6 +149,7 @@ class PageService {
     isDocumentReady = false;
     navigateInterval: Timeout = null;
     private observer: MutationObserver;
+    private observerWorkScheduled = false;
     private oldHref: string;
     private isFullscreen: boolean;
     private onPageChangeCallbackList: (() => void)[] = [];
@@ -159,32 +160,7 @@ class PageService {
     constructor() {
         this.oldHref = document.location.href;
         // Setup page observer.
-        this.observer = new MutationObserver(() => {
-            // Detect page changes.
-            const currentHref = document.location.href;
-            if (this.oldHref !== currentHref) {
-                this.oldHref = currentHref;
-                this.onPageChangeCallbackList.forEach(callback => {
-                    callback();
-                });
-            }
-            // Detect going fullscreen.
-            if (0 !== $(YT_PLAYER_CONTROL).length && true === $(YT_PLAYER_CONTROL).get(0)["fullscreen"]) {
-                if (!this.isFullscreen) {
-                    this.isFullscreen = true;
-                    this.onToggleFullscreenCallbackList.forEach(callback => {
-                        callback(true);
-                    });
-                }
-            } else {
-                if (this.isFullscreen) {
-                    this.isFullscreen = false;
-                    this.onToggleFullscreenCallbackList.forEach(callback => {
-                        callback(false);
-                    });
-                }
-            }
-        });
+        this.observer = new MutationObserver(() => this.onMutationsObserved());
 
         $(document).ready(() => {
             this.isDocumentReady = true;
@@ -197,7 +173,15 @@ class PageService {
     }
 
     startPageObserver() {
-        this.observer.observe(document.querySelector("body"), {"childList": true, "subtree": true});
+        const target = document.querySelector(YT_APP);
+        if (!target) {
+            setTimeout(() => this.startPageObserver(), 250);
+            return;
+        }
+        this.observer.observe(target, {
+            "childList": true,
+            "subtree": true
+        });
     }
 
     injectYTBSP(ytbsp: YTBSPComponent) {
@@ -420,6 +404,32 @@ class PageService {
             callback();
         });
     };
+
+    private onMutationsObserved() {
+        if (!this.observerWorkScheduled) {
+            this.observerWorkScheduled = true;
+            window.requestAnimationFrame(() => this.flushPendingMutations());
+        }
+    }
+
+    private flushPendingMutations() {
+        this.observerWorkScheduled = false;
+        const currentHref = document.location.href;
+        if (this.oldHref !== currentHref) {
+            this.oldHref = currentHref;
+            this.onPageChangeCallbackList.forEach(callback => {
+                callback();
+            });
+        }
+        const playerControl = $(YT_PLAYER_CONTROL);
+        const isFullscreenNow = 0 !== playerControl.length && true === playerControl.get(0)["fullscreen"];
+        if (isFullscreenNow !== this.isFullscreen) {
+            this.isFullscreen = isFullscreenNow;
+            this.onToggleFullscreenCallbackList.forEach(callback => {
+                callback(this.isFullscreen);
+            });
+        }
+    }
 }
 
 const pageService = new PageService();

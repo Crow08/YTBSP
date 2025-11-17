@@ -79,7 +79,7 @@ export default class VideoComponent extends Component {
             });
         });
 
-        //this adds clicked video to a magical invisible youtube playlist
+        // This adds clicked video to a magical invisible YouTube playlist.
         this.addToQueueItem.click(() => {
             pageService.addToQueue(video.id);
             queueService.setStartVideoId(video.id);
