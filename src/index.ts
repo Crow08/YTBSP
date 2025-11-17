@@ -7,7 +7,14 @@ import pageService, { PageState } from "./Services/PageService";
 import persistenceService from "./Services/PersistenceService";
 
 console.log("script start");
-setTimeout(() => {
+
+if (document.location.pathname.length > 1 && 'requestIdleCallback' in window) {
+    requestIdleCallback(startup, { timeout: 300000 });
+} else {
+    setTimeout(startup, 0);
+}
+
+function startup() {
     pageService.updateNativeStyleRuleModifications(PageState.LOADING);
 
     const ytbspComponent = new YTBSPComponent();
@@ -43,4 +50,4 @@ setTimeout(() => {
         pageService.addThumbnailEnlargeCss();
     }).catch(e => console.error(e));
 
-}, 0);
+}
