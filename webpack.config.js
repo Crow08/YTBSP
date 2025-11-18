@@ -10,11 +10,6 @@ module.exports = {
         extensions: [".ts", ".tsx", ".js", ".jsx"]
     },
     plugins: [
-        // Ignore moment.js locale files (saves ~200KB+)
-        new webpack.IgnorePlugin({
-            resourceRegExp: /^\.\/locale$/,
-            contextRegExp: /moment$/
-        }),
         // Bundle analyzer (enable with ANALYZE=true)
         ...(analyzeBundle ? [new BundleAnalyzerPlugin({
             analyzerMode: 'static',

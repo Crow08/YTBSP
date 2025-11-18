@@ -1,5 +1,4 @@
 import $ from "jquery";
-import moment from "moment";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService from "../Services/DataService";
@@ -35,7 +34,7 @@ export default class VideoComponent extends Component {
             "title": video.title,
             "html": video.title
         });
-        const dateHtml = video.premiere ? `Premieres ${moment(video.premiere).calendar()}` : `Uploaded ${video.uploaded} ago`;
+        const dateHtml = video.premiere ? `Premieres ${this.humanReadableDate(video.premiere)}` : `Uploaded ${video.uploaded} ago`;
         this.uploadItem = $("<p/>", {"class": "ytbsp-uploaded", "html": dateHtml});
         this.addToQueueItem = $("<span/>", {
             "class": "ytbsp-seenMarker",
@@ -205,4 +204,28 @@ export default class VideoComponent extends Component {
         }, 100);
 
     }
+
+
+    private humanReadableDate(date: Date): string {
+        const now = new Date();
+
+        const startOfDay = (dt: Date) => new Date(dt.getFullYear(), dt.getMonth(), dt.getDate());
+        const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
+        const diffDays = Math.round((startOfDay(date).getTime() - startOfDay(now).getTime()) / MS_PER_DAY);
+
+        const time = date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+        const dateStr = date.toLocaleDateString();
+
+        if (diffDays === 0) return `Today at ${time}`;
+        if (diffDays === -1) return `Yesterday at ${time}`;
+        if (diffDays === 1) return `Tomorrow at ${time}`;
+        if (diffDays < 0 && diffDays > -7)
+            return `Last ${date.toLocaleDateString(undefined, { weekday: "long" })} at ${time}`;
+        if (diffDays > 0 && diffDays < 7)
+            return `${date.toLocaleDateString(undefined, { weekday: "long" })} at ${time}`;
+
+        return dateStr;
+    }
+      
 }

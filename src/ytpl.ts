@@ -1,4 +1,3 @@
-import moment, { unitOfTime } from "moment";
 import Video from "./Model/Video";
 
 export default async (plistID: string, options: { limit: number; hideShorts: boolean }): Promise<Video[]> => {
@@ -84,8 +83,8 @@ function extractUploadInformation(videoItem): { "uploaded": string, "pubDate": D
                     result.uploaded = durationAgo;
                     const numberParts = numberRegex.exec(result.uploaded);
                     const unit = getTimeUnit(result.uploaded);
-                    if (unit && numberParts && numberParts.length !== 0) {
-                        result.pubDate = moment().subtract(numberParts[0], unit).toDate();
+                    if (!!unit && !!numberParts && numberParts.length !== 0 && !!Number(numberParts[0])) {
+                        result.pubDate = subtractFromNow(Number(numberParts[0]), unit);
                     }
                 }
             }
@@ -94,7 +93,7 @@ function extractUploadInformation(videoItem): { "uploaded": string, "pubDate": D
     return result;
 }
 
-function getTimeUnit(time: string): unitOfTime.DurationConstructor {
+function getTimeUnit(time: string): string | null {
     if (time.includes("year") || time.includes("Jahr")) {
         return "y";
     } else if (time.includes("month") || time.includes("Monat")) {
@@ -111,4 +110,35 @@ function getTimeUnit(time: string): unitOfTime.DurationConstructor {
         return "s";
     }
     return null;
+}
+
+function subtractFromNow(amount: number, unit: string): Date {
+    const date = new Date();
+    switch (unit) {
+      case 'y': // years
+        date.setFullYear(date.getFullYear() - amount);
+        break;
+      case 'M': // months
+        date.setMonth(date.getMonth() - amount);
+        break;
+      case 'w': // weeks
+        date.setDate(date.getDate() - amount * 7);
+        break;
+      case 'd': // days
+        date.setDate(date.getDate() - amount);
+        break;
+      case 'h': // hours
+        date.setHours(date.getHours() - amount);
+        break;
+      case 'm': // minutes
+        date.setMinutes(date.getMinutes() - amount);
+        break;
+      case 's': // seconds
+        date.setSeconds(date.getSeconds() - amount);
+        break;
+      default:
+        throw new Error(`Unsupported unit: ${unit}`);
+    }
+  
+    return date;
 }
