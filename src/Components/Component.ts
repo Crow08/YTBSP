@@ -8,8 +8,13 @@ export default class Component {
     }
 
     isInView(): boolean {
+        let screenTop = 0;
+        if(!!document.body?.scrollTop) {
+            screenTop = document.body.scrollTop;
+        } else if(!!document.documentElement?.scrollTop) {
+            screenTop = document.documentElement.scrollTop;
+        }
         const offsetTop = this.component.offset().top;
-        const screenTop = document.body.scrollTop || document.documentElement.scrollTop;
         const screenBottom = screenTop + window.innerHeight;
         const threshold = configService.getConfig().screenThreshold;
 
