@@ -9,6 +9,10 @@ import Component from "./Component";
 import ClickEvent = JQuery.ClickEvent;
 import Timeout = NodeJS.Timeout;
 
+// At most one yt-action listener may be active at a time,
+// otherwise every opened video leaks a permanent document-level listener.
+let activeOnYTAction: (e: CustomEvent) => void = null;
+
 export default class VideoComponent extends Component {
     videoId: string;
     private seenMarkerItem: JQuery;
@@ -124,11 +128,18 @@ export default class VideoComponent extends Component {
                 (e.detail["actionName"] === "yt-deactivate-miniplayer-action")) {
                 playerService.togglePictureInPicturePlayer(false);
                 document.removeEventListener("yt-action", onYTAction);
+                if (activeOnYTAction === onYTAction) {
+                    activeOnYTAction = null;
+                }
                 window.scrollTo(0, 0);
             }
 
         }
 
+        if (activeOnYTAction) {
+            document.removeEventListener("yt-action", activeOnYTAction);
+        }
+        activeOnYTAction = onYTAction;
         document.addEventListener("yt-action", onYTAction);
         pageService.navigateToVideo(this.videoId);
 
