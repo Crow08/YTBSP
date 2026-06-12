@@ -3,7 +3,6 @@ import Subscription from "../Model/Subscription";
 import Video from "../Model/Video";
 import configService from "../Services/ConfigService";
 import dataService, { SortPosition } from "../Services/DataService";
-import pageService from "../Services/PageService";
 import ytpl from "../ytpl";
 import Component from "./Component";
 import * as ComponentUtils from "./ComponentUtils";
@@ -141,7 +140,6 @@ export default class SubComponent extends Component {
         return this.reloadSubVideos().then(() => {
             configService.addChangeListener(() => this.updateVideoList());
             dataService.addSubscriptionChangeListener(this.channelId, () => this.updateVideoList());
-            pageService.addViewChangeListener(() => this.updateVisibility());
         }).catch((error) => {
             console.error(`Failed to (re-)load playlist for channel: ${this.channelId}`, error);
         });
@@ -191,7 +189,13 @@ export default class SubComponent extends Component {
         videoListElement.replaceChildren(fragment);
 
         // Remove any unused components from the map.
-        this.videoComponentMap = new Map(newVideoComponents.map(component => [component.videoId, component]));
+        const newVideoComponentMap = new Map(newVideoComponents.map(component => [component.videoId, component]));
+        this.videoComponentMap.forEach((component, videoId) => {
+            if (!newVideoComponentMap.has(videoId)) {
+                component.dispose();
+            }
+        });
+        this.videoComponentMap = newVideoComponentMap;
         this.videoComponents = newVideoComponents;
 
         this.updateHiddenState();
@@ -222,10 +226,8 @@ export default class SubComponent extends Component {
     private updateHiddenState(): void {
         if (this.videoComponents.length === 0 && configService.getConfig().hideEmptySubs) {
             this.component.hide();
-            pageService.triggerViewChange();
         } else {
             this.component.show();
-            this.updateVisibility();
         }
     }
 
@@ -254,14 +256,6 @@ export default class SubComponent extends Component {
             }), true, this.channelId);
         });
         dataService.pruneStaleVideos(this.channelId, response.map((responseItem) => responseItem.id));
-    }
-
-    private updateVisibility(): void {
-        if (this.isInView()) {
-            this.videoComponents.forEach(element => {
-                element.updateVisibility();
-            });
-        }
     }
 
     private toggleHideShorts() {

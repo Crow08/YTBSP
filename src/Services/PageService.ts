@@ -72,27 +72,6 @@ const getPageState = (): PageState => {
         return PageState.DEFAULT;
     }
 };
-const throttleDuration = 400;
-const throttleTime = (func: () => void) => {
-    let timeout: Timeout;
-    let pendingFunc: () => void;
-    return function() {
-        if (timeout) {
-            pendingFunc = func;
-        } else {
-            func.apply(this);
-            pendingFunc = null;
-            timeout = setTimeout(
-                (): void => {
-                    timeout = null;
-                    if (pendingFunc) {
-                        pendingFunc.apply(this);
-                    }
-                }, throttleDuration);
-        }
-    };
-};
-
 interface YTApp {
     fire: (key: string, data: {
         endpoint?: {
@@ -152,7 +131,8 @@ class PageService {
     private onPageChangeCallbackList: (() => void)[] = [];
     private onToggleFullscreenCallbackList: ((isFullscreen: boolean) => void)[] = [];
     private onDocumentReadyCallbackList: (() => void)[] = [];
-    private onViewChangeCallbackList: (() => void)[] = [];
+    private inViewObserver: IntersectionObserver = null;
+    private inViewCallbacks: Map<Element, () => void> = new Map();
 
     constructor() {
         this.oldHref = document.location.href;
@@ -195,12 +175,21 @@ class PageService {
         }
     }
 
-    addViewChangeListener(callback: () => void): void {
-        this.onViewChangeCallbackList.push(callback);
+    /**
+     * Calls onVisible whenever the element enters the viewport
+     * (or comes within screenThreshold pixels of it).
+     * Used for lazy-loading without scroll listeners and forced layouts.
+     */
+    observeInView(element: Element, onVisible: () => void): void {
+        this.inViewCallbacks.set(element, onVisible);
+        this.getInViewObserver().observe(element);
     }
 
-    triggerViewChange() {
-        throttleTime(() => this.handleViewChange());
+    unobserveInView(element: Element): void {
+        if (this.inViewObserver) {
+            this.inViewObserver.unobserve(element);
+        }
+        this.inViewCallbacks.delete(element);
     }
 
     updateNativeStyleRuleModifications(state?: PageState) {
@@ -363,11 +352,6 @@ class PageService {
         return channelId;
     }
 
-    addViewChangeListeners(component: JQuery) {
-        component.on("scroll", throttleTime(() => this.handleViewChange()));
-        window.addEventListener("resize", throttleTime(() => this.handleViewChange()), false);
-    }
-
     /**
      * Installs a YouTube class popup HML element to use as a dummy reference when
      * executing events on the YouTube App class (#YT_APP)
@@ -390,11 +374,22 @@ class PageService {
         return undefined;
     }
 
-    private handleViewChange = () => {
-        this.onViewChangeCallbackList.forEach(callback => {
-            callback();
-        });
-    };
+    // Created lazily so the screenThreshold config is loaded by the time it is needed.
+    private getInViewObserver(): IntersectionObserver {
+        if (!this.inViewObserver) {
+            this.inViewObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        const callback = this.inViewCallbacks.get(entry.target);
+                        if (callback) {
+                            callback();
+                        }
+                    }
+                });
+            }, {"rootMargin": `${configService.getConfig().screenThreshold}px 0px`});
+        }
+        return this.inViewObserver;
+    }
 
     private handlePageChange() {
         const currentHref = document.location.href;

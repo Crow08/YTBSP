@@ -87,13 +87,21 @@ export default class VideoComponent extends Component {
 
         this.clipItem.add(this.titleItem).add(this.closeItem).click((event) => this.handleOpenVideo(event));
 
+        pageService.observeInView(this.component.get(0), () => this.loadThumbnail());
     }
 
-    updateVisibility(): void {
+    // Stops the in-view observation; must be called when the component is discarded.
+    dispose(): void {
+        pageService.unobserveInView(this.component.get(0));
+    }
+
+    private loadThumbnail(): void {
         const src = this.thumbItem.attr("src");
-        if (this.isInView() && ("undefined" === typeof src || "" === src)) {
+        if ("undefined" === typeof src || "" === src) {
             this.thumbItem.attr("src", dataService.getVideo(this.videoId).thumb);
         }
+        // The thumbnail stays loaded, no need to keep observing.
+        pageService.unobserveInView(this.component.get(0));
     }
 
     toggleSeen(): void {
