@@ -2,11 +2,17 @@ import Video from "./Model/Video";
 
 export default async (plistID: string, options: { limit: number; hideShorts: boolean }): Promise<Video[]> => {
     const body = getPlaylistPageBody(plistID, options.hideShorts);
-    let contentJson = JSON.parse(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
-    let allItems: any[];
+    const contentJson = JSON.parse(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
+    let allItems: any[] = [];
     if ("undefined" !== typeof contentJson["sectionListRenderer"]) {
-        contentJson = contentJson["sectionListRenderer"];
-        allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["playlistVideoListRenderer"]["contents"];
+        const sectionContents = contentJson["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"];
+        if ("undefined" !== typeof sectionContents[0]["playlistVideoListRenderer"]) {
+            // Old format: videos wrapped in a playlistVideoListRenderer.
+            allItems = sectionContents[0]["playlistVideoListRenderer"]["contents"];
+        } else {
+            // New format (2025): lockupViewModel items directly in the item section.
+            allItems = sectionContents;
+        }
     } else {
         console.error("Unknown Subscription Format!");
     }
@@ -19,7 +25,8 @@ async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Pro
         "context": {
             "client": {
                 "clientName": "WEB",
-                "clientVersion": "2.20250328.01.00"
+                "clientVersion": "2.20250328.01.00",
+                "hl": "en" // Force english texts for date parsing.
             }
         },
         "browseId": `VL${playlistId}`,
@@ -41,52 +48,124 @@ async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Pro
 function convertToVideos(items: any[]): Video[] {
     const videos: Video[] = [];
     items.forEach(item => {
-        const videoItem = item["playlistVideoRenderer"];
-        if (typeof videoItem === "undefined") {
-            if (typeof item["continuationItemRenderer"] !== "undefined") {
-                return;
-            } else {
-                console.error(`unknown Error:\n${JSON.stringify(item)}`);
-                return;
+        if ("undefined" !== typeof item["playlistVideoRenderer"]) {
+            videos.push(convertClassicItemToVideo(item["playlistVideoRenderer"]));
+        } else if ("undefined" !== typeof item["lockupViewModel"]) {
+            const video = convertLockupItemToVideo(item["lockupViewModel"]);
+            if (video !== null) {
+                videos.push(video);
             }
+        } else if ("undefined" !== typeof item["continuationItemRenderer"]) {
+            // Pagination token, no video data.
+        } else {
+            console.error(`unknown Error:\n${JSON.stringify(item)}`);
         }
-        const vid = new Video(videoItem["videoId"]);
-        vid.title = videoItem["title"]["runs"][0]["text"];
-        vid.duration = videoItem["lengthText"] ? videoItem["lengthText"]["simpleText"] : "streaming";
-        vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
-        vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
-        // Try to get upload information from accessibility data.
-        const uploadInfo = extractUploadInformation(videoItem);
-        vid.uploaded = uploadInfo.uploaded;
-        vid.pubDate = uploadInfo.pubDate;
-
-        if (videoItem["upcomingEventData"] && videoItem["upcomingEventData"]["startTime"]) {
-            vid.premiere = new Date(Number(videoItem["upcomingEventData"]["startTime"]) * 1000);
-        }
-        videos.push(vid);
     });
 
     return videos;
 }
 
-function extractUploadInformation(videoItem): { "uploaded": string, "pubDate": Date | null } {
-    const result: { uploaded: string, pubDate: Date | null } = {"uploaded": "unknown", "pubDate": null};
-    const numberRegex = /\d+/g;
-    const videoInfo = videoItem["videoInfo"];
+function convertClassicItemToVideo(videoItem): Video {
+    const vid = new Video(videoItem["videoId"]);
+    vid.title = videoItem["title"]["runs"][0]["text"];
+    vid.duration = videoItem["lengthText"] ? videoItem["lengthText"]["simpleText"] : "streaming";
+    vid.thumb = videoItem["thumbnail"]["thumbnails"][0]["url"];
+    vid.thumbLarge = videoItem["thumbnail"]["thumbnails"][videoItem["thumbnail"]["thumbnails"].length - 1]["url"];
+    // Try to get upload information from accessibility data.
+    const uploadInfo = extractUploadInformation(videoItem);
+    vid.uploaded = uploadInfo.uploaded;
+    vid.pubDate = uploadInfo.pubDate;
 
+    if (videoItem["upcomingEventData"] && videoItem["upcomingEventData"]["startTime"]) {
+        vid.premiere = new Date(Number(videoItem["upcomingEventData"]["startTime"]) * 1000);
+    }
+    return vid;
+}
+
+function convertLockupItemToVideo(lockupItem): Video | null {
+    if ("undefined" === typeof lockupItem["contentId"]) {
+        console.error(`unknown lockup format:\n${JSON.stringify(lockupItem)}`);
+        return null;
+    }
+    // Regular videos have a plain thumbnailViewModel, collection entries (e.g. live stations) wrap it in a primaryThumbnail.
+    const thumbnailViewModel = lockupItem["contentImage"]?.["thumbnailViewModel"] ??
+        lockupItem["contentImage"]?.["collectionThumbnailViewModel"]?.["primaryThumbnail"]?.["thumbnailViewModel"];
+    if ("undefined" === typeof thumbnailViewModel) {
+        console.error(`unknown lockup format:\n${JSON.stringify(lockupItem)}`);
+        return null;
+    }
+    const vid = new Video(lockupItem["contentId"]);
+    vid.title = lockupItem["metadata"]["lockupMetadataViewModel"]["title"]["content"];
+    const thumbnails = thumbnailViewModel["image"]["sources"];
+    vid.thumb = thumbnails[0]["url"];
+    vid.thumbLarge = thumbnails[thumbnails.length - 1]["url"];
+    vid.duration = extractDurationFromOverlays(thumbnailViewModel["overlays"]);
+
+    // Try to get upload information from the metadata rows (e.g. "2 days ago").
+    const uploadInfo = parseUploadedText(extractMetadataTexts(lockupItem));
+    vid.uploaded = uploadInfo.uploaded;
+    vid.pubDate = uploadInfo.pubDate;
+    return vid;
+}
+
+function extractDurationFromOverlays(overlays: any[]): string {
+    for (const overlay of overlays ?? []) {
+        const badges = overlay["thumbnailBottomOverlayViewModel"]?.["badges"] ?? [];
+        for (const badge of badges) {
+            const badgeViewModel = badge["thumbnailBadgeViewModel"];
+            if ("undefined" === typeof badgeViewModel) {
+                continue;
+            }
+            if (badgeViewModel["badgeStyle"] === "THUMBNAIL_OVERLAY_BADGE_STYLE_LIVE") {
+                return "streaming";
+            }
+            if (badgeViewModel["badgeStyle"] === "THUMBNAIL_OVERLAY_BADGE_STYLE_DEFAULT" && badgeViewModel["text"]) {
+                return badgeViewModel["text"];
+            }
+        }
+    }
+    return "streaming";
+}
+
+function extractMetadataTexts(lockupItem): string[] {
+    const metadataRows = lockupItem["metadata"]?.["lockupMetadataViewModel"]?.["metadata"]?.["contentMetadataViewModel"]?.["metadataRows"] ?? [];
+    const texts: string[] = [];
+    for (const row of metadataRows) {
+        for (const part of row["metadataParts"] ?? []) {
+            if (part["text"]?.["content"]) {
+                texts.push(part["text"]["content"]);
+            }
+        }
+    }
+    return texts;
+}
+
+function extractUploadInformation(videoItem): { "uploaded": string, "pubDate": Date | null } {
+    const videoInfo = videoItem["videoInfo"];
     if (typeof videoInfo !== "undefined" && typeof videoInfo["runs"] !== "undefined") {
         const videoInfoTextRuns = videoInfo["runs"] as { "text": string }[];
-        for (const videoInfoTextRun of videoInfoTextRuns) {
-            if (videoInfoTextRun.text.endsWith("ago")) {
-                const durationAgo = videoInfoTextRun.text.substring(0, videoInfoTextRun.text.length - 4);
-                if (durationAgo) {
-                    result.uploaded = durationAgo;
-                    const numberParts = numberRegex.exec(result.uploaded);
-                    const unit = getTimeUnit(result.uploaded);
-                    if (!!unit && !!numberParts && numberParts.length !== 0 && !!Number(numberParts[0])) {
-                        result.pubDate = subtractFromNow(Number(numberParts[0]), unit);
-                    }
-                }
+        return parseUploadedText(videoInfoTextRuns.map(run => run.text));
+    }
+    return {"uploaded": "unknown", "pubDate": null};
+}
+
+function parseUploadedText(texts: string[]): { "uploaded": string, "pubDate": Date | null } {
+    const result: { uploaded: string, pubDate: Date | null } = {"uploaded": "unknown", "pubDate": null};
+    const numberRegex = /\d+/g;
+
+    for (const text of texts) {
+        let durationAgo: string = null;
+        if (text.endsWith(" ago")) {
+            durationAgo = text.substring(0, text.length - 4);
+        } else if (text.startsWith("vor ")) {
+            durationAgo = text.substring(4);
+        }
+        if (durationAgo) {
+            result.uploaded = durationAgo;
+            const numberParts = numberRegex.exec(result.uploaded);
+            const unit = getTimeUnit(result.uploaded);
+            if (!!unit && !!numberParts && numberParts.length !== 0 && !!Number(numberParts[0])) {
+                result.pubDate = subtractFromNow(Number(numberParts[0]), unit);
             }
         }
     }
@@ -139,6 +218,6 @@ function subtractFromNow(amount: number, unit: string): Date {
       default:
         throw new Error(`Unsupported unit: ${unit}`);
     }
-  
+
     return date;
 }
