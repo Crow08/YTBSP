@@ -253,6 +253,7 @@ export default class SubComponent extends Component {
                 return currentVideo;
             }), true, this.channelId);
         });
+        dataService.pruneStaleVideos(this.channelId, response.map((responseItem) => responseItem.id));
     }
 
     private updateVisibility(): void {

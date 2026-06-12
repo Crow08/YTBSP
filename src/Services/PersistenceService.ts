@@ -87,7 +87,9 @@ class PersistenceService {
         return this.loadLocalVideoInfo();
     }
 
-    public saveVideoInfo(subs: string): void {
+    // Takes a supplier so the (potentially large) serialization only runs
+    // once per debounce interval instead of on every data mutation.
+    public saveVideoInfo(getSubs: () => string): void {
 
         if (!this.videoSaveQueued) {
             this.videoSaveQueued = true;
@@ -97,7 +99,7 @@ class PersistenceService {
         debounceVideoSave((): void => {
             console.log("SAVE");
             this.videoSaveQueued = false;
-            this.saveLocalVideoInfo(subs)
+            this.saveLocalVideoInfo(getSubs())
                 .then(() => this.onNotifySave("end"))
                 .catch((error) => {
                     console.error(error);

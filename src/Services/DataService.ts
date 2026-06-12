@@ -71,6 +71,29 @@ class DataService {
         }
     }
 
+    /**
+     * Removes dead cache entries for a channel after a successful video fetch.
+     * Entries restored from localStorage only carry id/seen/removed (no title).
+     * If such an entry is not part of the latest fetch response, the video has
+     * fallen out of the channel's fetch window for good: it can never be
+     * displayed again, so keeping its flags only grows the cache forever.
+     *
+     * @param channelId channel whose videos were just fetched.
+     * @param fetchedIds video ids contained in the fetch response.
+     */
+    pruneStaleVideos(channelId: string, fetchedIds: string[]): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" === typeof sub) {
+            return;
+        }
+        const fetchedIdSet = new Set(fetchedIds);
+        const keptVideos = sub.videos.filter(video => fetchedIdSet.has(video.id) || "undefined" !== typeof video.title);
+        if (keptVideos.length !== sub.videos.length) {
+            sub.videos = keptVideos;
+            this.persist();
+        }
+    }
+
     addSubscriptionChangeListener(channelId: string, callback: () => void): void {
         if ("undefined" === typeof this.onSubscriptionChangeCallbackList[channelId]) {
             this.onSubscriptionChangeCallbackList[channelId] = [];
@@ -94,7 +117,7 @@ class DataService {
                 position == SortPosition.UP ? oldIndex - 1 :
                     oldIndex + 1;
         this.subscriptions.splice(newIndex, 0, movingSub);
-        persistenceService.saveVideoInfo(this.exportVideoData());
+        this.persist();
         this.onReorderCallbackList.forEach(callback => callback(this.subscriptions));
     }
 
@@ -118,7 +141,11 @@ class DataService {
                 callback();
             });
         }
-        persistenceService.saveVideoInfo(this.exportVideoData());
+        this.persist();
+    }
+
+    private persist() {
+        persistenceService.saveVideoInfo(() => this.exportVideoData());
     }
 }
 

@@ -65,7 +65,8 @@ export default class BackupModalComponent extends Component {
                     }
                 });
                 this.modal.closeModal();
-                persistenceService.saveVideoInfo(await files[0].text());
+                const importedData = await files[0].text();
+                persistenceService.saveVideoInfo(() => importedData);
 
             }
         };
