@@ -20,7 +20,6 @@ const YT_SIDEBAR = "ytd-app[frosted-glass-exp] tp-yt-app-drawer.ytd-app[persiste
 const YT_CONTENT = "#content";
 const YT_GUIDE = "#guide";
 //const YT_PLAYER = "#movie_player > div.html5-video-container > video";
-const YT_PLAYER_CONTROL = "#page-manager > ytd-watch-flexy";
 //const YT_VIDEO_STREAM = ".video-stream";
 
 // Style rules depending on the loaded native page.
@@ -148,8 +147,6 @@ class PageService {
 
     isDocumentReady = false;
     navigateInterval: Timeout = null;
-    private observer: MutationObserver;
-    private observerWorkScheduled = false;
     private oldHref: string;
     private isFullscreen: boolean;
     private onPageChangeCallbackList: (() => void)[] = [];
@@ -159,8 +156,6 @@ class PageService {
 
     constructor() {
         this.oldHref = document.location.href;
-        // Setup page observer.
-        this.observer = new MutationObserver(() => this.onMutationsObserved());
 
         $(document).ready(() => {
             this.isDocumentReady = true;
@@ -173,15 +168,11 @@ class PageService {
     }
 
     startPageObserver() {
-        const target = document.querySelector(YT_APP);
-        if (!target) {
-            setTimeout(() => this.startPageObserver(), 250);
-            return;
-        }
-        this.observer.observe(target, {
-            "childList": true,
-            "subtree": true
-        });
+        // YouTube fires yt-navigate-finish after every SPA navigation; together with
+        // popstate this covers all URL changes without observing DOM mutations.
+        window.addEventListener("yt-navigate-finish", () => this.handlePageChange());
+        window.addEventListener("popstate", () => this.handlePageChange());
+        document.addEventListener("fullscreenchange", () => this.handleFullscreenChange());
     }
 
     injectYTBSP(ytbsp: YTBSPComponent) {
@@ -405,15 +396,7 @@ class PageService {
         });
     };
 
-    private onMutationsObserved() {
-        if (!this.observerWorkScheduled) {
-            this.observerWorkScheduled = true;
-            window.requestAnimationFrame(() => this.flushPendingMutations());
-        }
-    }
-
-    private flushPendingMutations() {
-        this.observerWorkScheduled = false;
+    private handlePageChange() {
         const currentHref = document.location.href;
         if (this.oldHref !== currentHref) {
             this.oldHref = currentHref;
@@ -421,8 +404,10 @@ class PageService {
                 callback();
             });
         }
-        const playerControl = $(YT_PLAYER_CONTROL);
-        const isFullscreenNow = 0 !== playerControl.length && true === playerControl.get(0)["fullscreen"];
+    }
+
+    private handleFullscreenChange() {
+        const isFullscreenNow = null !== document.fullscreenElement;
         if (isFullscreenNow !== this.isFullscreen) {
             this.isFullscreen = isFullscreenNow;
             this.onToggleFullscreenCallbackList.forEach(callback => {
