@@ -241,6 +241,24 @@ ytd-app[mini-guide-visible] #YTBSP {
     width: 160px;
 }
 
+.ytbsp-duration {
+    position: absolute;
+    z-index: 1;
+    bottom: 2%;
+    right: 1%;
+    padding: 1px 4px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #fff;
+    font-size: 1.2rem;
+    font-weight: 500;
+    border-radius: 3px;
+    -moz-border-radius: 3px;
+
+    &:empty {
+        display: none;
+    }
+}
+
 .ytbsp-thumb-large {
     top: 1px;
     border-width: 2px;

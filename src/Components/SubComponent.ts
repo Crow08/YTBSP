@@ -196,11 +196,6 @@ export default class SubComponent extends Component {
 
         this.updateHiddenState();
         this.loader.hideLoader();
-
-        // Initialize duration overlays for all components (needed after DOM reattachment)
-        newVideoComponents.forEach(component => {
-            component.initDurationOverlay();
-        });
     }
 
     //calulate how old the video is and if its too old

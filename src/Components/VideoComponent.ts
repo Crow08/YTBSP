@@ -31,7 +31,7 @@ export default class VideoComponent extends Component {
         this.clipItem = $("<a/>", {"href": `/watch?v=${video.id}`, "class": "ytbsp-clip"});
         this.closeItem = $("<div/>", {"class": "ytbsp-x", "html": "X"});
         this.thumbItem = $("<img src=\"\" alt=\"loading...\"/>", {"class": "ytbsp-thumb"});
-        this.durationItem = $("<ytd-thumbnail-overlay-time-status-renderer/>");
+        this.durationItem = $("<span/>", {"class": "ytbsp-duration", "html": video.duration ? video.duration : ""});
         this.titleItem = $("<a/>", {
             "href": `/watch?v=${video.id}`,
             "class": "ytbsp-title",
@@ -57,7 +57,8 @@ export default class VideoComponent extends Component {
 
         this.component.append(this.clipItem
             .append(this.closeItem)
-            .append(this.thumbItem));
+            .append(this.thumbItem)
+            .append(this.durationItem));
         this.component.append(this.titleItem);
         this.component.append(this.uploadItem);
         this.component.append(this.seenMarkerItem);
@@ -105,6 +106,7 @@ export default class VideoComponent extends Component {
     update(): void {
         const video = dataService.getVideo(this.videoId);
         this.updateSeenButton(video);
+        this.durationItem.html(video.duration ? video.duration : "");
     }
 
     private updateSeenButton(video: Video): void {
@@ -202,20 +204,6 @@ export default class VideoComponent extends Component {
         clearTimeout(this.enlargeTimeout);
         this.enlargeTimeout = null;
     }
-
-    // Initialize duration overlay after component is reattached to DOM
-    initDurationOverlay(): void {
-        const video = dataService.getVideo(this.videoId);
-        this.clipItem.append(this.durationItem);
-        // TODO: Workaround, because when executed synchronous time will not be displayed.
-        setTimeout(() => {
-            this.durationItem.find(".ytd-thumbnail-overlay-time-status-renderer > yt-icon")
-                .prop("hidden", true);
-            this.durationItem.find("span").html(video.duration);
-        }, 100);
-
-    }
-
 
     private humanReadableDate(date: Date): string {
         const now = new Date();
