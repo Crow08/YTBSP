@@ -65,7 +65,7 @@ ytd-app[mini-guide-visible] #YTBSP {
 #YTBSP {
     margin-top: 56px;
     min-height: 22px;
-    display: inline-block;
+    display: block;
 }
 
 .ytbsp-chip-btn {
@@ -81,7 +81,7 @@ ytd-app[mini-guide-visible] #YTBSP {
 }
 
 #ytbsp-fixedBar {
-    position: absolute;
+    position: fixed;
     top: 30px;
     left: 185px;
     align-items: center;
@@ -98,11 +98,7 @@ ytd-app[mini-guide-visible] #YTBSP {
 
 #ytbsp-subsWrapper {
     padding-left: 60px;
-    margin-top: 50px;
-    position: absolute;
-    width: calc(100% - 308px);
-    height: 100%;
-    overflow: scroll;
+    padding-top: 50px;
 }
 
 #ytbsp-subsMenuStrip {
@@ -116,7 +112,7 @@ ytd-app[mini-guide-visible] #YTBSP {
     overflow: visible;
     padding: 0px;
     list-style-type: none;
-    margin: auto auto 100px;
+    margin: auto;
 }
 
 .ytbsp-subMenuStrip {
