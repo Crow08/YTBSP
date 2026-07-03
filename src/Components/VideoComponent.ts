@@ -133,24 +133,38 @@ export default class VideoComponent extends Component {
             return;
         }
 
+        function removeOnYTAction() {
+            document.removeEventListener("yt-action", onYTAction);
+            if (activeOnYTAction === onYTAction) {
+                activeOnYTAction = null;
+            }
+        }
+
         function onYTAction(e: CustomEvent) {
             if ((e.detail["actionName"] === "yt-miniplayer-play-state-changed" && e.detail["args"][0] === true) ||
                 (e.detail["actionName"] === "yt-deactivate-miniplayer-action")) {
                 playerService.togglePictureInPicturePlayer(false);
-                document.removeEventListener("yt-action", onYTAction);
-                if (activeOnYTAction === onYTAction) {
-                    activeOnYTAction = null;
-                }
+                removeOnYTAction();
                 window.scrollTo(0, 0);
             }
 
         }
+
+        // The listener is only needed while the navigation to the video is in progress
+        // (it cleans up an active miniplayer). Once the navigation has finished it must
+        // be removed, otherwise it deactivates the miniplayer opened by the next
+        // native/YTBSP page toggle, reverting the toggle.
+        const onNavigateFinish = () => {
+            window.removeEventListener("yt-navigate-finish", onNavigateFinish);
+            removeOnYTAction();
+        };
 
         if (activeOnYTAction) {
             document.removeEventListener("yt-action", activeOnYTAction);
         }
         activeOnYTAction = onYTAction;
         document.addEventListener("yt-action", onYTAction);
+        window.addEventListener("yt-navigate-finish", onNavigateFinish);
         pageService.navigateToVideo(this.videoId);
 
     }
