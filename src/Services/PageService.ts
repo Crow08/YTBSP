@@ -72,6 +72,11 @@ const getPageState = (): PageState => {
         return PageState.DEFAULT;
     }
 };
+interface YTHotKeyManager {
+    toggleMiniplayer: () => void;
+    isMiniplayerActive: () => boolean;
+}
+
 interface YTApp {
     fire: (key: string, data: {
         endpoint?: {
@@ -303,6 +308,13 @@ class PageService {
     }
 
     navigateToVideo(id: string): void {
+        // An active miniplayer competes with the navigation: its deactivation
+        // triggers YouTube's own navigation back to the miniplayer video.
+        // Close it before navigating to the new video.
+        const hotkeyManager = this.getHotkeyManager()[0] as unknown as YTHotKeyManager;
+        if (hotkeyManager && hotkeyManager.isMiniplayerActive()) {
+            hotkeyManager.toggleMiniplayer();
+        }
         const endpointData = {
             "commandMetadata": {
                 "webCommandMetadata": {
