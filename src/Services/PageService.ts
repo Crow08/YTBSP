@@ -59,7 +59,7 @@ const getStyleRulesForPageState = (pageState: PageState): string => {
     }
 };
 
-const getPageState = (): PageState => {
+export const getPageState = (): PageState => {
     if ((/^(\/?|((\/feed\/)(trending|subscriptions|history)\/?))?$/iu).test(location.pathname)) {
         return PageState.START_PAGE;
     } else if ((/^\/?watch$/u).test(location.pathname)) {
@@ -161,6 +161,10 @@ class PageService {
     }
 
     injectYTBSP(ytbsp: YTBSPComponent) {
+        if (0 === $(YT_CONTENT).length) {
+            setTimeout(() => this.injectYTBSP(ytbsp), 100);
+            return;
+        }
         $(YT_CONTENT).prepend(ytbsp.component);
     }
 

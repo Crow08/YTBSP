@@ -1,6 +1,6 @@
 {
     "name": "ytbsp",
-    "version": "3.2.7",
+    "version": "3.2.8",
     "description": "Spotlights all your subscriptions in an organized fashion on the start page of YouTube.",
     "scripts": {
         "lint": "eslint",

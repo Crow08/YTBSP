@@ -3,13 +3,13 @@ import Subscription from "./Model/Subscription";
 import configService from "./Services/ConfigService";
 import dataService from "./Services/DataService";
 import markAsSeenService from "./Services/MarkAsSeenService";
-import pageService, { PageState } from "./Services/PageService";
+import pageService, { getPageState, PageState } from "./Services/PageService";
 import persistenceService from "./Services/PersistenceService";
 
 console.log("script start");
 
-if (document.location.pathname.length > 1 && 'requestIdleCallback' in window) {
-    requestIdleCallback(startup, { timeout: 300000 });
+if (getPageState() !== PageState.START_PAGE && 'requestIdleCallback' in window) {
+    requestIdleCallback(startup, { timeout: 5000 });
 } else {
     setTimeout(startup, 0);
 }
