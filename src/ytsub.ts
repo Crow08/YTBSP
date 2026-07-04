@@ -25,7 +25,7 @@ export default async (): Promise<Subscription[]> => {
 };
 
 function getConfigurationJson(body: string): any {
-    let jsonString = "";
+    let jsonString: string;
     if (body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") !== -1) {
         jsonString = body.substring(body.search("window\\.ytplayer = \\{\\};ytcfg\\.set") + 31);
         jsonString = jsonString.substring(0, jsonString.search("ytcfg\\.set"));
@@ -42,7 +42,7 @@ function getConfigurationJson(body: string): any {
 }
 
 function getContentJson(body: string): any {
-    let jsonString = "";
+    let jsonString: string;
     if (body.search("window\\[\"ytInitialData\"\\]") !== -1) {
         jsonString = body.substring(body.search("window\\[\"ytInitialData\"\\]") + 25);
         jsonString = jsonString.substring(0, jsonString.search("window\\[\"ytInitialPlayerResponse\"\\]"));
