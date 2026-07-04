@@ -7,7 +7,10 @@ const analyzeBundle = process.env.ANALYZE === 'true';
 
 module.exports = {
     resolve: {
-        extensions: [".ts", ".tsx", ".js", ".jsx"]
+        extensions: [".ts", ".tsx", ".js", ".jsx"],
+        alias: {
+            "jquery$": "jquery/slim"
+        }
     },
     plugins: [
         // Bundle analyzer (enable with ANALYZE=true)
