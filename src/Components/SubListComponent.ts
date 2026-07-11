@@ -168,7 +168,9 @@ export default class SubListComponent extends Component {
             if (this.videoLoadingExecutions < configService.getConfig().maxSimSubLoad) {
                 const loadingProcess = subComp.reloadSubVideos();
                 ++this.videoLoadingExecutions;
-                loadingProcess.then(() => {
+                // Continue on failure as well: the slot must be freed and the
+                // queue drained even if a single subscription fails to load.
+                loadingProcess.catch(err => console.error(err)).then(() => {
                     --this.videoLoadingExecutions;
                     this.updateLoadingProgress();
                     if (this.videoLoadingQueue.length > 0) {
@@ -177,7 +179,7 @@ export default class SubListComponent extends Component {
                     } else {
                         resolve();
                     }
-                }).catch(err => console.error(err));
+                });
             } else {
                 this.videoLoadingQueue.push(subComp);
                 resolve();

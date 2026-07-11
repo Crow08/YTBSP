@@ -3,7 +3,7 @@ import Video from "./Model/Video";
 export default async (plistID: string, options: { limit: number; hideShorts: boolean }): Promise<Video[]> => {
     const body = getPlaylistPageBody(plistID, options.hideShorts);
     const contentJson = JSON.parse(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"];
-    let allItems: any[] = [];
+    let allItems: any[];
     if ("undefined" !== typeof contentJson["sectionListRenderer"]) {
         const sectionContents = contentJson["sectionListRenderer"]["contents"][0]["itemSectionRenderer"]["contents"];
         if ("undefined" !== typeof sectionContents[0]["playlistVideoListRenderer"]) {
@@ -14,7 +14,9 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
             allItems = sectionContents;
         }
     } else {
-        console.error("Unknown Subscription Format!");
+        // Reject instead of resolving with an empty list: an empty "success"
+        // would make pruneStaleVideos wipe the channel's seen/removed flags.
+        throw new Error("Unknown Subscription Format!");
     }
 
     return convertToVideos(allItems);

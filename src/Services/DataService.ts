@@ -6,6 +6,9 @@ export enum SortPosition {
     TOP, BOTTOM, UP, DOWN
 }
 
+// maxVideosPerSub is capped at max 50. An incomplete fetch response cannot delete information from active videos.
+const RETAINED_VIDEO_COUNT = 50;
+
 class DataService {
     private subscriptions: Subscription[] = [];
 
@@ -77,6 +80,8 @@ class DataService {
      * If such an entry is not part of the latest fetch response, the video has
      * fallen out of the channel's fetch window for good: it can never be
      * displayed again, so keeping its flags only grows the cache forever.
+     * The first RETAINED_VIDEO_COUNT entries are always kept, so a partial
+     * fetch response cannot wipe the flags of currently displayable videos.
      *
      * @param channelId channel whose videos were just fetched.
      * @param fetchedIds video ids contained in the fetch response.
@@ -87,7 +92,8 @@ class DataService {
             return;
         }
         const fetchedIdSet = new Set(fetchedIds);
-        const keptVideos = sub.videos.filter(video => fetchedIdSet.has(video.id) || "undefined" !== typeof video.title);
+        const keptVideos = sub.videos.filter((video, index) =>
+            index < RETAINED_VIDEO_COUNT || fetchedIdSet.has(video.id) || "undefined" !== typeof video.title);
         if (keptVideos.length !== sub.videos.length) {
             sub.videos = keptVideos;
             this.persist();
