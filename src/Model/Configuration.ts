@@ -17,6 +17,8 @@ export default class Configuration {
     maxVideosPerSub = 36;               // DEFAULT: 36 (Range: 1 - 50) (should be dividable by maxVideosPerRow).
     enlargeDelay = 500;                 // DEFAULT: 500 (in ms).
     enlargeFactor = 2.8;                // DEFAULT: 2.8 (x * 90px).
+    hoverPreview = false;               // DEFAULT: false.
+    previewDelay = 1000;                // DEFAULT: 1000 (in ms).
     enlargeFactorNative = 2.0;          // DEFAULT: 2.0 (x * 94px).
     timeToMarkAsSeen = 10;              // DEFAULT: 10 (in s).
     screenThreshold = 500;              // DEFAULT: 500 (preload images beyond current screen region in px).
@@ -35,6 +37,8 @@ export default class Configuration {
         maxVideosPerSub?: number,
         enlargeDelay?: number,
         enlargeFactor?: number,
+        hoverPreview?: boolean,
+        previewDelay?: number,
         enlargeFactorNative?: number,
         timeToMarkAsSeen?: number,
         screenThreshold?: number,
@@ -63,6 +67,12 @@ export default class Configuration {
         }
         if (Object.prototype.hasOwnProperty.call(info, "enlargeFactor")) {
             this.enlargeFactor = info.enlargeFactor;
+        }
+        if (Object.prototype.hasOwnProperty.call(info, "hoverPreview")) {
+            this.hoverPreview = info.hoverPreview;
+        }
+        if (Object.prototype.hasOwnProperty.call(info, "previewDelay")) {
+            this.previewDelay = info.previewDelay;
         }
         if (Object.prototype.hasOwnProperty.call(info, "enlargeFactorNative")) {
             this.enlargeFactorNative = info.enlargeFactorNative;
@@ -105,6 +115,8 @@ export default class Configuration {
             this.maxVideosPerSub === config.maxVideosPerSub &&
             this.enlargeDelay === config.enlargeDelay &&
             this.enlargeFactor === config.enlargeFactor &&
+            this.hoverPreview === config.hoverPreview &&
+            this.previewDelay === config.previewDelay &&
             this.enlargeFactorNative === config.enlargeFactorNative &&
             this.timeToMarkAsSeen === config.timeToMarkAsSeen &&
             this.screenThreshold === config.screenThreshold &&

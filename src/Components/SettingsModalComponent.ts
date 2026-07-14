@@ -15,6 +15,8 @@ export default class SettingsModalComponent extends Component {
     private hideSeenVideosSlider: Slider;
     private hideOlderVideosSlider: Slider;
     private autoPauseVideoSlider: Slider;
+    private hoverPreviewSlider: Slider;
+    private previewDelayInput: JQuery;
     private playerQualitySelect: JQuery;
     private maxSimSubLoadInput: JQuery;
     private maxVideosPerRowInput: JQuery;
@@ -36,6 +38,13 @@ export default class SettingsModalComponent extends Component {
         this.hideSeenVideosSlider = getSlider("ytbsp-settings-hideSeenVideos", configService.getConfig().hideSeenVideos);
         this.hideOlderVideosSlider = getSlider("ytbsp-settings-hideOlderVideos", configService.getConfig().hideOlderVideos);
         this.autoPauseVideoSlider = getSlider("ytbsp-settings-autoPauseVideo", configService.getConfig().autoPauseVideo);
+        this.hoverPreviewSlider = getSlider("ytbsp-settings-hoverPreview", configService.getConfig().hoverPreview);
+        this.previewDelayInput = $("<input>", {
+            "type": "number",
+            "min": "0",
+            "id": "ytbsp-settings-previewDelay",
+            "value": configService.getConfig().previewDelay
+        });
         this.playerQualitySelect = this.getQualitySelect();
         this.maxSimSubLoadInput = $("<input>", {
             "type": "number",
@@ -127,6 +136,8 @@ export default class SettingsModalComponent extends Component {
             screenThreshold: this.screenThresholdInput.val(),
             playerQuality: this.playerQualitySelect.val(),
             autoPauseVideo: this.autoPauseVideoSlider.getValue(),
+            hoverPreview: this.hoverPreviewSlider.getValue(),
+            previewDelay: this.previewDelayInput.val(),
             hideSeenVideos: this.hideSeenVideosSlider.getValue(),
             hideOlderVideos: this.hideOlderVideosSlider.getValue(),
             hideEmptySubs: this.hideEmptySubsSlider.getValue()
@@ -197,6 +208,16 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Watch time to mark video as seen"}))
             .append($("<td>").append(this.timeToMarkAsSeenInput).append(" s"))
             .append($("<td>", {"html": "Default: 10"}))
+        );
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Video hover preview"}))
+            .append($("<td>").append(this.hoverPreviewSlider.component))
+            .append($("<td>", {"html": "Flip through a video's content while hovering its thumbnail."}))
+        );
+        settingsTable.append($("<tr>")
+            .append($("<td>", {"html": "Delay for hover preview"}))
+            .append($("<td>").append(this.previewDelayInput).append(" ms"))
+            .append($("<td>", {"html": "Default: 1000 | Time to hover a thumbnail before the preview starts."}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Delay for thumbnail enlarge"}))

@@ -262,6 +262,17 @@ ytd-app[mini-guide-visible] #YTBSP {
     .alt-border-color-mixin();
 }
 
+.ytbsp-preview {
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: 10; // Above thumb and duration badge, below the remove button (X).
+    width: 100%;
+    height: 100%;
+    background-repeat: no-repeat; // Transparent until the first storyboard page paints, keeping the thumb visible.
+    pointer-events: none; // Let clicks and hover events pass through to the clip anchor.
+}
+
 .ytbsp-premiere {
     opacity: 25%;
 }

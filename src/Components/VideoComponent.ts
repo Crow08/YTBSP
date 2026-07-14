@@ -5,9 +5,14 @@ import dataService from "../Services/DataService";
 import pageService from "../Services/PageService";
 import playerService from "../Services/PlayerService";
 import queueService from "../Services/QueueService";
+import getStoryboard, { Storyboard } from "../ytsb";
 import Component from "./Component";
 import ClickEvent = JQuery.ClickEvent;
 import Timeout = NodeJS.Timeout;
+
+// Time between preview frames; the storyboard frames themselves are several
+// seconds of video apart, so this flips through the video's content.
+const PREVIEW_FRAME_MS = 400;
 
 // At most one yt-action listener may be active at a time,
 // otherwise every opened video leaks a permanent document-level listener.
@@ -22,6 +27,10 @@ export default class VideoComponent extends Component {
     private titleItem: JQuery;
     private clipItem: JQuery;
     private enlargeTimeout: Timeout = null;
+    private previewTimeout: Timeout = null;
+    private previewInterval: Timeout = null;
+    private previewItem: JQuery = null;
+    private previewGeneration = 0;
     private uploadItem: JQuery;
     private durationItem: JQuery;
 
@@ -49,10 +58,19 @@ export default class VideoComponent extends Component {
             "html": (video.seen ? "already seen" : "mark as seen")
         });
 
-        this.clipItem.mouseover(() => this.startEnlargeTimeout());
-        this.clipItem.mouseleave(() => this.abortEnlargeTimeout());
+        this.clipItem.mouseover(() => {
+            this.startEnlargeTimeout();
+            this.startPreviewTimeout();
+        });
+        this.clipItem.mouseleave(() => {
+            this.abortEnlargeTimeout();
+            this.abortPreviewTimeout();
+        });
         this.closeItem.mouseover(() => this.abortEnlargeTimeout());
-        this.component.mouseleave(() => this.resetThumbnail());
+        this.component.mouseleave(() => {
+            this.stopPreview();
+            this.resetThumbnail();
+        });
 
 
         this.component.append(this.clipItem
@@ -92,6 +110,7 @@ export default class VideoComponent extends Component {
 
     // Stops the in-view observation; must be called when the component is discarded.
     dispose(): void {
+        this.stopPreview();
         pageService.unobserveInView(this.component.get(0));
     }
 
@@ -132,6 +151,7 @@ export default class VideoComponent extends Component {
         if ((event.target as Element).classList.contains(this.closeItem.attr("class"))) {
             return;
         }
+        this.stopPreview();
 
         function removeOnYTAction() {
             document.removeEventListener("yt-action", onYTAction);
@@ -225,6 +245,82 @@ export default class VideoComponent extends Component {
     private abortEnlargeTimeout(): void {
         clearTimeout(this.enlargeTimeout);
         this.enlargeTimeout = null;
+    }
+
+    // Play a muted preview of the video after hovering the thumbnail for a while.
+    private startPreviewTimeout(): void {
+        if (!configService.getConfig().hoverPreview) {
+            return;
+        }
+        // Upcoming premieres have nothing to play yet.
+        if (dataService.getVideo(this.videoId).premiere) {
+            return;
+        }
+        if (null === this.previewTimeout && null === this.previewItem) {
+            this.previewTimeout = setTimeout(() => this.startPreview(), configService.getConfig().previewDelay);
+        }
+    }
+
+    private async startPreview(): Promise<void> {
+        if (null !== this.previewItem) {
+            return;
+        }
+        const generation = this.previewGeneration;
+        let storyboard: Storyboard;
+        try {
+            storyboard = await getStoryboard(this.videoId);
+        } catch (error) {
+            console.warn(`Could not load preview for ${this.videoId}:`, error);
+            return;
+        }
+        // The mouse may have left while the storyboard was loading.
+        if (null === storyboard || generation !== this.previewGeneration || null !== this.previewItem) {
+            return;
+        }
+        this.previewItem = $("<div/>", {"class": "ytbsp-preview"});
+        this.clipItem.append(this.previewItem);
+        let frame = 0;
+        this.renderPreviewFrame(storyboard, frame);
+        this.previewInterval = setInterval(() => {
+            frame = (frame + 1) % storyboard.frameCount;
+            this.renderPreviewFrame(storyboard, frame);
+        }, PREVIEW_FRAME_MS);
+    }
+
+    private renderPreviewFrame(storyboard: Storyboard, frame: number): void {
+        const framesPerPage = storyboard.rows * storyboard.cols;
+        const page = Math.floor(frame / framesPerPage);
+        const index = frame % framesPerPage;
+        const col = index % storyboard.cols;
+        const row = Math.floor(index / storyboard.cols);
+        this.previewItem.css({
+            "background-image": `url("${storyboard.urlTemplate.replace("$M", String(page))}")`,
+            "background-size": `${storyboard.cols * 100}% ${storyboard.rows * 100}%`,
+            // With a sprite sheet of n tiles per axis, tile i sits at i/(n-1) in percent coordinates.
+            "background-position": `${1 < storyboard.cols ? (col / (storyboard.cols - 1)) * 100 : 0}% ${1 < storyboard.rows ? (row / (storyboard.rows - 1)) * 100 : 0}%`
+        });
+        // Preload the next page so the page transition doesn't stall.
+        if (index === framesPerPage - 1 && frame + 1 < storyboard.frameCount) {
+            new Image().src = storyboard.urlTemplate.replace("$M", String(page + 1));
+        }
+    }
+
+    private stopPreview(): void {
+        this.previewGeneration++;
+        this.abortPreviewTimeout();
+        if (null !== this.previewInterval) {
+            clearInterval(this.previewInterval);
+            this.previewInterval = null;
+        }
+        if (null !== this.previewItem) {
+            this.previewItem.remove();
+            this.previewItem = null;
+        }
+    }
+
+    private abortPreviewTimeout(): void {
+        clearTimeout(this.previewTimeout);
+        this.previewTimeout = null;
     }
 
     private humanReadableDate(date: Date): string {

@@ -123,10 +123,13 @@ class PersistenceService {
             localStorage.removeItem("YTBSP_maxVideosPerSub");
             localStorage.removeItem("YTBSP_enlargeDelay");
             localStorage.removeItem("YTBSP_enlargeFactor");
+            localStorage.removeItem("YTBSP_hoverPreview");
+            localStorage.removeItem("YTBSP_previewDelay");
             localStorage.removeItem("YTBSP_enlargeFactorNative");
             localStorage.removeItem("YTBSP_playerQuality");
             localStorage.removeItem("YTBSP_timeToMarkAsSeen");
             localStorage.removeItem("YTBSP_screenThreshold");
+            localStorage.removeItem("YTBSP_videoDecomposeTime");
             localStorage.removeItem("YTBSP_autoPauseVideo");
             localStorage.removeItem("YTBSP_hideShorts");
             resolve();
@@ -144,6 +147,8 @@ class PersistenceService {
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxVideosPerSub");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeDelay");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactor");
+            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hoverPreview");
+            PersistenceService.applyNumberPropertyFromLocalStorage(config, "previewDelay");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "enlargeFactorNative");
             PersistenceService.applyResolutionPropertyFromLocalStorage(config, "playerQuality");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "timeToMarkAsSeen");
@@ -166,6 +171,8 @@ class PersistenceService {
             localStorage.setItem("YTBSP_maxVideosPerSub", config.maxVideosPerSub.toString());
             localStorage.setItem("YTBSP_enlargeDelay", config.enlargeDelay.toString());
             localStorage.setItem("YTBSP_enlargeFactor", config.enlargeFactor.toString());
+            localStorage.setItem("YTBSP_hoverPreview", config.hoverPreview ? "1" : "0");
+            localStorage.setItem("YTBSP_previewDelay", config.previewDelay.toString());
             localStorage.setItem("YTBSP_enlargeFactorNative", config.enlargeFactorNative.toString());
             localStorage.setItem("YTBSP_playerQuality", config.playerQuality.toString());
             localStorage.setItem("YTBSP_timeToMarkAsSeen", config.timeToMarkAsSeen.toString());
