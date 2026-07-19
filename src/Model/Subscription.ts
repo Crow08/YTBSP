@@ -8,6 +8,7 @@ export default class Subscription {
     channelUrl: URL;
     iconUrl: URL;
     videos: Video[] = [];
+    missingSince?: number;
 
     updateSubscription(info: {
         channelName?: string,
@@ -45,13 +46,16 @@ export default class Subscription {
         if (Object.prototype.hasOwnProperty.call(info, "iconUrl")) {
             this.iconUrl = info.iconUrl ? info.iconUrl : this.iconUrl;
         }
-        if (Object.prototype.hasOwnProperty.call(info, "videos")) {
+        if ("number" === typeof info.missingSince) {
+            this.missingSince = info.missingSince;
+        }
+        if (Array.isArray(info.videos)) {
             const existingVideos = new Map(this.videos.map(video => [video.id, video]));
             const processedIds = new Set<string>();
             const updatedVideos: Video[] = [];
 
             info.videos.forEach(updateInfo => {
-                if ("undefined" === typeof updateInfo || "undefined" === typeof updateInfo.id) {
+                if (!updateInfo || "undefined" === typeof updateInfo.id) {
                     return;
                 }
                 let currentVideo = existingVideos.get(updateInfo.id);
@@ -73,10 +77,14 @@ export default class Subscription {
     }
 
     getDTO(): SubscriptionDTO {
-        return {
+        const dto: SubscriptionDTO = {
             channelId: this.channelId,
             videos: this.videos.map(video => video.getDTO())
         };
+        if ("number" === typeof this.missingSince) {
+            dto.missingSince = this.missingSince;
+        }
+        return dto;
     }
 
 }

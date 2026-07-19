@@ -41,9 +41,17 @@ function startup() {
         configService.setConfig(config);
         persistenceService.loadVideoInfo().then((subs) => {
             subs.forEach((subDTO) => {
-                const sub = new Subscription();
-                sub.updateSubscription(subDTO);
-                dataService.upsertSubscription(sub.channelId, () => sub);
+                try {
+                    if (!subDTO || "string" !== typeof subDTO.channelId || "" === subDTO.channelId) {
+                        console.error("Skipping invalid video cache entry:", subDTO);
+                        return;
+                    }
+                    const sub = new Subscription();
+                    sub.updateSubscription(subDTO);
+                    dataService.upsertSubscription(sub.channelId, () => sub, true);
+                } catch (error) {
+                    console.error("Failed to restore subscription from video cache:", subDTO, error);
+                }
             });
             atScriptDataLoaded();
         }).catch(e => console.error(e));

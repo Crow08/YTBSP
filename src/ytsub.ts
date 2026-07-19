@@ -1,27 +1,44 @@
 import Subscription from "./Model/Subscription";
 
-export default async (): Promise<Subscription[]> => {
+export interface SubscriptionListResult {
+    subscriptions: Subscription[];
+    // indicates a partial of full fetch error
+    complete: boolean;
+}
+
+export default async (): Promise<SubscriptionListResult> => {
     const body = getSubPageBody();
 
     const contentJson = getContentJson(await body)["contents"]["twoColumnBrowseResultsRenderer"]["tabs"][0]["tabRenderer"]["content"]["sectionListRenderer"];
     const cfgJson = getConfigurationJson(await body);
 
     let allItems = contentJson["contents"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+    let complete = true;
 
     if (contentJson["contents"].length > 1) {
         let continuation = contentJson["contents"][1];
         while (continuation) {
-            const continuationToken = continuation["continuationItemRenderer"]["continuationEndpoint"]["continuationCommand"]["token"];
-            const clickTrackingParams = continuation["continuationItemRenderer"]["continuationEndpoint"]["clickTrackingParams"];
-            const spfBody = getSubContinuationBody(cfgJson, continuationToken, clickTrackingParams);
-            const continuationJson = JSON.parse(await spfBody);
-            const spfItems = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
-            continuation = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][1];
-            allItems = allItems.concat(spfItems);
+            try {
+                const continuationToken = continuation["continuationItemRenderer"]["continuationEndpoint"]["continuationCommand"]["token"];
+                const clickTrackingParams = continuation["continuationItemRenderer"]["continuationEndpoint"]["clickTrackingParams"];
+                const spfBody = getSubContinuationBody(cfgJson, continuationToken, clickTrackingParams);
+                const continuationJson = JSON.parse(await spfBody);
+                const spfItems = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][0]["itemSectionRenderer"]["contents"][0]["shelfRenderer"]["content"]["expandedShelfContentsRenderer"]["items"];
+                continuation = continuationJson["onResponseReceivedActions"][0]["appendContinuationItemsAction"]["continuationItems"][1];
+                allItems = allItems.concat(spfItems);
+            } catch (error) {
+                console.error("Failed to load subscription list continuation, continuing with partial list.", error);
+                complete = false;
+                break;
+            }
         }
     }
 
-    return convertToSubscriptions(allItems);
+    const conversion = convertToSubscriptions(allItems);
+    return {
+        subscriptions: conversion.subscriptions,
+        complete: complete && conversion.complete
+    };
 };
 
 function getConfigurationJson(body: string): any {
@@ -137,17 +154,28 @@ async function getPOSTHeader(cfgJson): Promise<Record<string, string>> {
     };
 }
 
-function convertToSubscriptions(items: any[]): Subscription[] {
+function convertToSubscriptions(items: any[]): { subscriptions: Subscription[], complete: boolean } {
     const subscriptions: Subscription[] = [];
+    let complete = true;
     items.forEach(item => {
-        const channelItem = item["channelRenderer"];
-        const sub = new Subscription();
-        sub.channelId = channelItem["channelId"];
-        sub.channelName = channelItem["title"]["simpleText"];
-        sub.playlistId = sub.channelId.replace(/^UC/u, "UU");
-        sub.channelUrl = new URL("/channel/" + sub.channelId, document.baseURI);
-        sub.iconUrl = channelItem["thumbnail"]["thumbnails"][0]["url"];
-        subscriptions.push(sub);
+        try {
+            const channelItem = item["channelRenderer"];
+            const sub = new Subscription();
+            sub.channelId = channelItem["channelId"];
+            if ("string" !== typeof sub.channelId || "" === sub.channelId) {
+                console.error(`Skipping subscription item without channelId:\n${JSON.stringify(item)}`);
+                complete = false;
+                return;
+            }
+            sub.channelName = channelItem["title"]["simpleText"];
+            sub.playlistId = sub.channelId.replace(/^UC/u, "UU");
+            sub.channelUrl = new URL("/channel/" + sub.channelId, document.baseURI);
+            sub.iconUrl = channelItem["thumbnail"]["thumbnails"][0]["url"];
+            subscriptions.push(sub);
+        } catch (error) {
+            console.error(`Skipping malformed subscription item:\n${JSON.stringify(item)}`, error);
+            complete = false;
+        }
     });
-    return subscriptions;
+    return {subscriptions, complete};
 }

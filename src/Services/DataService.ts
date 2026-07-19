@@ -1,4 +1,5 @@
 import Subscription from "../Model/Subscription";
+import SubscriptionDTO from "../Model/SubscriptionDTO";
 import Video from "../Model/Video";
 import persistenceService from "./PersistenceService";
 
@@ -11,6 +12,9 @@ const RETAINED_VIDEO_COUNT = 50;
 
 class DataService {
     private subscriptions: Subscription[] = [];
+
+    private fetchedSubscriptions = new Set<string>();
+    private unsubscribedChannels = new Set<string>();
 
     private onSubscriptionChangeCallbackList: { [channelId: string]: (() => void)[] } = {};
     private onReorderCallbackList: ((subs: Subscription[]) => void)[] = [];
@@ -75,6 +79,25 @@ class DataService {
     }
 
     /**
+     * Marks a channel as having had a successful video fetch this session.
+     */
+    markSubscriptionFetched(channelId: string): void {
+        this.fetchedSubscriptions.add(channelId);
+    }
+
+    /**
+     * Deletes all data of a channel the user is unsubscribed from.
+     */
+    removeSubscription(channelId: string): void {
+        this.unsubscribedChannels.add(channelId);
+        const index = this.subscriptions.findIndex(sub => sub.channelId === channelId);
+        if (index !== -1) {
+            this.subscriptions.splice(index, 1);
+        }
+        this.persist();
+    }
+
+    /**
      * Removes dead cache entries for a channel after a successful video fetch.
      * Entries restored from localStorage only carry id/seen/removed (no title).
      * If such an entry is not part of the latest fetch response, the video has
@@ -107,8 +130,42 @@ class DataService {
         this.onSubscriptionChangeCallbackList[channelId].push(callback);
     }
 
+    /**
+     * Serializes the in-memory state merged with the currently stored state.
+     * This merge resists incomplete fetches.
+     */
     exportVideoData(): string {
-        return JSON.stringify(this.subscriptions.map(sub => sub.getDTO()));
+        return JSON.stringify(this.mergeWithStoredData(this.subscriptions.map(sub => sub.getDTO())));
+    }
+
+    private mergeWithStoredData(memoryDTOs: SubscriptionDTO[]): SubscriptionDTO[] {
+        const stored = persistenceService.loadVideoInfoSync();
+        if (null === stored || 0 === stored.length) {
+            return memoryDTOs;
+        }
+        const validStored = stored.filter(sub => sub && "string" === typeof sub.channelId);
+        const storedById = new Map(validStored.map(sub => [sub.channelId, sub]));
+        const memoryIds = new Set(memoryDTOs.map(dto => dto.channelId));
+
+        const merged = memoryDTOs.map(dto => {
+            const storedSub = storedById.get(dto.channelId);
+            if ("undefined" === typeof storedSub || this.fetchedSubscriptions.has(dto.channelId) || !Array.isArray(storedSub.videos)) {
+                return dto;
+            }
+            const memoryVideoIds = new Set(dto.videos.map(video => video.id));
+            const missingVideos = storedSub.videos.filter(video =>
+                video && "string" === typeof video.id && !memoryVideoIds.has(video.id));
+            if (0 === missingVideos.length) {
+                return dto;
+            }
+            return {...dto, videos: dto.videos.concat(missingVideos)};
+        });
+        validStored.forEach(storedSub => {
+            if (!memoryIds.has(storedSub.channelId) && !this.unsubscribedChannels.has(storedSub.channelId)) {
+                merged.push(storedSub);
+            }
+        });
+        return merged;
     }
 
     getSubscriptions(): Subscription[] {

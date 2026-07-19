@@ -232,6 +232,7 @@ export default class SubComponent extends Component {
     }
 
     private processRequestVideos(response: Video[]): void {
+        dataService.markSubscriptionFetched(this.channelId);
         if (this.removeShorts === true) {
             this.removeShorts = false;
             // Find removed shorts videos:

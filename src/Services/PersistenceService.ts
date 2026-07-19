@@ -29,8 +29,20 @@ const debounceConfigSave = (func: () => void): void => {
 class PersistenceService {
     private videoSaveQueued = false;
     private configSaveQueued = false;
+    private pendingVideoSave: (() => void) | null = null;
 
     private onSaveCallbackList: ((state: "start" | "end") => void)[] = [];
+
+    constructor() {
+        // The debounced save loses up to 2s of changes on a full page unload,
+        // so flush pending writes when the page goes to the background.
+        window.addEventListener("beforeunload", () => this.flushPendingVideoSave());
+        document.addEventListener("visibilitychange", () => {
+            if ("hidden" === document.visibilityState) {
+                this.flushPendingVideoSave();
+            }
+        });
+    }
 
     private static applyResolutionPropertyFromLocalStorage(config: Configuration, key: string): void {
         const property = localStorage.getItem(`YTBSP_${key}`);
@@ -96,8 +108,9 @@ class PersistenceService {
             this.onNotifySave("start");
         }
 
-        debounceVideoSave((): void => {
+        this.pendingVideoSave = (): void => {
             console.log("SAVE");
+            this.pendingVideoSave = null;
             this.videoSaveQueued = false;
             this.saveLocalVideoInfo(getSubs())
                 .then(() => this.onNotifySave("end"))
@@ -105,7 +118,34 @@ class PersistenceService {
                     console.error(error);
                     this.onNotifySave("end");
                 });
-        });
+        };
+        debounceVideoSave((): void => this.pendingVideoSave?.());
+    }
+
+    public flushPendingVideoSave(): void {
+        if (null === this.pendingVideoSave) {
+            return;
+        }
+        clearTimeout(saveVideoTimeout);
+        saveVideoTimeout = null;
+        this.pendingVideoSave();
+    }
+
+    /**
+     * Synchronously reads the currently stored video cache.
+     */
+    public loadVideoInfoSync(): SubscriptionDTO[] | null {
+        const rawData = localStorage.getItem("YTBSP_VideoInfo");
+        if (null === rawData || "" === rawData) {
+            return [];
+        }
+        let subs: unknown;
+        try {
+            subs = JSON.parse(rawData);
+        } catch {
+            return null;
+        }
+        return Array.isArray(subs) ? subs as SubscriptionDTO[] : null;
     }
 
     addSaveListener(callback: (state: "start" | "end") => void): void {
@@ -185,17 +225,12 @@ class PersistenceService {
     }
 
     private loadLocalVideoInfo(): Promise<SubscriptionDTO[]> {
-        return new Promise(((resolve, reject) => {
-            let subs = [];
-            // Get data from localStorage;
-            const rawData = localStorage.getItem("YTBSP_VideoInfo");
-            // If we have a data parse it.
-            if (null !== rawData && "" !== rawData) {
-                try {
-                    subs = JSON.parse(rawData) as unknown as SubscriptionDTO[];
-                } catch {
-                    reject("Error parsing cache!");
-                }
+        return new Promise(((resolve) => {
+            const subs = this.loadVideoInfoSync();
+            if (null === subs) {
+                console.error("Error parsing video cache!");
+                resolve([]);
+                return;
             }
             resolve(subs);
         }));

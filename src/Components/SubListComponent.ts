@@ -8,6 +8,8 @@ import ytsub from "../ytsub";
 import Component from "./Component";
 import SubComponent from "./SubComponent";
 
+const UNSUBSCRIBED_GRACE_DAYS = 7 ;
+
 export default class SubListComponent extends Component {
 
     storedHideEmptySubs = false;
@@ -56,7 +58,7 @@ export default class SubListComponent extends Component {
         this.subList = $("<ul/>", {"id": "ytbsp-subsList"});
         this.component.append(this.subList);
 
-        ytsub().then((subs) => this.initSubs(subs)).catch((err) => console.error(err));
+        ytsub().then((result) => this.initSubs(result.subscriptions, result.complete)).catch((err) => console.error(err));
 
         dataService.addReorderListener((subs) => this.updateSubOrder(subs));
     }
@@ -102,15 +104,18 @@ export default class SubListComponent extends Component {
         }
     }
 
-    private initSubs(newSubs: Subscription[]): void {
-        const cachedSubs = dataService.getSubscriptions();
+    private initSubs(newSubs: Subscription[], complete: boolean): void {
+        // Copy: handleMissingSubscription may remove entries from the underlying array while iterating.
+        const cachedSubs = [...dataService.getSubscriptions()];
         cachedSubs.forEach(cachedSub => {
             const subIndex = newSubs.findIndex(sub => sub.channelId == cachedSub.channelId);
             const newSub = newSubs[subIndex];
             if ("undefined" === typeof newSub) {
-                //no longer subscribed
+                this.handleMissingSubscription(cachedSub, complete);
                 return;
             }
+            // Channel is (still) subscribed: end a running unsubscribe grace period.
+            cachedSub.missingSince = undefined;
             newSub.updateSubscription(cachedSub);
             this.setupNewSubscription(newSub);
             newSubs.splice(subIndex, 1);
@@ -119,6 +124,32 @@ export default class SubListComponent extends Component {
         newSubs.forEach(newSub => {
             this.setupNewSubscription(newSub);
         });
+    }
+
+    /**
+     * Handles a cached subscription missing from the subscription list response.
+     * Once the channel has been missing for a whole grace period, it will be deleted.
+     */
+    private handleMissingSubscription(cachedSub: Subscription, complete: boolean): void {
+        const channelDescription = `${cachedSub.channelId} (${cachedSub.channelName ?? "?"})`;
+        if (!complete) {
+            console.info(`Channel ${channelDescription} missing from partial subscription list response, keeping cached data.`);
+            return;
+        }
+        if ("number" !== typeof cachedSub.missingSince) {
+            console.info(`Channel ${channelDescription} missing from subscription list, keeping cached data for a grace period.`);
+            dataService.upsertSubscription(cachedSub.channelId, () => {
+                cachedSub.missingSince = Date.now();
+                return cachedSub;
+            });
+            return;
+        }
+        if (Date.now() - cachedSub.missingSince > UNSUBSCRIBED_GRACE_DAYS * 24 * 60 * 60 * 1000) {
+            console.info(`Channel ${channelDescription} missing from subscription list since ${new Date(cachedSub.missingSince).toISOString()}, deleting cached data.`);
+            dataService.removeSubscription(cachedSub.channelId);
+            return;
+        }
+        console.info(`Channel ${channelDescription} still in unsubscribe grace period, keeping cached data.`);
     }
 
     private setupNewSubscription(sub: Subscription): void {
