@@ -15,7 +15,7 @@ export default class BackupModalComponent extends Component {
         this.component.append($("<h1/>", {"html": "Backup video information"}));
         this.component.append($("<p/>", {
             "html": "This Feature allows you to save the data used in the script containing the " +
-                "information which videos you have seen or removed." +
+                "information which videos you have removed." +
                 "<br/>This can be used to import the current state of the script data on another " +
                 "browser/computer or just to make sure you don't loose this information over night."
         }));

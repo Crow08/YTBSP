@@ -52,12 +52,33 @@ class DataService {
         const video = sub.videos.find(vid => vid.id === videoId);
         const newVideo = func(video);
         if ("undefined" === typeof video) {
+            if ("undefined" === typeof newVideo) {
+                return;
+            }
             sub.videos.push(newVideo);
         } else {
             video.updateVideo(newVideo);
         }
         if (!silent) {
             this.onDataUpdated(sub.channelId);
+        }
+    }
+
+    /**
+     * Merges a freshly fetched playlist page into a subscription, preserving
+     * upload order: fetched videos first (in fetch order), then any older,
+     * previously known videos this fetch didn't include, in their prior
+     * order. Unlike per-video upsertVideo (which appends newly discovered
+     * videos to the end of the array), this never reorders a channel's
+     * newest upload behind older, already-known entries.
+     *
+     * Does not persist or notify listeners -- callers merging a full fetch
+     * response already trigger both via pruneStaleVideos/compactRemovedVideos.
+     */
+    mergeFetchedVideos(channelId: string, response: Video[]): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" !== typeof sub) {
+            sub.updateSubscription({videos: response});
         }
     }
 
@@ -69,13 +90,66 @@ class DataService {
         return sub.videos;
     }
 
-    updateSubVideos(channelId: string, func: (vid: Video) => void, silent = false): void {
-        this.getSubscription(channelId).videos.forEach(video => {
-            func(video);
-        });
-        if (!silent) {
-            this.onDataUpdated(channelId);
+    /**
+     * Marks all currently known videos of a channel as removed. Does not try
+     * to guess a new boundary itself (that requires the true playlist order,
+     * which is only reliable right after a fetch — see Subscription); actual
+     * compaction of these into a single boundary happens lazily on the next
+     * fetch, via compactRemovedVideos.
+     */
+    removeAllVideos(channelId: string): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" === typeof sub) {
+            return;
         }
+        sub.videos.forEach(video => {
+            video.removed = true;
+        });
+        this.onDataUpdated(channelId);
+    }
+
+    /**
+     * Resets the removed state of all videos of a channel, including the
+     * boundary: videos no longer stored individually because the boundary
+     * covered them reappear with the next fetch.
+     */
+    resetAllVideos(channelId: string): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" === typeof sub) {
+            return;
+        }
+        sub.removedThroughVideoId = undefined;
+        sub.videos.forEach(video => {
+            video.removed = false;
+        });
+        this.onDataUpdated(channelId);
+    }
+
+    /**
+     * Applies the removed boundary to videos in a freshly fetched playlist
+     * page that this subscription doesn't already know about. Must run
+     * before the response is merged — see Subscription.applyRemovedBoundary.
+     */
+    applyRemovedBoundary(channelId: string, response: Video[]): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" !== typeof sub) {
+            sub.applyRemovedBoundary(response);
+        }
+    }
+
+    /**
+     * Advances the removed boundary and drops now-covered individual video
+     * entries, using a freshly fetched playlist page as the source of truth.
+     * Must run after the response has been merged into the subscription —
+     * see Subscription.compactRemovedVideos.
+     */
+    compactRemovedVideos(channelId: string, response: Video[]): void {
+        const sub = this.getSubscription(channelId);
+        if ("undefined" === typeof sub) {
+            return;
+        }
+        sub.compactRemovedVideos(response);
+        this.persist();
     }
 
     /**
@@ -99,7 +173,7 @@ class DataService {
 
     /**
      * Removes dead cache entries for a channel after a successful video fetch.
-     * Entries restored from localStorage only carry id/seen/removed (no title).
+     * Entries restored from localStorage only carry id/removed (no title).
      * If such an entry is not part of the latest fetch response, the video has
      * fallen out of the channel's fetch window for good: it can never be
      * displayed again, so keeping its flags only grows the cache forever.

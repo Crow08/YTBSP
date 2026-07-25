@@ -25,7 +25,6 @@ export default class Configuration {
     playerQuality = Resolutions.P1080;  // DEFAULT: hd1080 (Resolutions.P1080)
     peekPlayerSizeFactor = 1.5;         // DEFAULT: 1.5 (x * 180px).
     autoPauseVideo = false;             // DEFAULT: false.
-    hideSeenVideos = false;             // DEFAULT: false.
     hideEmptySubs = true;               // DEFAULT: true.
     hideOlderVideos = false;            // DEFAULT: false.
     videoDecomposeTime = 30;            // DEFAULT: 30 days.
@@ -45,7 +44,6 @@ export default class Configuration {
         playerQuality?: Resolutions,
         peekPlayerSizeFactor?: number,
         autoPauseVideo?: boolean,
-        hideSeenVideos?: boolean,
         hideOlderVideos?: boolean,
         hideEmptySubs?: boolean,
         videoDecomposeTime?: number,
@@ -92,9 +90,6 @@ export default class Configuration {
         if (Object.prototype.hasOwnProperty.call(info, "autoPauseVideo")) {
             this.autoPauseVideo = info.autoPauseVideo;
         }
-        if (Object.prototype.hasOwnProperty.call(info, "hideSeenVideos")) {
-            this.hideSeenVideos = info.hideSeenVideos;
-        }
         if (Object.prototype.hasOwnProperty.call(info, "hideOlderVideos")) {
             this.hideOlderVideos = info.hideOlderVideos;
         }
@@ -123,7 +118,6 @@ export default class Configuration {
             this.playerQuality === config.playerQuality &&
             this.peekPlayerSizeFactor === config.peekPlayerSizeFactor &&
             this.autoPauseVideo === config.autoPauseVideo &&
-            this.hideSeenVideos === config.hideSeenVideos &&
             this.hideOlderVideos === config.hideOlderVideos &&
             this.videoDecomposeTime === config.videoDecomposeTime &&
             this.hideEmptySubs === config.hideEmptySubs &&

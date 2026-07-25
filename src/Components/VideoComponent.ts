@@ -20,7 +20,6 @@ let activeOnYTAction: (e: CustomEvent) => void = null;
 
 export default class VideoComponent extends Component {
     videoId: string;
-    private seenMarkerItem: JQuery;
     private thumbItem: JQuery;
     private closeItem: JQuery;
     private addToQueueItem: JQuery;
@@ -53,10 +52,6 @@ export default class VideoComponent extends Component {
             "class": "ytbsp-seenMarker",
             "html": "add to queue"
         });
-        this.seenMarkerItem = $("<span/>", {
-            "class": `ytbsp-seenMarker${video.seen ? " seen" : ""}`,
-            "html": (video.seen ? "already seen" : "mark as seen")
-        });
 
         this.clipItem.mouseover(() => {
             this.startEnlargeTimeout();
@@ -79,15 +74,12 @@ export default class VideoComponent extends Component {
             .append(this.durationItem));
         this.component.append(this.titleItem);
         this.component.append(this.uploadItem);
-        this.component.append(this.seenMarkerItem);
-        this.component.append($("<span/>", {"class": "ytbsp-spacer", "html": " | "}));
         this.component.append(this.addToQueueItem);
         if (video.premiere) {
             this.component.addClass("ytbsp-premiere");
         }
 
         // Register some events from this thumb.
-        this.seenMarkerItem.click(() => this.toggleSeen());
         this.closeItem.click(() => {
             dataService.upsertVideo(video.id, (video) => {
                 video.removed = true;
@@ -123,27 +115,9 @@ export default class VideoComponent extends Component {
         pageService.unobserveInView(this.component.get(0));
     }
 
-    toggleSeen(): void {
-        dataService.upsertVideo(this.videoId, (video) => {
-            video.seen = !video.seen;
-            return video;
-        });
-    }
-
     update(): void {
         const video = dataService.getVideo(this.videoId);
-        this.updateSeenButton(video);
         this.durationItem.html(video.duration ? video.duration : "");
-    }
-
-    private updateSeenButton(video: Video): void {
-        if (video.seen) {
-            this.seenMarkerItem.html("already seen");
-            this.seenMarkerItem.addClass("seen");
-        } else {
-            this.seenMarkerItem.html("mark as seen");
-            this.seenMarkerItem.removeClass("seen");
-        }
     }
 
     private handleOpenVideo(event: ClickEvent): void {

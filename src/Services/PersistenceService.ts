@@ -179,7 +179,6 @@ class PersistenceService {
     private loadLocalConfig(): Promise<Configuration> {
         return new Promise(((resolve) => {
             const config = new Configuration();
-            PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideSeenVideos");
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideOlderVideos");
             PersistenceService.applyBooleanPropertyFromLocalStorage(config, "hideEmptySubs");
             PersistenceService.applyNumberPropertyFromLocalStorage(config, "maxSimSubLoad");
@@ -203,7 +202,6 @@ class PersistenceService {
 
     private saveLocalConfig(config: Configuration): Promise<void> {
         return new Promise(((resolve) => {
-            localStorage.setItem("YTBSP_hideSeenVideos", config.hideSeenVideos ? "1" : "0");
             localStorage.setItem("YTBSP_hideOlderVideos", config.hideOlderVideos ? "1" : "0");
             localStorage.setItem("YTBSP_hideEmptySubs", config.hideEmptySubs ? "1" : "0");
             localStorage.setItem("YTBSP_maxSimSubLoad", config.maxSimSubLoad.toString());

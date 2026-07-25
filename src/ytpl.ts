@@ -15,7 +15,7 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
         }
     } else {
         // Reject instead of resolving with an empty list: an empty "success"
-        // would make pruneStaleVideos wipe the channel's seen/removed flags.
+        // would make pruneStaleVideos wipe the channel's removed flags.
         throw new Error("Unknown Subscription Format!");
     }
 

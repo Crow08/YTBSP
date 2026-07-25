@@ -12,7 +12,6 @@ export default class SettingsModalComponent extends Component {
     private modal: ModalComponent;
 
     private hideEmptySubsSlider: Slider;
-    private hideSeenVideosSlider: Slider;
     private hideOlderVideosSlider: Slider;
     private autoPauseVideoSlider: Slider;
     private hoverPreviewSlider: Slider;
@@ -35,7 +34,6 @@ export default class SettingsModalComponent extends Component {
         this.modal = modal;
 
         this.hideEmptySubsSlider = getSlider("ytbsp-settings-hideEmptySubs", configService.getConfig().hideEmptySubs);
-        this.hideSeenVideosSlider = getSlider("ytbsp-settings-hideSeenVideos", configService.getConfig().hideSeenVideos);
         this.hideOlderVideosSlider = getSlider("ytbsp-settings-hideOlderVideos", configService.getConfig().hideOlderVideos);
         this.autoPauseVideoSlider = getSlider("ytbsp-settings-autoPauseVideo", configService.getConfig().autoPauseVideo);
         this.hoverPreviewSlider = getSlider("ytbsp-settings-hoverPreview", configService.getConfig().hoverPreview);
@@ -138,7 +136,6 @@ export default class SettingsModalComponent extends Component {
             autoPauseVideo: this.autoPauseVideoSlider.getValue(),
             hoverPreview: this.hoverPreviewSlider.getValue(),
             previewDelay: this.previewDelayInput.val(),
-            hideSeenVideos: this.hideSeenVideosSlider.getValue(),
             hideOlderVideos: this.hideOlderVideosSlider.getValue(),
             hideEmptySubs: this.hideEmptySubsSlider.getValue()
         });
@@ -163,11 +160,6 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Hide empty subs"}))
             .append($("<td>").append(this.hideEmptySubsSlider.component))
             .append($("<td>", {"html": "Hide subscription without any Videos that are either removed or hidden.)"}))
-        );
-        settingsTable.append($("<tr>")
-            .append($("<td>", {"html": "Hide seen videos"}))
-            .append($("<td>").append(this.hideSeenVideosSlider.component))
-            .append($("<td>", {"html": "Hide videos that hav been marked seen.)"}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Hide older videos"}))
@@ -205,9 +197,9 @@ export default class SettingsModalComponent extends Component {
             .append($("<td>", {"html": "Default: 27 | Range: 1-50 | Should be dividable by videos per row."}))
         );
         settingsTable.append($("<tr>")
-            .append($("<td>", {"html": "Watch time to mark video as seen"}))
+            .append($("<td>", {"html": "Watch time to remove video"}))
             .append($("<td>").append(this.timeToMarkAsSeenInput).append(" s"))
-            .append($("<td>", {"html": "Default: 10"}))
+            .append($("<td>", {"html": "Default: 10 | Watched videos are removed from their subscription row."}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Video hover preview"}))
@@ -242,7 +234,7 @@ export default class SettingsModalComponent extends Component {
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "Video data"}))
             .append($("<td>").append(this.backupButton))
-            .append($("<td>", {"html": "Can be use to transfer all seen and removal information of videos between PCs or browsers."}))
+            .append($("<td>", {"html": "Can be use to transfer all removal information of videos between PCs or browsers."}))
         );
         settingsTable.append($("<tr>")
             .append($("<td>", {"html": "User data"}))

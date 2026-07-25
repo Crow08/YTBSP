@@ -91,17 +91,12 @@ export default class SubComponent extends Component {
 
     // Function to remove all videos.
     subRemoveAllVideos(): void {
-        dataService.updateSubVideos(this.channelId, (video) => {
-            video.removed = true;
-        });
+        dataService.removeAllVideos(this.channelId);
     }
 
     // Function to reset all videos.
     subResetAllVideos(): void {
-        dataService.updateSubVideos(this.channelId, (video) => {
-            video.seen = false;
-            video.removed = false;
-        });
+        dataService.resetAllVideos(this.channelId);
     }
 
     // Function to show more.
@@ -217,9 +212,7 @@ export default class SubComponent extends Component {
     }
 
     private isVideoHidden(video: Video) {
-        const hideSeen = configService.getConfig().hideSeenVideos && video.seen;
-        const hideOld = configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
-        return hideSeen || hideOld;
+        return configService.getConfig().hideOlderVideos && this.isVideoOld(video.pubDate);
     }
 
     // Hides subscription if needed.
@@ -233,6 +226,7 @@ export default class SubComponent extends Component {
 
     private processRequestVideos(response: Video[]): void {
         dataService.markSubscriptionFetched(this.channelId);
+        dataService.applyRemovedBoundary(this.channelId, response);
         if (this.removeShorts === true) {
             this.removeShorts = false;
             // Find removed shorts videos:
@@ -247,16 +241,9 @@ export default class SubComponent extends Component {
                 }
             });
         }
-        response.forEach((responseItem) => {
-            dataService.upsertVideo(responseItem.id, ((currentVideo) => {
-                if ("undefined" === typeof currentVideo) {
-                    currentVideo = new Video(responseItem.id);
-                }
-                currentVideo.updateVideo(responseItem);
-                return currentVideo;
-            }), true, this.channelId);
-        });
+        dataService.mergeFetchedVideos(this.channelId, response);
         dataService.pruneStaleVideos(this.channelId, response.map((responseItem) => responseItem.id));
+        dataService.compactRemovedVideos(this.channelId, response);
     }
 
     private toggleHideShorts() {

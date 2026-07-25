@@ -12,7 +12,6 @@ export default class Video {
     clicks: string;
     premiere: Date;
 
-    seen = false;
     removed = false;
 
     constructor(id: string) {
@@ -54,11 +53,12 @@ export default class Video {
         if (Object.prototype.hasOwnProperty.call(info, "clicks")) {
             this.clicks = "" !== info.clicks ? info.clicks : this.clicks;
         }
-        if (Object.prototype.hasOwnProperty.call(info, "seen")) {
-            this.seen = false !== info.seen ? info.seen : this.seen;
-        }
         if (Object.prototype.hasOwnProperty.call(info, "removed")) {
             this.removed = false !== info.removed ? info.removed : this.removed;
+        }
+        // Legacy caches stored a separate seen flag; seen now means removed.
+        if (true === info.seen) {
+            this.removed = true;
         }
         if (Object.prototype.hasOwnProperty.call(info, "premiere")) {
             this.premiere = null !== info.premiere ? info.premiere : this.premiere;
@@ -68,7 +68,6 @@ export default class Video {
     getDTO(): VideoDTO {
         return {
             "id": this.id,
-            "seen": this.seen,
             "removed": this.removed
         };
     }

@@ -17,14 +17,14 @@ class MarkAsSeenService {
         }
     }
 
-    // Mark as seen after at least X seconds.
+    // Mark as removed after at least X seconds of watching.
     private startMarkAsSeenTimeout(): void {
         this.markAsSeenTimeout = setTimeout(() => {
             const videoId = /v=([^&]{11})/u.exec(location.href)[1];
             if (videoId) {
                 dataService.upsertVideo(videoId, (video) => {
                     if ("undefined" !== typeof video) {
-                        video.updateVideo({seen: true});
+                        video.updateVideo({removed: true});
                     }
                     return video;
                 }, false, pageService.getChannelId());
