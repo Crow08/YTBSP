@@ -257,10 +257,6 @@ export default class SettingsModalComponent extends Component {
         return select;
     }
 
-    private getClientInfo(): string {
-        return `Client ID: ${localStorage.getItem("YTBSP_ServerId")}`;
-    }
-
     private getScriptVersionInfo(): string {
         let versionInformation = "";
         try {
@@ -287,7 +283,6 @@ export default class SettingsModalComponent extends Component {
                 "class": "ytbsp-func",
                 "style": "font-size: 1rem;"
             }))
-            .append($("<p/>", {"html": this.getClientInfo(), "class": "ytbsp-func", "style": "font-size: 1rem;"}))
             .append($("<input/>", {
                 "type": "submit",
                 "class": "ytbsp-func",
