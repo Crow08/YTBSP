@@ -22,12 +22,26 @@ export default async (plistID: string, options: { limit: number; hideShorts: boo
     return convertToVideos(allItems);
 };
 
+/**
+ * The InnerTube client version YouTube itself is currently using.
+ */
+function getClientVersion(): string {
+    const ytcfg = (window as any).ytcfg;
+    const version = ytcfg?.get?.("INNERTUBE_CONTEXT_CLIENT_VERSION") ??
+        ytcfg?.data_?.["INNERTUBE_CONTEXT_CLIENT_VERSION"];
+    if ("string" === typeof version && "" !== version) {
+        return version;
+    }
+    console.warn("Could not read INNERTUBE_CONTEXT_CLIENT_VERSION from ytcfg, falling back to a hard coded version.");
+    return "";
+}
+
 async function getPlaylistPageBody(playlistId: string, hideShorts: boolean): Promise<string> {
     const payload = {
         "context": {
             "client": {
                 "clientName": "WEB",
-                "clientVersion": "2.20250328.01.00",
+                "clientVersion": getClientVersion(),
                 "hl": "en" // Force english texts for date parsing.
             }
         },
@@ -57,8 +71,10 @@ function convertToVideos(items: any[]): Video[] {
             if (video !== null) {
                 videos.push(video);
             }
-        } else if ("undefined" !== typeof item["continuationItemRenderer"]) {
-            // Pagination token, no video data.
+        } else if ("undefined" !== typeof item["continuationItemRenderer"] ||
+            "undefined" !== typeof item["continuationItemViewModel"]) {
+            // Pagination token, no video data. The view model variant is the
+            // new format's counterpart and accompanies lockupViewModel items.
         } else {
             console.error(`unknown Error:\n${JSON.stringify(item)}`);
         }
